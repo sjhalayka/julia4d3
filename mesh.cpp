@@ -201,39 +201,22 @@ bool read_triangles_from_binary_stereo_lithography_file(vector<triangle> &triang
 
 void add_box(vector<triangle>& triangles, float max_extent)
 {
+//	return;
 	//max_extent *= 1.5f;
+	
+	//max_extent = 1000.0f;
+//
 
 	vertex_3_with_index v0;
-	v0.x = -100; v0.y = -max_extent; v0.z = 100;
-
 	vertex_3_with_index v1;
-	v1.x = -100; v1.y = -max_extent; v1.z = -100;
-
 	vertex_3_with_index v2;
-	v2.x = 100; v2.y = -max_extent; v2.z = -100;
-
 	vertex_3_with_index v3;
-	v3.x = 100; v3.y = -max_extent; v3.z = 100;
-
 	triangle t;
 
-	t.vertex[0] = v0;
-	t.vertex[1] = v2;
-	t.vertex[2] = v1;
-	triangles.push_back(t);
-
-	t.vertex[0] = v3;
-	t.vertex[1] = v2;
-	t.vertex[2] = v0;
-	triangles.push_back(t);
-
-	return;
-
-
-	v0.x = -max_extent; v0.y = max_extent; v0.z = max_extent;
-	v1.x = -max_extent; v1.y = max_extent; v1.z = -max_extent;
-	v2.x = max_extent; v2.y = max_extent; v2.z = -max_extent;
-	v3.x = max_extent; v3.y = max_extent; v3.z = max_extent;
+	v0.x = -max_extent; v0.y = -1; v0.z = max_extent;
+	v1.x = -max_extent; v1.y = -1; v1.z = -max_extent;
+	v2.x = max_extent; v2.y = -1; v2.z = -max_extent;
+	v3.x = max_extent; v3.y = -1; v3.z = max_extent;
 
 	t.vertex[0] = v0;
 	t.vertex[1] = v1;
@@ -245,12 +228,10 @@ void add_box(vector<triangle>& triangles, float max_extent)
 	t.vertex[2] = v3;
 	triangles.push_back(t);
 
-
-
-	v0.x = max_extent; v0.y = -max_extent; v0.z = max_extent;
-	v1.x = max_extent; v1.y = -max_extent; v1.z = -max_extent;
-	v2.x = max_extent; v2.y = max_extent; v2.z = -max_extent;
-	v3.x = max_extent; v3.y = max_extent; v3.z = max_extent;
+	v0.x = -max_extent; v0.y = -0.9f; v0.z = max_extent;
+	v1.x = -max_extent; v1.y = -0.9f; v1.z = -max_extent;
+	v2.x = max_extent; v2.y = -0.9f; v2.z = -max_extent;
+	v3.x = max_extent; v3.y = -0.9f; v3.z = max_extent;
 
 	t.vertex[0] = v2;
 	t.vertex[1] = v1;
@@ -262,10 +243,12 @@ void add_box(vector<triangle>& triangles, float max_extent)
 	t.vertex[2] = v0;
 	triangles.push_back(t);
 
-	v0.x = -max_extent; v0.y = -max_extent; v0.z = max_extent;
-	v1.x = -max_extent; v1.y = -max_extent; v1.z = -max_extent;
-	v2.x = -max_extent; v2.y = max_extent; v2.z = -max_extent;
-	v3.x = -max_extent; v3.y = max_extent; v3.z = max_extent;
+
+
+	v0.x = max_extent; v0.y = -1; v0.z = max_extent;
+	v1.x = max_extent; v1.y = -1; v1.z = -max_extent;
+	v2.x = max_extent; v2.y = -0.9f; v2.z = -max_extent;
+	v3.x = max_extent; v3.y = -0.9f; v3.z = max_extent;
 
 	t.vertex[0] = v0;
 	t.vertex[1] = v1;
@@ -277,27 +260,10 @@ void add_box(vector<triangle>& triangles, float max_extent)
 	t.vertex[2] = v3;
 	triangles.push_back(t);
 
-
-
-	v0.x = max_extent; v0.y = -max_extent; v0.z = max_extent;
-	v1.x = -max_extent; v1.y = -max_extent; v1.z = max_extent;
-	v2.x = -max_extent; v2.y = max_extent; v2.z = max_extent;
-	v3.x = max_extent; v3.y = max_extent; v3.z = max_extent;
-
-	t.vertex[0] = v0;
-	t.vertex[1] = v1;
-	t.vertex[2] = v2;
-	triangles.push_back(t);
-
-	t.vertex[0] = v0;
-	t.vertex[1] = v2;
-	t.vertex[2] = v3;
-	triangles.push_back(t);
-
-	v0.x = max_extent; v0.y = -max_extent; v0.z = -max_extent;
-	v1.x = -max_extent; v1.y = -max_extent; v1.z = -max_extent;
-	v2.x = -max_extent; v2.y = max_extent; v2.z = -max_extent;
-	v3.x = max_extent; v3.y = max_extent; v3.z = -max_extent;
+	v0.x = -max_extent; v0.y = -1; v0.z = max_extent;
+	v1.x = -max_extent; v1.y = -1; v1.z = -max_extent;
+	v2.x = -max_extent; v2.y = -0.9f; v2.z = -max_extent;
+	v3.x = -max_extent; v3.y = -0.9f; v3.z = max_extent;
 
 	t.vertex[0] = v2;
 	t.vertex[1] = v1;
@@ -307,6 +273,38 @@ void add_box(vector<triangle>& triangles, float max_extent)
 	t.vertex[0] = v3;
 	t.vertex[1] = v2;
 	t.vertex[2] = v0;
+	triangles.push_back(t);
+
+
+
+	v0.x = max_extent; v0.y = -1; v0.z = max_extent;
+	v1.x = -max_extent; v1.y = -1; v1.z = max_extent;
+	v2.x = -max_extent; v2.y = -0.9f; v2.z = max_extent;
+	v3.x = max_extent; v3.y = -0.9f; v3.z = max_extent;
+
+	t.vertex[0] = v2;
+	t.vertex[1] = v1;
+	t.vertex[2] = v0;
+	triangles.push_back(t);
+
+	t.vertex[0] = v3;
+	t.vertex[1] = v2;
+	t.vertex[2] = v0;
+	triangles.push_back(t);
+
+	v0.x = max_extent; v0.y = -1; v0.z = -max_extent;
+	v1.x = -max_extent; v1.y = -1; v1.z = -max_extent;
+	v2.x = -max_extent; v2.y = -0.9f; v2.z = -max_extent;
+	v3.x = max_extent; v3.y = -0.9f; v3.z = -max_extent;
+
+	t.vertex[0] = v0;
+	t.vertex[1] = v1;
+	t.vertex[2] = v2;
+	triangles.push_back(t);
+
+	t.vertex[0] = v0;
+	t.vertex[1] = v2;
+	t.vertex[2] = v3;
 	triangles.push_back(t);
 
 }

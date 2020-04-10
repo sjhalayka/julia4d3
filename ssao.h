@@ -28,7 +28,7 @@
  */
 
 
-
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -37,7 +37,10 @@
 #ifdef _MSC_VER
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
+#pragma comment(lib, "glui64bit")
 #endif
+
+
 
 #include <iostream>
 using namespace std;
@@ -46,14 +49,18 @@ using namespace std;
 #include "matrix_utils.h"
 #include "uv_camera.h"
 #include "mesh.h"
+#include "glui.h"
 
 
-vector<triangle_index> triangle_indices;
-vector<vertex_3_with_normal> vertices_with_face_normals;
+GLUI_Checkbox* checkbox;
+GLUI_Spinner* spinner;
+GLUI_RadioGroup* radio;
+GLUI_EditText* edittext;
 
-
-vertex_fragment_shader render;
-vertex_fragment_shader ssao;
+int   wireframe = 0;
+int   obj = 0;
+int   segments = 8;
+char  text[200] = { "Hello World!" };
 
 GLint win_id = 0;
 GLuint win_x = 600;
@@ -64,9 +71,50 @@ bool rmb_down = false;
 GLuint mouse_x = 0;
 GLuint mouse_y = 0;
 float u_spacer = 0.01f;
-float v_spacer = 0.5f*u_spacer;
+float v_spacer = 0.5f * u_spacer;
 float w_spacer = 0.1f;
 uv_camera main_camera;
+
+
+
+
+void control_cb(int control)
+{
+	/********************************************************************
+	  Here we'll print the user id of the control that generated the
+	  callback, and we'll also explicitly get the values of each control.
+	  Note that we really didn't have to explicitly get the values, since
+	  they are already all contained within the live variables:
+	  'wireframe',  'segments',  'obj',  and 'text'
+	  ********************************************************************/
+
+	printf("callback: %d\n", control);
+	printf("             checkbox: %d\n", checkbox->get_int_val());
+	printf("              spinner: %d\n", spinner->get_int_val());
+	printf("          radio group: %d\n", radio->get_int_val());
+	printf("                 text: %s\n", edittext->get_text());
+
+}
+
+void myGlutIdle(void)
+{
+	/* According to the GLUT specification, the current window is
+	   undefined during an idle callback.  So we need to explicitly change
+	   it if necessary */
+	if (glutGetWindow() != win_id)
+		glutSetWindow(win_id);
+
+	glutPostRedisplay();
+}
+
+
+vector<triangle_index> triangle_indices;
+vector<vertex_3_with_normal> vertices_with_face_normals;
+
+
+vertex_fragment_shader render;
+vertex_fragment_shader ssao;
+
 
 
 GLuint fractal_vao;
