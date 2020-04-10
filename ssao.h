@@ -27,8 +27,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-
 #define _CRT_SECURE_NO_WARNINGS
+
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -38,6 +38,7 @@
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
 #pragma comment(lib, "glui64bit")
+
 #endif
 
 
@@ -62,6 +63,10 @@ GLUI* glui;// , * glui2;
 GLUI_Checkbox* checkbox;
 GLUI_Spinner* spinner, * light0_spinner, * light1_spinner;
 GLUI_RadioGroup* radio;
+
+
+/** Pointers to the windows and some of the controls we'll create **/
+GLUI * glui2;
 
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
