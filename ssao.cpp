@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
     /*** Create the side subwindow ***/
 
-	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
+//	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
 //	GLUI_Master.set_glutKeyboardFunc(myGlutKeyboard);
 
 

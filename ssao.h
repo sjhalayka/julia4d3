@@ -37,8 +37,6 @@
 #ifdef _MSC_VER
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
-#pragma comment(lib, "glui64bit")
-
 #endif
 
 
@@ -50,7 +48,7 @@ using namespace std;
 #include "matrix_utils.h"
 #include "uv_camera.h"
 #include "mesh.h"
-#include "glui.h"
+#include "GLUI/glui.h"
 
 #include <sstream>
 using std::ostringstream;
