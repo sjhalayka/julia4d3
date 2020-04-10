@@ -51,11 +51,14 @@ using namespace std;
 #include "mesh.h"
 #include "glui.h"
 
-
+float xy_aspect;
+int   last_x, last_y;
+GLUI* glui;// , * glui2;
 GLUI_Checkbox* checkbox;
-GLUI_Spinner* spinner;
+GLUI_Spinner* spinner, * light0_spinner, * light1_spinner;
 GLUI_RadioGroup* radio;
-GLUI_EditText* edittext;
+GLUI_Panel* obj_panel;
+
 
 int   wireframe = 0;
 int   obj = 0;
@@ -75,8 +78,23 @@ float v_spacer = 0.5f * u_spacer;
 float w_spacer = 0.1f;
 uv_camera main_camera;
 
+bool generate_button = true;
 
 
+void button_func(int control)
+{
+	//if (true == generate_button)
+	//{
+	//	button->set_name(const_cast<char*>("Generate"));
+	//}
+	//else
+	//{
+	//	button->set_name(const_cast<char*>("Cancel"));
+	//}
+
+	//button->enabled = false;
+
+}
 
 void control_cb(int control)
 {
@@ -88,12 +106,34 @@ void control_cb(int control)
 	  'wireframe',  'segments',  'obj',  and 'text'
 	  ********************************************************************/
 
-	printf("callback: %d\n", control);
-	printf("             checkbox: %d\n", checkbox->get_int_val());
-	printf("              spinner: %d\n", spinner->get_int_val());
-	printf("          radio group: %d\n", radio->get_int_val());
-	printf("                 text: %s\n", edittext->get_text());
+	//printf("callback: %d\n", control);
+	//printf("                 text: %s\n", edittext->get_text());
 
+}
+
+void myGlutReshape(int x, int y)
+{
+	win_x = x;
+	win_y = y;
+
+	if (win_x < 1)
+		win_x = 1;
+
+	if (win_y < 1)
+		win_y = 1;
+
+	glutSetWindow(win_id);
+	glutReshapeWindow(win_x, win_y);
+	glViewport(0, 0, win_x, win_y);
+
+
+	//int tx, ty, tw, th;
+	//GLUI_Master.get_viewport_area(&tx, &ty, &tw, &th);
+	//glViewport(tx, ty, tw, th);
+
+	//xy_aspect = (float)tw / (float)th;
+
+	glutPostRedisplay();
 }
 
 void myGlutIdle(void)
@@ -417,6 +457,12 @@ void mouse_func(int button, int state, int x, int y)
 			rmb_down = false;
 	}
 }
+
+void myGlutMotion(int x, int y)
+{
+	glutPostRedisplay();
+}
+
 
 void motion_func(int x, int y)
 {

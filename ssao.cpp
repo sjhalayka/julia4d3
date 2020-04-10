@@ -59,35 +59,54 @@ int main(int argc, char **argv)
 		return 3;
 
     glutDisplayFunc(display_func);
-	glutReshapeFunc(reshape_func);
-	glutIdleFunc(idle_func);
+	//glutReshapeFunc(reshape_func);
+	//glutIdleFunc(idle_func);
 	glutKeyboardFunc(keyboard_func);
 	glutMouseFunc(mouse_func);
 	glutMotionFunc(motion_func);
 	glutPassiveMotionFunc(passive_motion_func);
 
+	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
+
+    /*** Create the side subwindow ***/
+    glui = GLUI_Master.create_glui_subwindow(win_id,
+        GLUI_SUBWINDOW_RIGHT);
+
+    obj_panel = glui->add_rollout(const_cast<char*>("Properties"), false);
+
+    /***** Control for object params *****/
+
+    checkbox =
+        glui->add_checkbox_to_panel(obj_panel, const_cast<char*>("Wireframe"), &wireframe, 1,
+            control_cb);
+    spinner = glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Segments:"),
+        GLUI_SPINNER_INT, &segments);
+    spinner->set_int_limits(3, 60);
+    spinner->set_alignment(GLUI_ALIGN_RIGHT);
+
+    float scale = 1.0;
+
+    GLUI_Spinner* scale_spinner =
+        glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Scale:"),
+            GLUI_SPINNER_FLOAT, &scale);
+    scale_spinner->set_float_limits(.2f, 4.0);
+    scale_spinner->set_alignment(GLUI_ALIGN_RIGHT);
 
 
-	GLUI* glui = GLUI_Master.create_glui(const_cast<char*>("GLUI"), 0, 400, 50); /* name, flags,
-							   x, and y */
-	glui->add_statictext(const_cast<char*>("GLUI Example 2"));
-	glui->add_separator();
-	checkbox = glui->add_checkbox(const_cast<char*>("Wireframe"), &wireframe, 1, control_cb);
-	spinner = glui->add_spinner(const_cast<char*>("Segments:"), GLUI_SPINNER_INT, &segments,
-		2, control_cb);
-	spinner->set_int_limits(3, 60);
-	edittext = glui->add_edittext(const_cast<char*>("Text:"), GLUI_EDITTEXT_TEXT, text,
-		3, control_cb);
-	GLUI_Panel* obj_panel = glui->add_panel(const_cast<char*>("Object Type"));
-	radio = glui->add_radiogroup_to_panel(obj_panel, &obj, 4, control_cb);
-	glui->add_radiobutton_to_group(radio, const_cast<char*>("Sphere"));
-	glui->add_radiobutton_to_group(radio, const_cast<char*>("Torus"));
-	glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
+    /******** Add some controls for lights ********/
 
-	glui->set_main_gfx_window(win_id);
+    /****** A 'quit' button *****/
+    glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
 
-	/* We register the idle callback with GLUI, *not* with GLUT */
-	GLUI_Master.set_glutIdleFunc(myGlutIdle);
+
+    /**** Link windows to GLUI, and register idle callback ******/
+
+    glui->set_main_gfx_window(win_id);
+
+
+
+    /**** We register the idle callback with GLUI, *not* with GLUT ****/
+    GLUI_Master.set_glutIdleFunc(myGlutIdle);
 
 
 
