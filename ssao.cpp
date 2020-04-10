@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 
     glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE);
-    glutInitWindowSize(win_x, win_y);
+    glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT));
     win_id = glutCreateWindow(argv[0]);
 	glewInit();
 	
@@ -97,6 +97,10 @@ int main(int argc, char **argv)
 
     /****** A 'quit' button *****/
     glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
+
+	glui->add_column(false);
+
+	glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
 
 
     /**** Link windows to GLUI, and register idle callback ******/

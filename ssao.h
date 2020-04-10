@@ -66,7 +66,7 @@ int   segments = 8;
 char  text[200] = { "Hello World!" };
 
 GLint win_id = 0;
-GLuint win_x = 600;
+GLuint win_x = 800;
 GLuint win_y = 600;
 bool lmb_down = false;
 bool mmb_down = false;
