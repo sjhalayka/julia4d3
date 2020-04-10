@@ -69,18 +69,15 @@ int main(int argc, char **argv)
 	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
 
     /*** Create the side subwindow ***/
-    glui = GLUI_Master.create_glui_subwindow(win_id,
-        GLUI_SUBWINDOW_RIGHT);
+    glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
     obj_panel = glui->add_rollout(const_cast<char*>("Properties"), false);
 
     /***** Control for object params *****/
 
     checkbox =
-        glui->add_checkbox_to_panel(obj_panel, const_cast<char*>("Wireframe"), &wireframe, 1,
-            control_cb);
-    spinner = glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Segments:"),
-        GLUI_SPINNER_INT, &segments);
+        glui->add_checkbox_to_panel(obj_panel, const_cast<char*>("Wireframe"), &wireframe, 1, control_cb);
+    spinner = glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Segments:"), GLUI_SPINNER_INT, &segments);
     spinner->set_int_limits(3, 60);
     spinner->set_alignment(GLUI_ALIGN_RIGHT);
 

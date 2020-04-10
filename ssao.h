@@ -51,6 +51,11 @@ using namespace std;
 #include "mesh.h"
 #include "glui.h"
 
+#include <sstream>
+using std::ostringstream;
+
+
+
 float xy_aspect;
 int   last_x, last_y;
 GLUI* glui;// , * glui2;
@@ -58,6 +63,9 @@ GLUI_Checkbox* checkbox;
 GLUI_Spinner* spinner, * light0_spinner, * light1_spinner;
 GLUI_RadioGroup* radio;
 GLUI_Panel* obj_panel;
+
+
+
 
 
 int   wireframe = 0;
@@ -79,6 +87,80 @@ float w_spacer = 0.1f;
 uv_camera main_camera;
 
 bool generate_button = true;
+
+
+// Text drawing code originally from "GLUT Tutorial -- Bitmap Fonts and Orthogonal Projections" by A R Fernandes
+void render_string(int x, const int y, void* font, const string& text)
+{
+	for (size_t i = 0; i < text.length(); i++)
+	{
+		glRasterPos2i(x, y);
+		glutBitmapCharacter(font, text[i]);
+		x += glutBitmapWidth(font, text[i]) + 1;
+	}
+}
+
+
+void draw_text(void)
+{
+	// Text drawing code originally from "GLUT Tutorial -- Bitmap Fonts and Orthogonal Projections" by A R Fernandes
+	// http://www.lighthouse3d.com/opengl/glut/index.php?bmpfontortho
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, win_x, 0, win_y);
+	glScalef(1, -1, 1); // Neat. :)
+	glTranslatef(0, -static_cast<float>(win_y), 0); // Neat. :)
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	vertex_3 background_colour(0.0f, 0.0f, 0.0f);
+	vertex_3 control_list_colour(0.9f, 0.9f, 0.9f);
+
+	glColor3f(control_list_colour.x, control_list_colour.y, control_list_colour.z);
+
+	size_t break_size = 22;
+	size_t start = 20;
+	ostringstream oss;
+
+	render_string(10, start, GLUT_BITMAP_HELVETICA_18, string("Mouse controls:"));
+	render_string(10, start + 1 * break_size, GLUT_BITMAP_HELVETICA_18, string("  LMB + drag: Rotate camera"));
+	render_string(10, start + 2 * break_size, GLUT_BITMAP_HELVETICA_18, string("  RMB + drag: Zoom camera"));
+
+	render_string(10, start + 4 * break_size, GLUT_BITMAP_HELVETICA_18, string("Keyboard controls:"));
+	render_string(10, start + 5 * break_size, GLUT_BITMAP_HELVETICA_18, string("  q: Draw mesh"));
+	render_string(10, start + 6 * break_size, GLUT_BITMAP_HELVETICA_18, string("  w: Draw axis"));
+	render_string(10, start + 7 * break_size, GLUT_BITMAP_HELVETICA_18, string("  e: Draw text"));
+
+	render_string(10, start + 9 * break_size, GLUT_BITMAP_HELVETICA_18, string("  u: Rotate camera +u"));
+	render_string(10, start + 10 * break_size, GLUT_BITMAP_HELVETICA_18, string("  i: Rotate camera -u"));
+	render_string(10, start + 11 * break_size, GLUT_BITMAP_HELVETICA_18, string("  o: Rotate camera +v"));
+	render_string(10, start + 12 * break_size, GLUT_BITMAP_HELVETICA_18, string("  p: Rotate camera -v"));
+
+
+
+	vertex_3 eye = main_camera.eye;
+	vertex_3 eye_norm = eye;
+	eye_norm.normalize();
+
+	oss.clear();
+	oss.str("");
+	oss << "Camera position: " << eye.x << ' ' << eye.y << ' ' << eye.z;
+	render_string(10, win_y - 2 * break_size, GLUT_BITMAP_HELVETICA_18, oss.str());
+
+	oss.clear();
+	oss.str("");
+	oss << "Camera position (normalized): " << eye_norm.x << ' ' << eye_norm.y << ' ' << eye_norm.z;
+	render_string(10, win_y - break_size, GLUT_BITMAP_HELVETICA_18, oss.str());
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	// End text drawing code.
+}
+
+
 
 
 void button_func(int control)
@@ -395,6 +477,10 @@ void display_func(void)
     glBindVertexArray(quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	
+
+	draw_text();
+
+
 	glutSwapBuffers();
 }
 
