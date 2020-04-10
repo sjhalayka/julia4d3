@@ -69,35 +69,45 @@ int main(int argc, char **argv)
 	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
 
     /*** Create the side subwindow ***/
-    glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
-    obj_panel = glui->add_rollout(const_cast<char*>("Properties"), false);
+	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
+//	GLUI_Master.set_glutKeyboardFunc(myGlutKeyboard);
 
-    /***** Control for object params *****/
+	/*** Create the side subwindow ***/
+	glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
-    checkbox =
-        glui->add_checkbox_to_panel(obj_panel, const_cast<char*>("Wireframe"), &wireframe, 1, control_cb);
-    spinner = glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Segments:"), GLUI_SPINNER_INT, &segments);
-    spinner->set_int_limits(3, 60);
-    spinner->set_alignment(GLUI_ALIGN_RIGHT);
+	glui->add_button(const_cast<char*>("Generate"), 0, generate_cancel_button_func);
+	glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
 
-    float scale = 1.0;
+	glui->add_separator();
 
-    GLUI_Spinner* scale_spinner =
-        glui->add_spinner_to_panel(obj_panel, const_cast<char*>("Scale:"),
-            GLUI_SPINNER_FLOAT, &scale);
-    scale_spinner->set_float_limits(.2f, 4.0);
-    scale_spinner->set_alignment(GLUI_ALIGN_RIGHT);
+	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
 
+	//	equation_edittext->set_w(150);
 
-    /******** Add some controls for lights ********/
+	glui->add_separator();
 
-    /****** A 'quit' button *****/
-    glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
+	obj_panel = glui->add_panel(const_cast<char*>("C"));
+	c_x_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.x:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("0.2866"), 3, control_cb);
+	c_y_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.y:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("0.5133"), 3, control_cb);
+	c_z_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.z:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("0.46"), 3, control_cb);
+	c_w_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.w:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("0.2467"), 3, control_cb);
 
-	glui->add_column(false);
+	obj_panel2 = glui->add_panel(const_cast<char*>("Various parameters"));
+	z_w_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Z.w:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("0.0"), 3, control_cb);
+	iterations_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Iterations:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("8"), 3, control_cb);
+	resolution_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Resolution:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("100"), 3, control_cb);
+	infinity_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Infinity:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("4.0"), 3, control_cb);
 
-	glui->add_button(const_cast<char*>("Quit"), 0, (GLUI_Update_CB)exit);
+	obj_panel3 = glui->add_panel(const_cast<char*>("Space min/max"));
+	x_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X min:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("-1.5"), 3, control_cb);
+	y_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y min:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("-1.5"), 3, control_cb);
+	z_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z min:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("-1.5"), 3, control_cb);
+
+	x_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X max:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("1.5"), 3, control_cb);
+	y_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y max:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("1.5"), 3, control_cb);
+	z_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z max:"), GLUI_EDITTEXT_TEXT, const_cast<char*>("1.5"), 3, control_cb);
+
 
 
     /**** Link windows to GLUI, and register idle callback ******/

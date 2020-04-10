@@ -62,10 +62,29 @@ GLUI* glui;// , * glui2;
 GLUI_Checkbox* checkbox;
 GLUI_Spinner* spinner, * light0_spinner, * light1_spinner;
 GLUI_RadioGroup* radio;
-GLUI_Panel* obj_panel;
 
 
+GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
+GLUI_EditText* equation_edittext;
+
+GLUI_EditText* c_x_edittext;
+GLUI_EditText* c_y_edittext;
+GLUI_EditText* c_z_edittext;
+GLUI_EditText* c_w_edittext;
+
+GLUI_EditText* x_min_edittext;
+GLUI_EditText* y_min_edittext;
+GLUI_EditText* z_min_edittext;
+
+GLUI_EditText* x_max_edittext;
+GLUI_EditText* y_max_edittext;
+GLUI_EditText* z_max_edittext;
+
+GLUI_EditText* z_w_edittext;
+GLUI_EditText* iterations_edittext;
+GLUI_EditText* resolution_edittext;
+GLUI_EditText* infinity_edittext;
 
 
 int   wireframe = 0;
@@ -162,8 +181,7 @@ void draw_text(void)
 
 
 
-
-void button_func(int control)
+void generate_cancel_button_func(int control)
 {
 	//if (true == generate_button)
 	//{
@@ -177,6 +195,14 @@ void button_func(int control)
 	//button->enabled = false;
 
 }
+
+void export_button_func(int control)
+{
+
+
+}
+
+
 
 void control_cb(int control)
 {
