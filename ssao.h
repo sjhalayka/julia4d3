@@ -55,19 +55,16 @@ using std::ostringstream;
 
 
 
-float xy_aspect;
-int   last_x, last_y;
-GLUI* glui;// , * glui2;
-GLUI_Checkbox* checkbox;
-GLUI_Spinner* spinner, * light0_spinner, * light1_spinner;
-GLUI_RadioGroup* radio;
-
-
-/** Pointers to the windows and some of the controls we'll create **/
-GLUI * glui2;
-
+GLUI* glui;
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
+
+GLUI_Button* generate_mesh_button, * export_to_stl_button;
+
+GLUI_Checkbox* randomize_c_checkbox, *use_pedestal_checkbox;
+
+GLUI_EditText* pedestal_y_start_edittext;
+GLUI_EditText* pedestal_y_end_edittext;
 
 GLUI_EditText* equation_edittext;
 
@@ -90,10 +87,7 @@ GLUI_EditText* resolution_edittext;
 GLUI_EditText* infinity_edittext;
 
 
-int   wireframe = 0;
-int   obj = 0;
-int   segments = 8;
-char  text[200] = { "Hello World!" };
+
 
 GLint win_id = 0;
 GLuint win_x = 800;
@@ -142,8 +136,8 @@ void draw_text(void)
 
 	glColor3f(control_list_colour.x, control_list_colour.y, control_list_colour.z);
 
-	size_t break_size = 22;
-	size_t start = 20;
+	int break_size = 22;
+	int start = 20;
 	ostringstream oss;
 
 	render_string(10, start, GLUT_BITMAP_HELVETICA_18, string("Mouse controls:"));
@@ -484,7 +478,7 @@ void display_func(void)
     glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
 	glBindVertexArray(fractal_vao);
-	glDrawElements(GL_TRIANGLES, triangle_indices.size()*3, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
 
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

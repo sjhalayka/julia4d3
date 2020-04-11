@@ -50,8 +50,11 @@ int main(int argc, char **argv)
 	get_triangle_indices_and_vertices_with_face_normals_from_triangles(triangles, triangle_indices, vertices_with_face_normals);
 
     glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+
     glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT));
+	glutInitWindowPosition(0, 0);
+
     win_id = glutCreateWindow(argv[0]);
 	glewInit();
 	
@@ -79,18 +82,40 @@ int main(int argc, char **argv)
 
 	glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
-	glui->add_button(const_cast<char*>("Generate"), 0, generate_cancel_button_func);
-	glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
+	generate_mesh_button = glui->add_button(const_cast<char*>("Generate mesh"), 0, generate_cancel_button_func);
+	export_to_stl_button = glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
+	export_to_stl_button->enabled = false;
+
+	//generate_mesh_button->set_alignment(GLUI_ALIGN_LEFT);
+	//export_to_stl_button->set_alignment(GLUI_ALIGN_LEFT);
+
 
 	glui->add_separator();
 
 	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
-	equation_edittext->set_text("Z = Z * Z + C");
-	equation_edittext->set_w(200);
+	equation_edittext->set_text("Z = Z*Z + C");
+	equation_edittext->set_w(150);
+
 	glui->add_separator();
 
-	obj_panel = glui->add_panel(const_cast<char*>("C"));
-	c_x_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.x:"), 0, const_cast<char*>("0.2866"), 3, control_cb);
+	randomize_c_checkbox = glui->add_checkbox("Randomize C"); 
+	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
+	use_pedestal_checkbox->set_int_val(1);
+
+	pedestal_y_start_edittext = glui->add_edittext(const_cast<char*>("Pedestal y start:"), 0, const_cast<char*>("1.0"), 3, control_cb);
+	pedestal_y_start_edittext->set_text("0.0");
+
+	pedestal_y_end_edittext = glui->add_edittext(const_cast<char*>("Pedestal y end:"), 0, const_cast<char*>("1.0"), 3, control_cb);
+	pedestal_y_end_edittext->set_text("0.1");
+
+
+	glui->add_separator();
+
+	obj_panel = glui->add_panel(const_cast<char*>("Constant"));
+
+	obj_panel->set_alignment(GLUI_ALIGN_LEFT);
+
+	c_x_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.x:"), -1, const_cast<char*>("0.2866"), 3, control_cb);
 	c_x_edittext->set_text("0.2866");
 	
 	c_y_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.y:"), -1, const_cast<char*>("0.5133"), 3, control_cb);
@@ -104,10 +129,12 @@ int main(int argc, char **argv)
 
 	obj_panel2 = glui->add_panel(const_cast<char*>("Various parameters"));
 
+	obj_panel2->set_alignment(GLUI_ALIGN_LEFT);
+
 	z_w_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Z.w:"), -1, const_cast<char*>("0.0"), 3, control_cb);
 	z_w_edittext->set_text("0.0");
 	
-	iterations_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Iterations:"), -1, const_cast<char*>("8"), 3, control_cb);
+	iterations_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Max iterations:"), -1, const_cast<char*>("8"), 3, control_cb);
 	iterations_edittext->set_text("8");
 
 	resolution_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Resolution:"), -1, const_cast<char*>("100"), 3, control_cb);
@@ -117,6 +144,8 @@ int main(int argc, char **argv)
 	infinity_edittext->set_text("4.0");
 
 	obj_panel3 = glui->add_panel(const_cast<char*>("Space min/max"));
+
+	obj_panel3->set_alignment(GLUI_ALIGN_LEFT);
 
 	x_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
 	y_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
