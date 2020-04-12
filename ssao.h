@@ -435,30 +435,6 @@ void load_shaders()
 bool init(void)
 {
 
-	BMP info = BMP("card_texture.bmp");
-
-	const size_t num_channels = 4;
-
-	pixels.resize(info.GetWidth() * info.GetHeight() * num_channels);
-
-	for (size_t i = 0; i < info.GetWidth(); i++)
-	{
-		for (size_t j = 0; j < info.GetHeight(); j++)
-		{
-			pixels[num_channels * (i * info.GetHeight() + j) + 2] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
-			pixels[num_channels * (i * info.GetHeight() + j) + 1] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
-			pixels[num_channels * (i * info.GetHeight() + j) + 0] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
-			pixels[num_channels * (i * info.GetHeight() + j) + 3] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
-		}
-	}
-
-	glEnable(GL_TEXTURE_2D);
-	glGenTextures(1, texid);
-	glBindTexture(GL_TEXTURE_2D, texid[0]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.GetWidth(), info.GetHeight(), 0, GL_RGBA, GL_FLOAT, &pixels[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 
 
 
@@ -565,6 +541,30 @@ bool init(void)
 
 
 
+	BMP info = BMP("card_texture.bmp");
+
+	const size_t num_channels = 4;
+
+	pixels.resize(info.GetWidth() * info.GetHeight() * num_channels);
+
+	for (size_t i = 0; i < info.GetWidth(); i++)
+	{
+		for (size_t j = 0; j < info.GetHeight(); j++)
+		{
+			pixels[num_channels * (i * info.GetHeight() + j) + 2] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 1] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 0] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 3] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
+		}
+	}
+
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, texid);
+	glBindTexture(GL_TEXTURE_2D, texid[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.GetWidth(), info.GetHeight(), 0, GL_RGBA, GL_FLOAT, &pixels[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 
 
 
@@ -574,8 +574,8 @@ bool init(void)
 
 void display_func(void)
 {
-//	glClearColor(1, 0.5f, 0, 1);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClearColor(1, 0.5f, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 	glDisable(GL_BLEND);
@@ -626,15 +626,16 @@ void display_func(void)
     glBindVertexArray(quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+	
+
+
+	// Draw fullscreen quad
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, win_x, 0, win_y, -1, 1);
+	glOrtho(0, win_x, 0, win_y, 0, 1);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
-	glColor3f(1, 1, 1);
-
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
