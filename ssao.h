@@ -55,7 +55,7 @@ using std::ostringstream;
 
 
 
-GLUI* glui;
+GLUI* glui, *glui2;
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
@@ -86,7 +86,7 @@ GLUI_EditText* iterations_edittext;
 GLUI_EditText* resolution_edittext;
 GLUI_EditText* infinity_edittext;
 
-
+GLUI_StaticText* status;
 
 
 GLint win_id = 0;
@@ -578,53 +578,53 @@ void display_func(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 
-	//glDisable(GL_BLEND);
-	//
-	//const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
- //   static const GLfloat one = 1.0f;
- //   static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glDisable(GL_BLEND);
+	
+	const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    static const GLfloat one = 1.0f;
+    static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
- //   glViewport(0, 0, win_x, win_y);
+    glViewport(0, 0, win_x, win_y);
 
- //   glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
- //   glEnable(GL_DEPTH_TEST);
-	// 
- //   glClearBufferfv(GL_COLOR, 0, black);
- //   glClearBufferfv(GL_COLOR, 1, black);
- //   glClearBufferfv(GL_DEPTH, 0, &one);
+    glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+    glEnable(GL_DEPTH_TEST);
+	 
+    glClearBufferfv(GL_COLOR, 0, black);
+    glClearBufferfv(GL_COLOR, 1, black);
+    glClearBufferfv(GL_DEPTH, 0, &one);
 
- //   glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
 
-	//glUseProgram(render.get_program());
+	glUseProgram(render.get_program());
 
-	//main_camera.calculate_camera_matrices(win_x, win_y);
-	//glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-	//glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+	main_camera.calculate_camera_matrices(win_x, win_y);
+	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
 
- //   glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+    glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
-	//glBindVertexArray(fractal_vao);
-	//glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(fractal_vao);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
 
 
- //   glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	//glUseProgram(ssao.get_program());
+	glUseProgram(ssao.get_program());
 
- //   glUniform1f(uniforms.ssao.ssao_radius, ssao_radius * float(win_x) / 1000.0f);
- //   glUniform1f(uniforms.ssao.ssao_level, show_ao ? (show_shading ? 0.3f : 1.0f) : 0.0f);
- //   glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ? 1 : 0);
- //   glUniform1i(uniforms.ssao.randomize_points, randomize_points ? 1 : 0);
- //   glUniform1ui(uniforms.ssao.point_count, point_count);
+    glUniform1f(uniforms.ssao.ssao_radius, ssao_radius * float(win_x) / 1000.0f);
+    glUniform1f(uniforms.ssao.ssao_level, show_ao ? (show_shading ? 0.3f : 1.0f) : 0.0f);
+    glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ? 1 : 0);
+    glUniform1i(uniforms.ssao.randomize_points, randomize_points ? 1 : 0);
+    glUniform1ui(uniforms.ssao.point_count, point_count);
 
- //   glActiveTexture(GL_TEXTURE0);
- //   glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
- //   glActiveTexture(GL_TEXTURE1);
- //   glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
- //   glDisable(GL_DEPTH_TEST);
- //   glBindVertexArray(quad_vao);
- //   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(quad_vao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	
 
