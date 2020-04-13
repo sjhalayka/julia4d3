@@ -37,6 +37,7 @@
 #ifdef _MSC_VER
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
+#pragma comment(lib, "freetype")
 #endif
 
 
@@ -49,9 +50,16 @@ using namespace std;
 #include "uv_camera.h"
 #include "mesh.h"
 #include "GLUI/glui.h"
+#include "TextRenderer.hpp"
+
 
 #include <sstream>
 using std::ostringstream;
+
+
+
+
+glfreetype::font_data our_font;
 
 
 
@@ -434,8 +442,7 @@ void load_shaders()
 
 bool init(void)
 {
-
-
+	our_font.init("arial.ttf", 25 /* size */);
 
 
 	ssao_level = 1.0f;
@@ -576,7 +583,9 @@ void display_func(void)
 {
 	glClearColor(1, 0.5f, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_TEXTURE_2D);
+
+
+
 
 	glDisable(GL_BLEND);
 	
@@ -606,7 +615,6 @@ void display_func(void)
 	glBindVertexArray(fractal_vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
 
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glUseProgram(ssao.get_program());
@@ -622,34 +630,43 @@ void display_func(void)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
+
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(quad_vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	
 
 
-	// Draw fullscreen quad
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, win_x, 0, win_y, 0, 1);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	const size_t num_channels = 4;
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(0, 0);
-		glTexCoord2f(1, 0);
-		glVertex2f(win_x, 0);
-		glTexCoord2f(1, 1);
-		glVertex2f(win_x, win_y);
-		glTexCoord2f(0, 1);
-		glVertex2f(0, win_y);
-	glEnd();
+	vector<GLubyte> fbpixels(num_channels * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+
+	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+
+			if (rand() % 2 == 0)
+			{
+				fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
+				fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
+				fbpixels[num_channels * (i * win_y + j) + 2] = 0;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
+			}
+			fbpixels[num_channels * (i * win_y + j) + 3] = 255;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
+		}
+	}
+
+	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+
+
+
+
+
 
 
 	glutSwapBuffers();

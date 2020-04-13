@@ -72,6 +72,9 @@
     <ClInclude Include="glui\viewmodel.h">
       <Filter>Header Files\GLUI</Filter>
     </ClInclude>
+    <ClInclude Include="TextRenderer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="matrix_utils.cpp">
@@ -181,6 +184,9 @@
     </ClCompile>
     <ClCompile Include="glui\viewmodel.cpp">
       <Filter>Source Files\GLUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

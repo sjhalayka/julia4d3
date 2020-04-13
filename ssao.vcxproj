@@ -152,6 +152,7 @@
     <ClInclude Include="primitives.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="ssao.h" />
+    <ClInclude Include="TextRenderer.hpp" />
     <ClInclude Include="uv_camera.h" />
     <ClInclude Include="vertex_fragment_shader.h" />
     <ClInclude Include="vmath.h" />
@@ -191,6 +192,7 @@
     <ClCompile Include="matrix_utils.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="ssao.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="uv_camera.cpp" />
     <ClCompile Include="vertex_fragment_shader.cpp" />
   </ItemGroup>
