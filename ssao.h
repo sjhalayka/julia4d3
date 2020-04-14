@@ -675,10 +675,6 @@ bool init(void)
 			cout << "destination" << endl;
 			size_t destination_col = 0;
 
-			// print test char
-				
-
-
 			for (size_t i = 0; i < num_chars_wide; i++)
 			{
 				for (size_t j = 0; j < num_chars_high; j++)
@@ -695,42 +691,14 @@ bool init(void)
 							size_t img_pos = l * char_width + k;
 							size_t sub_pos = y * cropped_width + x;
 
-							img.pixel_data[sub_pos] = char_data[n][img_pos]; // Assume grayscale, only use r component
+							img.pixel_data[sub_pos] = char_data[n][img_pos];
 						}
 					}
-
-					char_index++;
 				}
 			}
 
-
-
-			//for (size_t i = first_non_zeroes_column; i <= last_non_zeroes_column; i++)
-			//{
-			//	for (size_t j = 0; j < char_height; j++)
-			//	{
-			//		size_t char_data_index = j * char_width + i;
-			//		size_t img_data_index = j * cropped_width + destination_col;
-
-			//		size_t val = (size_t)char_data[n][char_data_index];
-
-			//		cout << val << ' ';
-
-			//		img.pixel_data[img_data_index] = val;
-			//		//cout << (int)img.pixel_data[img_data_index] << ' ';
-
-			//		destination_col++;
-
-			//		cout << endl;
-			//	}
-			//}
-
-
-
-			cout << "lala" << endl;
 			cout << img.width << endl;
 			cout << img.height << endl;
-			cout << "lala2" << endl;
 
 			for (size_t j = 0; j < img.height; j++)
 			{
