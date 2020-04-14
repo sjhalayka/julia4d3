@@ -637,16 +637,12 @@ bool init(void)
 				}
 			}
 
-
-
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
 			monochrome_image img;
 			img.width = cropped_width;
 			img.height = char_height;
 			img.pixel_data.resize(img.width * img.height, 0);
-
-			size_t destination_col = 0;
 
 			for (size_t i = 0; i < num_chars_wide; i++)
 			{
