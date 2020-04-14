@@ -478,14 +478,15 @@ public:
 
 
 
-size_t num_chars = 256;
-size_t image_width = 256;
-size_t image_height = 256;
-size_t char_width = 16;
-size_t char_height = 16;
-size_t num_chars_wide = image_width / char_width;
-size_t num_chars_high = image_height / char_height;
+const size_t num_chars = 256;
+const size_t image_width = 256;
+const size_t image_height = 256;
+const size_t char_width = 16;
+const size_t char_height = 16;
+const size_t num_chars_wide = image_width / char_width;
+const size_t num_chars_high = image_height / char_height;
 
+vector<monochrome_image> mimgs;
 
 
 bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
@@ -526,10 +527,15 @@ bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vect
 bool init(void)
 {
 	BMP font;
+
 	if (false == font.load("font.bmp"))
 	{
 		cout << "could not load font.bmp" << endl;
 		return false;
+	}
+	else
+	{
+		cout << "loaded font successfully" << endl;
 	}
 
 
@@ -545,13 +551,13 @@ bool init(void)
 		for (size_t j = 0; j < num_chars_high; j++)
 		{
 			size_t left = i*char_width;
-			size_t right = left + char_width;
+			size_t right = left + char_width - 1;
 			size_t top = j * char_height;
-			size_t bottom = top + char_height;
+			size_t bottom = top + char_height - 1;
 
-			for (size_t k = left, x = 0; k < right; k++, x++)
+			for (size_t k = left, x = 0; k <= right; k++, x++)
 			{
-				for (size_t l = top, y = 0; l < bottom; l++, y++)
+				for (size_t l = top, y = 0; l <= bottom; l++, y++)
 				{
 					size_t img_pos = 4*(k * image_height + l);
 					size_t sub_pos = x * char_height + y;
@@ -563,38 +569,37 @@ bool init(void)
 			char_index++;
 		}
 	}
+
+
+	//// print test char
+	//for (size_t i = 0; i < 16; i++)
+	//{
+	//	for (size_t j = 0; j < 16; j++)
+	//	{	
+	//		size_t index = i * 16 + j;
+
+	//		size_t val = (size_t)char_data[0][index];
+
+	//		if (val < 100)
+	//		{
+	//			if (val < 10)
+	//				cout << "  ";
+	//			else
+	//				cout << "  ";
+	//		}
+
+	//		cout << val << " ";
+	//	}
+	//	cout << endl;
+	//}
+
+
+
+
+
 	
-	// print test char
-	for (size_t i = 0; i < 16; i++)
-	{
-		for (size_t j = 0; j < 16; j++)
-		{	
-			size_t index = i * 16 + j;
-
-			size_t val = (size_t)char_data[1][index];
-
-			if (val < 100)
-			{
-				if (val < 10)
-					cout << "  ";
-				else
-					cout << "  ";
-			}
-
-			cout << val << " ";
-		}
-		cout << endl;
-	}
-
-	//for (size_t i = 0; i < 16 * 16; i++)
-	//	cout << (size_t) char_data[0][i] << endl;
-
-	cout << endl;
-
-	vector<monochrome_image> mimgs;
-
-	for (size_t n = 1; n < 2; n++)
-	{
+	for (size_t n = 0; n < num_chars; n++)
+	{	
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
 			monochrome_image img;
@@ -605,11 +610,42 @@ bool init(void)
 			img.pixel_data.resize(img.width * img.height, 0);
 
 			mimgs.push_back(img);
+
+
+			//cout << img.width << endl;
+			//cout << img.height << endl;
+
+			//for (size_t j = 0; j < img.height; j++)
+			//{
+			//	for (size_t i = 0; i < img.width; i++)
+			//	{
+			//		size_t val = img.pixel_data[j * img.width + i];
+
+			//		if (val < 100)
+			//		{
+			//			if (val < 10)
+			//			{
+			//				cout << "  ";
+			//			}
+			//			else
+			//			{
+			//				cout << " ";
+			//			}
+			//		}
+
+			//		cout << val << " ";
+			//	}
+
+			//	cout << endl;
+			}
+
+
+
 		}
 		else
 		{
 			size_t first_non_zeroes_column = 0;
-			size_t last_non_zeroes_column = 0;
+			size_t last_non_zeroes_column = char_width - 1;
 
 			for (size_t x = 0; x < char_width; x++)
 			{
@@ -632,64 +668,34 @@ bool init(void)
 				}
 			}
 
+
+
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
 			cout << cropped_width << endl;
 
-			//monochrome_image img;
-			//img.width = cropped_width;
-			//img.height = char_height;
-			//img.pixel_data.resize(img.width * img.height, 0);
-
-			//size_t destination_col = 0;
-			//// print test char
-			//for (size_t i = 0; i < char_width; i++)
-			//{
-			//	for (size_t j = 0; j < char_height; j++)
-			//	{
-			//		if (i < first_non_zeroes_column)
-			//			continue;
-
-			//		if (i > last_non_zeroes_column)
-			//			break;
-
-			//		size_t char_data_index = j * char_width + i;
-			//		size_t img_data_index = j * cropped_width + destination_col;
-
-			//		size_t val = (size_t)char_data[n][char_data_index];
-
-			//		img.pixel_data[img_data_index] = val;
-			//		//cout << (int)img.pixel_data[img_data_index] << ' ';
-
-			//		destination_col++;
-			//	}
-			//	cout << endl;
-			//}
-
-
 			monochrome_image img;
 			img.width = cropped_width;
 			img.height = char_height;
-			img.pixel_data.resize(img.width * img.height, 127);
+			img.pixel_data.resize(img.width * img.height, 0);
 
-			cout << "destination" << endl;
 			size_t destination_col = 0;
 
 			for (size_t i = 0; i < num_chars_wide; i++)
 			{
 				for (size_t j = 0; j < num_chars_high; j++)
 				{
-					size_t left = first_non_zeroes_column;
-					size_t right = left + cropped_width - 1;
-					size_t top = 0;
-					size_t bottom = char_height - 1;
+					const size_t left = first_non_zeroes_column;
+					const size_t right = left + cropped_width - 1;
+					const size_t top = 0;
+					const size_t bottom = char_height - 1;
 
 					for (size_t k = left, x = 0; k <= right; k++, x++)
 					{
 						for (size_t l = top, y = 0; l <= bottom; l++, y++)
 						{
-							size_t img_pos = l * char_width + k;
-							size_t sub_pos = y * cropped_width + x;
+							const size_t img_pos = l * char_width + k;
+							const size_t sub_pos = y * cropped_width + x;
 
 							img.pixel_data[sub_pos] = char_data[n][img_pos];
 						}
