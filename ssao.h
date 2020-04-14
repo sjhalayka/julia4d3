@@ -899,7 +899,9 @@ void display_func(void)
 	text_colour.r = 255;
 	text_colour.g = 255;
 	text_colour.b = 255;
-	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World", text_colour);
+
+	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World1", text_colour);
+	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos + 20, "Hello World2", text_colour);
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
