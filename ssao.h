@@ -589,7 +589,7 @@ bool init(void)
 	//for (size_t i = 0; i < 16 * 16; i++)
 	//	cout << (size_t) char_data[0][i] << endl;
 
-
+	cout << endl;
 
 	vector<monochrome_image> mimgs;
 
@@ -632,7 +632,61 @@ bool init(void)
 				}
 			}
 
-			cout << first_non_zeroes_column << " " << last_non_zeroes_column << endl;
+			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
+
+			cout << cropped_width << endl;
+
+			monochrome_image img;
+			img.width = cropped_width;
+			img.height = char_height;
+			img.pixel_data.resize(img.width * img.height, 0);
+
+
+			size_t left = first_non_zeroes_column;
+			size_t right = last_non_zeroes_column;
+			size_t top = 0;
+			size_t bottom = char_height - 1;
+
+			for (size_t k = left, x = 0; k < right; k++, x++)
+			{
+				for (size_t l = top, y = 0; l < bottom; l++, y++)
+				{
+					size_t img_pos = k * char_height + l;
+					size_t sub_pos = x * img.height + y;
+
+
+					
+					img.pixel_data[sub_pos] = char_data[n][img_pos]; // Assume grayscale, only use r component
+				}
+			}
+
+
+			cout << img.width << endl;
+			cout << img.height << endl;
+
+			for (size_t i = 0; i < img.height; i++)
+			{
+				for (size_t j = 0; j < img.width; j++)
+				{
+					size_t val = img.pixel_data[i * img.width + j];
+
+					if (val < 100)
+					{
+						if (val < 10)
+						{
+							cout << "  ";
+						}
+						else
+						{
+							cout << " ";
+						}
+					}
+
+					cout << val << " ";
+				}
+
+				cout << endl;
+			}
 		}
 	}
 
