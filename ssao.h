@@ -610,37 +610,6 @@ bool init(void)
 			img.pixel_data.resize(img.width * img.height, 0);
 
 			mimgs.push_back(img);
-
-
-			cout << img.width << endl;
-			cout << img.height << endl;
-
-			for (size_t j = 0; j < img.height; j++)
-			{
-				for (size_t i = 0; i < img.width; i++)
-				{
-					size_t val = img.pixel_data[j * img.width + i];
-
-					if (val < 100)
-					{
-						if (val < 10)
-						{
-							cout << "  ";
-						}
-						else
-						{
-							cout << " ";
-						}
-					}
-
-					cout << val << " ";
-				}
-
-				cout << endl;
-			}
-
-
-
 		}
 		else
 		{
@@ -672,8 +641,6 @@ bool init(void)
 
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
-			cout << cropped_width << endl;
-
 			monochrome_image img;
 			img.width = cropped_width;
 			img.height = char_height;
@@ -703,32 +670,39 @@ bool init(void)
 				}
 			}
 
-			cout << img.width << endl;
-			cout << img.height << endl;
+			mimgs.push_back(img);
+		}
+	}
 
-			for (size_t j = 0; j < img.height; j++)
+	cout << "mimgs.size() " << mimgs.size() << endl;
+
+	for (size_t n = 0; n < num_chars; n++)
+	{
+		cout << mimgs[n].width << endl;
+		cout << mimgs[n].height << endl;
+
+		for (size_t j = 0; j < mimgs[n].height; j++)
+		{
+			for (size_t i = 0; i < mimgs[n].width; i++)
 			{
-				for (size_t i = 0; i < img.width; i++)
+				size_t val = mimgs[n].pixel_data[j * mimgs[n].width + i];
+
+				if (val < 100)
 				{
-					size_t val = img.pixel_data[j * img.width + i];
-
-					if (val < 100)
+					if (val < 10)
 					{
-						if (val < 10)
-						{
-							cout << "  ";
-						}
-						else
-						{
-							cout << " ";
-						}
+						cout << "  ";
 					}
-
-					cout << val << " ";
+					else
+					{
+						cout << " ";
+					}
 				}
 
-				cout << endl;
+				cout << val << " ";
 			}
+
+			cout << endl;
 		}
 	}
 
