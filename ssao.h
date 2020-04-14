@@ -612,31 +612,31 @@ bool init(void)
 			mimgs.push_back(img);
 
 
-			//cout << img.width << endl;
-			//cout << img.height << endl;
+			cout << img.width << endl;
+			cout << img.height << endl;
 
-			//for (size_t j = 0; j < img.height; j++)
-			//{
-			//	for (size_t i = 0; i < img.width; i++)
-			//	{
-			//		size_t val = img.pixel_data[j * img.width + i];
+			for (size_t j = 0; j < img.height; j++)
+			{
+				for (size_t i = 0; i < img.width; i++)
+				{
+					size_t val = img.pixel_data[j * img.width + i];
 
-			//		if (val < 100)
-			//		{
-			//			if (val < 10)
-			//			{
-			//				cout << "  ";
-			//			}
-			//			else
-			//			{
-			//				cout << " ";
-			//			}
-			//		}
+					if (val < 100)
+					{
+						if (val < 10)
+						{
+							cout << "  ";
+						}
+						else
+						{
+							cout << " ";
+						}
+					}
 
-			//		cout << val << " ";
-			//	}
+					cout << val << " ";
+				}
 
-			//	cout << endl;
+				cout << endl;
 			}
 
 
