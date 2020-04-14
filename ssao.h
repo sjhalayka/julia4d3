@@ -59,7 +59,8 @@ using std::ostringstream;
 
 
 
-glfreetype::font_data our_font;
+
+
 
 
 
@@ -136,20 +137,27 @@ class BMP
 public:
 	std::uint32_t width, height;
 	std::uint16_t BitsPerPixel;
-	std::vector<std::uint8_t> Pixels;
+	std::vector<unsigned char> Pixels;
 
 public:
-	BMP(const char* FilePath);
+	BMP(void)
+	{
+
+	}
+
+	bool load(const char* filePath);
 	std::vector<std::uint8_t> GetPixels() const { return this->Pixels; }
 	std::uint32_t GetWidth() const { return this->width; }
 	std::uint32_t GetHeight() const { return this->height; }
 	bool HasAlphaChannel() { return BitsPerPixel == 32; }
 };
 
-BMP::BMP(const char* FilePath)
+
+
+bool BMP::load(const char* FilePath)
 {
 	std::fstream hFile(FilePath, std::ios::in | std::ios::binary);
-	if (!hFile.is_open()) throw std::invalid_argument("Error: File Not Found.");
+	if (!hFile.is_open()) return false;
 
 	hFile.seekg(0, std::ios::end);
 	std::size_t Length = hFile.tellg();
@@ -160,14 +168,14 @@ BMP::BMP(const char* FilePath)
 	if (FileInfo[0] != 'B' && FileInfo[1] != 'M')
 	{
 		hFile.close();
-		throw std::invalid_argument("Error: Invalid File Format. Bitmap Required.");
+		return false;
 	}
 
 	// if (FileInfo[28] != 24 && FileInfo[28] != 32)
 	if (FileInfo[28] != 32)
 	{
 		hFile.close();
-		throw std::invalid_argument("Error: Invalid File Format. 32-bit Image Required.");
+		return false;
 	}
 
 	BitsPerPixel = FileInfo[28];
@@ -180,18 +188,35 @@ BMP::BMP(const char* FilePath)
 	hFile.seekg(PixelsOffset, std::ios::beg);
 	hFile.read(reinterpret_cast<char*>(Pixels.data()), size);
 	hFile.close();
-}
 
+
+	// Reverse row order
+	short unsigned int num_rows_to_swap = height;
+	vector<unsigned char> buffer(static_cast<size_t>(width) * 4);
+
+	if (0 != height % 2)
+		num_rows_to_swap--;
+
+	num_rows_to_swap /= 2;
+
+	for (size_t i = 0; i < num_rows_to_swap; i++)
+	{
+		size_t y_first = i * static_cast<size_t>(width) * 4;
+		size_t y_last = (static_cast<size_t>(height) - 1 - i) * static_cast<size_t>(width) * 4;
+
+		memcpy(&buffer[0], &Pixels[y_first], static_cast<size_t>(width) * 4);
+		memcpy(&Pixels[y_first], &Pixels[y_last], static_cast<size_t>(width) * 4);
+		memcpy(&Pixels[y_last], &buffer[0], static_cast<size_t>(width) * 4);
+	}
+
+	return true;
+}
 
 
 
 vector<GLfloat> pixels;
 
 GLuint texid[] = { 0 };
-
-
-
-
 
 
 
@@ -440,9 +465,149 @@ void load_shaders()
     uniforms.ssao.point_count = glGetUniformLocation(ssao.get_program(), "point_count");
 }
 
+
+
+
+class monochrome_image
+{
+public:
+	size_t width;
+	size_t height;
+	vector<unsigned char> pixel_data;
+};
+
+
+bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
+{
+	bool all_zeroes = true;
+
+	for (size_t i = 0; i < width * height; i++)
+	{
+		if (pixel_data[i] != 0)
+		{
+			all_zeroes = false;
+			break;
+		}
+	}
+
+	return all_zeroes;
+}
+
+
 bool init(void)
 {
-	our_font.init("arial.ttf", 25 /* size */);
+	BMP font;
+	if (false == font.load("font.bmp"))
+	{
+		cout << "could not load font.bmp" << endl;
+		return false;
+	}
+
+	size_t num_chars = 256;
+	size_t image_width = 256;
+	size_t image_height = 256;
+	size_t char_width = 16;
+	size_t char_height = 16;
+	size_t num_chars_wide = image_width / char_width;
+	size_t num_chars_high = image_height / char_height;
+
+	size_t char_index = 0;
+	
+	vector< vector<GLubyte> > char_data;
+	vector<unsigned char> char_template(char_width*char_height);
+	char_data.resize(num_chars, char_template);
+
+	for (size_t i = 0; i < num_chars_wide; i++)
+	{
+		for (size_t j = 0; j < num_chars_high; j++)
+		{
+			size_t left = i*char_width;
+			size_t right = left + char_width;
+			size_t top = j * char_height;
+			size_t bottom = top + char_height;
+
+			for (size_t k = left, x = 0; k < right; k++, x++)
+			{
+				for (size_t l = top, y = 0; l < bottom; l++, y++)
+				{
+					size_t img_pos = 4*(k * image_height + l);
+					size_t sub_pos = x * char_height + y;
+
+					char_data[char_index][sub_pos] = font.Pixels[img_pos]; // Assume grayscale, only use r component
+				}
+			}
+			
+			char_index++;
+		}
+	}
+	
+	// print test char
+	for (size_t i = 0; i < 16; i++)
+	{
+		for (size_t j = 0; j < 16; j++)
+		{	
+			size_t index = i * 16 + j;
+
+			size_t val = (size_t)char_data[1][index];
+
+			if (val < 100)
+			{
+				if (val < 10)
+					cout << "  ";
+				else
+					cout << "  ";
+			}
+
+			cout << val << " ";
+		}
+		cout << endl;
+	}
+
+	//for (size_t i = 0; i < 16 * 16; i++)
+	//	cout << (size_t) char_data[0][i] << endl;
+
+
+
+	vector<monochrome_image> mimgs;
+
+	for (size_t n = 1; n < 2; n++)
+	{
+		monochrome_image img;
+
+		if (is_all_zeroes(char_width, char_height, char_data[n]))
+		{
+			img.width = char_width;
+			img.height = char_height;
+
+			img.pixel_data.resize(img.width * img.height, 0);
+
+			mimgs.push_back(img);
+		}
+		else
+		{
+			for (size_t x = 0; x < char_width; x++)
+			{
+				bool is_column_all_zeroes = true;
+
+				for (size_t y = 0; y < char_height; y++)
+				{
+					size_t index = y * char_width + x;
+
+					if (char_data[n][index] != 0)
+					{
+						is_column_all_zeroes = false;
+						break;
+					}
+				}
+
+				cout << is_column_all_zeroes << endl;
+			}
+		}
+	}
+
+
+
+
 
 
 	ssao_level = 1.0f;
@@ -548,7 +713,12 @@ bool init(void)
 
 
 
-	BMP info = BMP("card_texture.bmp");
+	BMP info;
+	if (false == info.load("card_texture.bmp"))
+	{
+		cout << "could not load card_texture.bmp" << endl;
+		return false;
+	}
 
 	const size_t num_channels = 4;
 
