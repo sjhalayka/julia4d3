@@ -482,7 +482,7 @@ public:
 };
 
 
-void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
+void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c, const RGB &text_colour)
 {
 	monochrome_image img = mimgs[c];
 
@@ -501,11 +501,6 @@ void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_
 
 			size_t fb_index = num_channels * (fb_y * fb_width + fb_x);
 			size_t img_index = j * img.width + i;
-
-			RGB text_colour;
-			text_colour.r = 255;
-			text_colour.g = 255;
-			text_colour.b = 255;
 
 			RGB background_colour;
 			background_colour.r = fbpixels[fb_index + 0];
@@ -528,11 +523,11 @@ void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_
 	}
 }
 
-void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s)
+void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s, const RGB& text_colour)
 {
 	for (size_t i = 0; i < s.size(); i++)
 	{
-		print_char(num_channels, fbpixels, fb_width, fb_height, char_x_pos, char_y_pos, s[i]);
+		print_char(num_channels, fbpixels, fb_width, fb_height, char_x_pos, char_y_pos, s[i], text_colour);
 
 		size_t char_width = mimgs[s[i]].width;
 
@@ -899,7 +894,12 @@ void display_func(void)
 
 	size_t char_x_pos = 10;
 	size_t char_y_pos = 30;
-	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World");
+
+	RGB text_colour;
+	text_colour.r = 255;
+	text_colour.g = 255;
+	text_colour.b = 255;
+	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World", text_colour);
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
