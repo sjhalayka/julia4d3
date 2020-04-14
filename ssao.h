@@ -43,6 +43,7 @@
 
 
 #include <iostream>
+#include <string>
 using namespace std;
 
 #include "vertex_fragment_shader.h"
@@ -487,13 +488,7 @@ const size_t num_chars_wide = image_width / char_width;
 const size_t num_chars_high = image_height / char_height;
 
 
-void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
-{
-
-
-}
-
-void print_char(size_t num_channels, vector<unsigned char> &fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
+void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
 {
 	monochrome_image img = mimgs[c];
 
@@ -518,6 +513,22 @@ void print_char(size_t num_channels, vector<unsigned char> &fbpixels, size_t fb_
 			fbpixels[fb_index + 3] = 255;
 		}
 	}
+}
+
+
+
+void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s)
+{
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		print_char(num_channels, fbpixels, fb_width, fb_height, char_x_pos, char_y_pos, s[i]);
+
+		size_t char_width = mimgs[s[i]].width;
+
+		char_x_pos += char_width + 2;
+	}
+
+	cout << endl;
 }
 
 
@@ -937,25 +948,10 @@ void display_func(void)
 
 	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-
-	//		if (1)//rand() % 2 == 0)
-	//		{
-	//			fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
-	//			fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
-	//			fbpixels[num_channels * (i * win_y + j) + 2] = 0;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
-	//		}
-	//		fbpixels[num_channels * (i * win_y + j) + 3] = 255;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
-	//	}
-	//}
-
 	size_t char_x_pos = 10;
-	size_t char_y_pos = 20;
+	size_t char_y_pos = 30;
 
-	print_char(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, 'A');
+	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World");
 
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
