@@ -163,9 +163,9 @@ int main(int argc, char **argv)
 	z_max_edittext->set_text("1.5");
 
 
-	glui2 = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_TOP);
+	//glui2 = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_TOP);
 
-	status = glui2->add_statictext("lala");
+	//status = glui2->add_statictext("lala");
 
 
     /**** Link windows to GLUI, and register idle callback ******/

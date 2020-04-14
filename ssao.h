@@ -476,7 +476,7 @@ public:
 	vector<unsigned char> pixel_data;
 };
 
-
+vector<monochrome_image> mimgs;
 
 const size_t num_chars = 256;
 const size_t image_width = 256;
@@ -486,7 +486,39 @@ const size_t char_height = 16;
 const size_t num_chars_wide = image_width / char_width;
 const size_t num_chars_high = image_height / char_height;
 
-vector<monochrome_image> mimgs;
+
+void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
+{
+
+
+}
+
+void print_char(size_t num_channels, vector<unsigned char> &fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
+{
+	monochrome_image img = mimgs[c];
+
+	for (size_t i = 0; i < img.width; i++)
+	{
+		for (size_t j = 0; j < img.height; j++)
+		{
+			size_t y = img.height - j;
+
+			size_t fb_x = char_x_pos + i;
+			size_t fb_y = fb_height - char_y_pos + y;
+
+			if (fb_x >= fb_width || fb_y >= fb_height)
+				continue;
+
+			size_t fb_index = num_channels * (fb_y * fb_width + fb_x);
+			size_t img_index = j * img.width + i;
+
+			fbpixels[fb_index + 0] = img.pixel_data[img_index];
+			fbpixels[fb_index + 1] = img.pixel_data[img_index];
+			fbpixels[fb_index + 2] = img.pixel_data[img_index];
+			fbpixels[fb_index + 3] = 255;
+		}
+	}
+}
 
 
 bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
@@ -901,24 +933,30 @@ void display_func(void)
 	const size_t num_channels = 4;
 
 
-	vector<GLubyte> fbpixels(num_channels * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+	vector<unsigned char> fbpixels(num_channels * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
 
 	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	for (size_t i = 0; i < win_x; i++)
-	{
-		for (size_t j = 0; j < win_y; j++)
-		{
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
 
-			if (0)//rand() % 2 == 0)
-			{
-				fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
-				fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
-				fbpixels[num_channels * (i * win_y + j) + 2] = 0;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
-			}
-			fbpixels[num_channels * (i * win_y + j) + 3] = 255;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
-		}
-	}
+	//		if (1)//rand() % 2 == 0)
+	//		{
+	//			fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
+	//			fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
+	//			fbpixels[num_channels * (i * win_y + j) + 2] = 0;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
+	//		}
+	//		fbpixels[num_channels * (i * win_y + j) + 3] = 255;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
+	//	}
+	//}
+
+	size_t char_x_pos = 10;
+	size_t char_y_pos = 20;
+
+	print_char(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, 'A');
+
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
