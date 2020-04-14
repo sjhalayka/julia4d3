@@ -670,42 +670,35 @@ bool init(void)
 		}
 	}
 
-	cout << "mimgs.size() " << mimgs.size() << endl;
+	//cout << "mimgs.size() " << mimgs.size() << endl;
 
-	for (size_t n = 0; n < num_chars; n++)
-	{
-		cout << mimgs[n].width << endl;
-		cout << mimgs[n].height << endl;
+	//for (size_t n = 0; n < num_chars; n++)
+	//{
+	//	cout << mimgs[n].width << endl;
+	//	cout << mimgs[n].height << endl;
 
-		for (size_t j = 0; j < mimgs[n].height; j++)
-		{
-			for (size_t i = 0; i < mimgs[n].width; i++)
-			{
-				size_t val = mimgs[n].pixel_data[j * mimgs[n].width + i];
+	//	for (size_t j = 0; j < mimgs[n].height; j++)
+	//	{
+	//		for (size_t i = 0; i < mimgs[n].width; i++)
+	//		{
+	//			size_t val = mimgs[n].pixel_data[j * mimgs[n].width + i];
 
-				if (val < 100)
-				{
-					if (val < 10)
-					{
-						cout << "  ";
-					}
-					else
-					{
-						cout << " ";
-					}
-				}
+	//			if (val < 100)
+	//			{
+	//				if (val < 10)
+	//					cout << "  ";
+	//				else
+	//					cout << " ";
+	//			}
 
-				cout << val << " ";
-			}
+	//			cout << val << " ";
+	//		}
 
-			cout << endl;
-		}
-	}
+	//		cout << endl;
+	//	}
+	//}
 
 
-
-
-	return false;
 
 	ssao_level = 1.0f;
 	ssao_radius = 0.05f;
@@ -917,7 +910,7 @@ void display_func(void)
 		for (size_t j = 0; j < win_y; j++)
 		{
 
-			if (rand() % 2 == 0)
+			if (0)//rand() % 2 == 0)
 			{
 				fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
 				fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
