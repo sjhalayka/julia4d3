@@ -120,19 +120,6 @@ bool generate_button = true;
 
 
 
-
-typedef union PixelInfo
-{
-	std::uint32_t Colour;
-	struct
-	{
-		std::uint8_t R, G, B, A;
-	};
-} *PPixelInfo;
-
-
-
-
 class BMP
 {
 public:
@@ -488,6 +475,13 @@ const size_t num_chars_wide = image_width / char_width;
 const size_t num_chars_high = image_height / char_height;
 
 
+class RGB
+{
+public:
+	unsigned char r, g, b;
+};
+
+
 void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c)
 {
 	monochrome_image img = mimgs[c];
@@ -501,21 +495,38 @@ void print_char(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_
 			size_t fb_x = char_x_pos + i;
 			size_t fb_y = fb_height - char_y_pos + y;
 
+			// If out of bounds, skip this pixel
 			if (fb_x >= fb_width || fb_y >= fb_height)
 				continue;
 
 			size_t fb_index = num_channels * (fb_y * fb_width + fb_x);
 			size_t img_index = j * img.width + i;
 
-			fbpixels[fb_index + 0] = img.pixel_data[img_index];
-			fbpixels[fb_index + 1] = img.pixel_data[img_index];
-			fbpixels[fb_index + 2] = img.pixel_data[img_index];
+			RGB text_colour;
+			text_colour.r = 255;
+			text_colour.g = 255;
+			text_colour.b = 255;
+
+			RGB background_colour;
+			background_colour.r = fbpixels[fb_index + 0];
+			background_colour.g = fbpixels[fb_index + 1];
+			background_colour.b = fbpixels[fb_index + 2];
+
+			const unsigned char alpha = img.pixel_data[img_index];
+			const float alpha_float = alpha / 255.0f;
+
+			RGB target_colour;
+			target_colour.r = int(alpha_float * double(text_colour.r - background_colour.r) + background_colour.r);
+			target_colour.g = int(alpha_float * double(text_colour.g - background_colour.g) + background_colour.g);
+			target_colour.b = int(alpha_float * double(text_colour.b - background_colour.b) + background_colour.b);
+
+			fbpixels[fb_index + 0] = target_colour.r;
+			fbpixels[fb_index + 1] = target_colour.g;
+			fbpixels[fb_index + 2] = target_colour.b;
 			fbpixels[fb_index + 3] = 255;
 		}
 	}
 }
-
-
 
 void print_sentence(size_t num_channels, vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s)
 {
@@ -576,11 +587,6 @@ bool init(void)
 		cout << "could not load font.bmp" << endl;
 		return false;
 	}
-	else
-	{
-		cout << "loaded font successfully" << endl;
-	}
-
 
 
 	size_t char_index = 0;
@@ -612,42 +618,14 @@ bool init(void)
 			char_index++;
 		}
 	}
-
-
-	//// print test char
-	//for (size_t i = 0; i < 16; i++)
-	//{
-	//	for (size_t j = 0; j < 16; j++)
-	//	{	
-	//		size_t index = i * 16 + j;
-
-	//		size_t val = (size_t)char_data[0][index];
-
-	//		if (val < 100)
-	//		{
-	//			if (val < 10)
-	//				cout << "  ";
-	//			else
-	//				cout << "  ";
-	//		}
-
-	//		cout << val << " ";
-	//	}
-	//	cout << endl;
-	//}
-
-
-
-
-
 	
 	for (size_t n = 0; n < num_chars; n++)
 	{	
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
 			monochrome_image img;
-
-			img.width = char_width;
+				
+			img.width = char_width / 2;
 			img.height = char_height;
 
 			img.pixel_data.resize(img.width * img.height, 0);
@@ -712,34 +690,6 @@ bool init(void)
 			mimgs.push_back(img);
 		}
 	}
-
-	//cout << "mimgs.size() " << mimgs.size() << endl;
-
-	//for (size_t n = 0; n < num_chars; n++)
-	//{
-	//	cout << mimgs[n].width << endl;
-	//	cout << mimgs[n].height << endl;
-
-	//	for (size_t j = 0; j < mimgs[n].height; j++)
-	//	{
-	//		for (size_t i = 0; i < mimgs[n].width; i++)
-	//		{
-	//			size_t val = mimgs[n].pixel_data[j * mimgs[n].width + i];
-
-	//			if (val < 100)
-	//			{
-	//				if (val < 10)
-	//					cout << "  ";
-	//				else
-	//					cout << " ";
-	//			}
-
-	//			cout << val << " ";
-	//		}
-
-	//		cout << endl;
-	//	}
-	//}
 
 
 
@@ -943,16 +893,13 @@ void display_func(void)
 
 	const size_t num_channels = 4;
 
-
 	vector<unsigned char> fbpixels(num_channels * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
 
 	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
 	size_t char_x_pos = 10;
 	size_t char_y_pos = 30;
-
 	print_sentence(num_channels, fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World");
-
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
