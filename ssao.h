@@ -595,10 +595,10 @@ bool init(void)
 
 	for (size_t n = 1; n < 2; n++)
 	{
-		monochrome_image img;
-
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
+			monochrome_image img;
+
 			img.width = char_width;
 			img.height = char_height;
 
@@ -636,39 +636,107 @@ bool init(void)
 
 			cout << cropped_width << endl;
 
+			//monochrome_image img;
+			//img.width = cropped_width;
+			//img.height = char_height;
+			//img.pixel_data.resize(img.width * img.height, 0);
+
+			//size_t destination_col = 0;
+			//// print test char
+			//for (size_t i = 0; i < char_width; i++)
+			//{
+			//	for (size_t j = 0; j < char_height; j++)
+			//	{
+			//		if (i < first_non_zeroes_column)
+			//			continue;
+
+			//		if (i > last_non_zeroes_column)
+			//			break;
+
+			//		size_t char_data_index = j * char_width + i;
+			//		size_t img_data_index = j * cropped_width + destination_col;
+
+			//		size_t val = (size_t)char_data[n][char_data_index];
+
+			//		img.pixel_data[img_data_index] = val;
+			//		//cout << (int)img.pixel_data[img_data_index] << ' ';
+
+			//		destination_col++;
+			//	}
+			//	cout << endl;
+			//}
+
+
 			monochrome_image img;
 			img.width = cropped_width;
 			img.height = char_height;
-			img.pixel_data.resize(img.width * img.height, 0);
+			img.pixel_data.resize(img.width * img.height, 127);
+
+			cout << "destination" << endl;
+			size_t destination_col = 0;
+
+			// print test char
+				
 
 
-			size_t left = first_non_zeroes_column;
-			size_t right = last_non_zeroes_column;
-			size_t top = 0;
-			size_t bottom = char_height - 1;
-
-			for (size_t k = left, x = 0; k < right; k++, x++)
+			for (size_t i = 0; i < num_chars_wide; i++)
 			{
-				for (size_t l = top, y = 0; l < bottom; l++, y++)
+				for (size_t j = 0; j < num_chars_high; j++)
 				{
-					size_t img_pos = k * char_height + l;
-					size_t sub_pos = x * img.height + y;
+					size_t left = first_non_zeroes_column;
+					size_t right = left + cropped_width - 1;
+					size_t top = 0;
+					size_t bottom = char_height - 1;
 
+					for (size_t k = left, x = 0; k <= right; k++, x++)
+					{
+						for (size_t l = top, y = 0; l <= bottom; l++, y++)
+						{
+							size_t img_pos = l * char_width + k;
+							size_t sub_pos = y * cropped_width + x;
 
-					
-					img.pixel_data[sub_pos] = char_data[n][img_pos]; // Assume grayscale, only use r component
+							img.pixel_data[sub_pos] = char_data[n][img_pos]; // Assume grayscale, only use r component
+						}
+					}
+
+					char_index++;
 				}
 			}
 
 
+
+			//for (size_t i = first_non_zeroes_column; i <= last_non_zeroes_column; i++)
+			//{
+			//	for (size_t j = 0; j < char_height; j++)
+			//	{
+			//		size_t char_data_index = j * char_width + i;
+			//		size_t img_data_index = j * cropped_width + destination_col;
+
+			//		size_t val = (size_t)char_data[n][char_data_index];
+
+			//		cout << val << ' ';
+
+			//		img.pixel_data[img_data_index] = val;
+			//		//cout << (int)img.pixel_data[img_data_index] << ' ';
+
+			//		destination_col++;
+
+			//		cout << endl;
+			//	}
+			//}
+
+
+
+			cout << "lala" << endl;
 			cout << img.width << endl;
 			cout << img.height << endl;
+			cout << "lala2" << endl;
 
-			for (size_t i = 0; i < img.height; i++)
+			for (size_t j = 0; j < img.height; j++)
 			{
-				for (size_t j = 0; j < img.width; j++)
+				for (size_t i = 0; i < img.width; i++)
 				{
-					size_t val = img.pixel_data[i * img.width + j];
+					size_t val = img.pixel_data[j * img.width + i];
 
 					if (val < 100)
 					{
@@ -693,7 +761,7 @@ bool init(void)
 
 
 
-
+	return false;
 
 	ssao_level = 1.0f;
 	ssao_radius = 0.05f;
