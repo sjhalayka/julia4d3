@@ -477,6 +477,17 @@ public:
 };
 
 
+
+size_t num_chars = 256;
+size_t image_width = 256;
+size_t image_height = 256;
+size_t char_width = 16;
+size_t char_height = 16;
+size_t num_chars_wide = image_width / char_width;
+size_t num_chars_high = image_height / char_height;
+
+
+
 bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
 {
 	bool all_zeroes = true;
@@ -484,6 +495,24 @@ bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pix
 	for (size_t i = 0; i < width * height; i++)
 	{
 		if (pixel_data[i] != 0)
+		{
+			all_zeroes = false;
+			break;
+		}
+	}
+
+	return all_zeroes;
+}
+
+bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vector<unsigned char>& pixel_data)
+{
+	bool all_zeroes = true;
+
+	for (size_t y = 0; y < height; y++)
+	{
+		size_t index = y * width + column;
+
+		if (pixel_data[index] != 0)
 		{
 			all_zeroes = false;
 			break;
@@ -503,13 +532,7 @@ bool init(void)
 		return false;
 	}
 
-	size_t num_chars = 256;
-	size_t image_width = 256;
-	size_t image_height = 256;
-	size_t char_width = 16;
-	size_t char_height = 16;
-	size_t num_chars_wide = image_width / char_width;
-	size_t num_chars_high = image_height / char_height;
+
 
 	size_t char_index = 0;
 	
@@ -585,23 +608,31 @@ bool init(void)
 		}
 		else
 		{
+			size_t first_non_zeroes_column = 0;
+			size_t last_non_zeroes_column = 0;
+
 			for (size_t x = 0; x < char_width; x++)
 			{
-				bool is_column_all_zeroes = true;
+				bool all_zeroes = is_column_all_zeroes(x, char_width, char_height, char_data[n]);
 
-				for (size_t y = 0; y < char_height; y++)
+				if (false == all_zeroes)
 				{
-					size_t index = y * char_width + x;
-
-					if (char_data[n][index] != 0)
-					{
-						is_column_all_zeroes = false;
-						break;
-					}
+					first_non_zeroes_column = x;
+					break;
 				}
-
-				cout << is_column_all_zeroes << endl;
 			}
+
+			for (size_t x = first_non_zeroes_column + 1; x < char_width; x++)
+			{
+				bool all_zeroes = is_column_all_zeroes(x, char_width, char_height, char_data[n]);
+
+				if (false == all_zeroes)
+				{
+					last_non_zeroes_column = x;
+				}
+			}
+
+			cout << first_non_zeroes_column << " " << last_non_zeroes_column << endl;
 		}
 	}
 
