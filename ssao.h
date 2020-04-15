@@ -408,7 +408,7 @@ public:
 };
 
 
-void print_char(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c, const RGB &text_colour)
+void print_char(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c, const RGB &text_colour)
 {
 	for (size_t i = 0; i < mimgs[c].width; i++)
 	{
@@ -447,7 +447,7 @@ void print_char(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_heig
 	}
 }
 
-void print_sentence(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s, const RGB& text_colour)
+void print_sentence(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, size_t char_x_pos, const size_t char_y_pos, const string s, const RGB& text_colour)
 {
 	for (size_t i = 0; i < s.size(); i++)
 	{
