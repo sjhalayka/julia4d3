@@ -40,9 +40,15 @@
 #endif
 
 
-
-#include <iostream>
+#include <atomic>
+#include <vector>
+#include <chrono>
+#include <thread>
+#include <mutex>
 #include <string>
+#include <iostream>
+#include <chrono>
+#include <sstream>
 using namespace std;
 
 #include "vertex_fragment_shader.h"
@@ -52,9 +58,21 @@ using namespace std;
 #include "GLUI/glui.h"
 
 
-#include <sstream>
-using std::ostringstream;
+thread gen_thread;
+atomic_bool stop = true;
+vector<string> string_log;
+mutex thread_mutex;
 
+
+void thread_func(atomic_bool& stop_flag, vector<string>& vs, mutex& m)
+{
+	while (false == stop_flag)
+	{
+		m.lock();
+		vs.push_back("test");
+		m.unlock();
+	}
+}
 
 
 
@@ -210,17 +228,20 @@ bool BMP::load(const char* FilePath)
 
 void generate_cancel_button_func(int control)
 {
-	//if (true == generate_button)
-	//{
-	//	button->set_name(const_cast<char*>("Generate"));
-	//}
-	//else
-	//{
-	//	button->set_name(const_cast<char*>("Cancel"));
-	//}
-
-	//button->enabled = false;
-
+	if (!stop)
+	{
+		cout << "user clicked cancel" << endl;
+\
+		stop = true;
+		gen_thread.join();
+		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+	}
+	else
+	{
+		stop = false;
+		gen_thread = thread(thread_func, ref(stop), ref(string_log), ref(thread_mutex));
+		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
+	}
 }
 
 void export_button_func(int control)
@@ -229,21 +250,9 @@ void export_button_func(int control)
 
 }
 
-
-
 void control_cb(int control)
 {
-	/********************************************************************
-	  Here we'll print the user id of the control that generated the
-	  callback, and we'll also explicitly get the values of each control.
-	  Note that we really didn't have to explicitly get the values, since
-	  they are already all contained within the live variables:
-	  'wireframe',  'segments',  'obj',  and 'text'
-	  ********************************************************************/
-
-	//printf("callback: %d\n", control);
 	//printf("                 text: %s\n", edittext->get_text());
-
 }
 
 void myGlutReshape(int x, int y)
@@ -273,11 +282,21 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	/* According to the GLUT specification, the current window is
-	   undefined during an idle callback.  So we need to explicitly change
-	   it if necessary */
-	if (glutGetWindow() != win_id)
-		glutSetWindow(win_id);
+	if (!stop)
+	{
+		cout << "Printing log:" << endl;
+
+		thread_mutex.lock();
+
+		cout << "Nunm log items: " << string_log.size() << endl;
+
+		//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
+		//	cout << *ci << endl;
+
+		string_log.clear();
+
+		thread_mutex.unlock();
+	}
 
 	glutPostRedisplay();
 }
@@ -457,8 +476,6 @@ void print_sentence(vector<unsigned char>& fbpixels, const size_t fb_width, cons
 
 		char_x_pos += char_width + 2;
 	}
-
-	cout << endl;
 }
 
 
@@ -802,10 +819,6 @@ void display_func(void)
 	glutSwapBuffers();
 }
 
-void idle_func(void)
-{ 
-	glutPostRedisplay();
-}
 
 void reshape_func(int width, int height)
 {
@@ -827,8 +840,10 @@ void keyboard_func(unsigned char key, int x, int y)
 {
 	switch(tolower(key))
 	{
-	case 'a':
+	case 's':
 		{
+
+
 			break;
 		}
 

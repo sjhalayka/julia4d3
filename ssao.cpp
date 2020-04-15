@@ -87,10 +87,6 @@ int main(int argc, char **argv)
 	export_to_stl_button = glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
 	export_to_stl_button->enabled = false;
 
-	//generate_mesh_button->set_alignment(GLUI_ALIGN_LEFT);
-	//export_to_stl_button->set_alignment(GLUI_ALIGN_LEFT);
-
-
 	glui->add_separator();
 
 	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
@@ -161,11 +157,6 @@ int main(int argc, char **argv)
 	x_max_edittext->set_text("1.5");
 	y_max_edittext->set_text("1.5");
 	z_max_edittext->set_text("1.5");
-
-
-	//glui2 = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_TOP);
-
-	//status = glui2->add_statictext("lala");
 
 
     /**** Link windows to GLUI, and register idle callback ******/
