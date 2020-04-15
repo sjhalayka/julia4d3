@@ -37,12 +37,12 @@
 #ifdef _MSC_VER
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
+#pragma comment(lib, "freetype")
 #endif
 
 
 
 #include <iostream>
-#include <string>
 using namespace std;
 
 #include "vertex_fragment_shader.h"
@@ -50,6 +50,7 @@ using namespace std;
 #include "uv_camera.h"
 #include "mesh.h"
 #include "GLUI/glui.h"
+#include "TextRenderer.hpp"
 
 
 #include <sstream>
@@ -114,6 +115,19 @@ bool generate_button = true;
 
 
 
+
+
+
+
+
+typedef union PixelInfo
+{
+	std::uint32_t Colour;
+	struct
+	{
+		std::uint8_t R, G, B, A;
+	};
+} *PPixelInfo;
 
 
 
@@ -199,12 +213,84 @@ bool BMP::load(const char* FilePath)
 }
 
 
-//
-//vector<GLfloat> pixels;
-//
-//GLuint texid[] = { 0 };
+
+vector<GLfloat> pixels;
+
+GLuint texid[] = { 0 };
 
 
+
+
+// Text drawing code originally from "GLUT Tutorial -- Bitmap Fonts and Orthogonal Projections" by A R Fernandes
+void render_string(int x, const int y, void* font, const string& text)
+{
+	for (size_t i = 0; i < text.length(); i++)
+	{
+		glRasterPos2i(x, y);
+		glutBitmapCharacter(font, text[i]);
+		x += glutBitmapWidth(font, text[i]) + 1;
+	}
+}
+
+
+void draw_text(void)
+{
+	// Text drawing code originally from "GLUT Tutorial -- Bitmap Fonts and Orthogonal Projections" by A R Fernandes
+	// http://www.lighthouse3d.com/opengl/glut/index.php?bmpfontortho
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, win_x, 0, win_y);
+	glScalef(1, -1, 1); // Neat. :)
+	glTranslatef(0, -static_cast<float>(win_y), 0); // Neat. :)
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+
+	vertex_3 background_colour(0.0f, 0.0f, 0.0f);
+	vertex_3 control_list_colour(0.9f, 0.9f, 0.9f);
+
+	glColor3f(control_list_colour.x, control_list_colour.y, control_list_colour.z);
+
+	int break_size = 22;
+	int start = 20;
+	ostringstream oss;
+
+	render_string(10, start, GLUT_BITMAP_HELVETICA_18, string("Mouse controls:"));
+	render_string(10, start + 1 * break_size, GLUT_BITMAP_HELVETICA_18, string("  LMB + drag: Rotate camera"));
+	render_string(10, start + 2 * break_size, GLUT_BITMAP_HELVETICA_18, string("  RMB + drag: Zoom camera"));
+
+	render_string(10, start + 4 * break_size, GLUT_BITMAP_HELVETICA_18, string("Keyboard controls:"));
+	render_string(10, start + 5 * break_size, GLUT_BITMAP_HELVETICA_18, string("  q: Draw mesh"));
+	render_string(10, start + 6 * break_size, GLUT_BITMAP_HELVETICA_18, string("  w: Draw axis"));
+	render_string(10, start + 7 * break_size, GLUT_BITMAP_HELVETICA_18, string("  e: Draw text"));
+
+	render_string(10, start + 9 * break_size, GLUT_BITMAP_HELVETICA_18, string("  u: Rotate camera +u"));
+	render_string(10, start + 10 * break_size, GLUT_BITMAP_HELVETICA_18, string("  i: Rotate camera -u"));
+	render_string(10, start + 11 * break_size, GLUT_BITMAP_HELVETICA_18, string("  o: Rotate camera +v"));
+	render_string(10, start + 12 * break_size, GLUT_BITMAP_HELVETICA_18, string("  p: Rotate camera -v"));
+
+
+
+	vertex_3 eye = main_camera.eye;
+	vertex_3 eye_norm = eye;
+	eye_norm.normalize();
+
+	oss.clear();
+	oss.str("");
+	oss << "Camera position: " << eye.x << ' ' << eye.y << ' ' << eye.z;
+	render_string(10, win_y - 2 * break_size, GLUT_BITMAP_HELVETICA_18, oss.str());
+
+	oss.clear();
+	oss.str("");
+	oss << "Camera position (normalized): " << eye_norm.x << ' ' << eye_norm.y << ' ' << eye_norm.z;
+	render_string(10, win_y - break_size, GLUT_BITMAP_HELVETICA_18, oss.str());
+
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	// End text drawing code.
+}
 
 
 
@@ -390,78 +476,7 @@ public:
 	vector<unsigned char> pixel_data;
 };
 
-vector<monochrome_image> mimgs;
 
-const size_t num_chars = 256;
-const size_t image_width = 256;
-const size_t image_height = 256;
-const size_t char_width = 16;
-const size_t char_height = 16;
-const size_t num_chars_wide = image_width / char_width;
-const size_t num_chars_high = image_height / char_height;
-
-
-class RGB
-{
-public:
-	unsigned char r, g, b;
-};
-
-
-void print_char(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c, const RGB &text_colour)
-{
-	monochrome_image img = mimgs[c];
-
-	for (size_t i = 0; i < img.width; i++)
-	{
-		for (size_t j = 0; j < img.height; j++)
-		{
-			size_t y = img.height - j;
-
-			size_t fb_x = char_x_pos + i;
-			size_t fb_y = fb_height - char_y_pos + y;
-
-			// If out of bounds, skip this pixel
-			if (fb_x >= fb_width || fb_y >= fb_height)
-				continue;
-
-			size_t fb_index = 4 * (fb_y * fb_width + fb_x);
-			size_t img_index = j * img.width + i;
-
-			RGB background_colour;
-			background_colour.r = fbpixels[fb_index + 0];
-			background_colour.g = fbpixels[fb_index + 1];
-			background_colour.b = fbpixels[fb_index + 2];
-
-			const unsigned char alpha = img.pixel_data[img_index];
-			const float alpha_float = alpha / 255.0f;
-
-			RGB target_colour;
-			target_colour.r = int(alpha_float * double(text_colour.r - background_colour.r) + background_colour.r);
-			target_colour.g = int(alpha_float * double(text_colour.g - background_colour.g) + background_colour.g);
-			target_colour.b = int(alpha_float * double(text_colour.b - background_colour.b) + background_colour.b);
-
-			fbpixels[fb_index + 0] = target_colour.r;
-			fbpixels[fb_index + 1] = target_colour.g;
-			fbpixels[fb_index + 2] = target_colour.b;
-			fbpixels[fb_index + 3] = 255;
-		}
-	}
-}
-
-void print_sentence(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, string s, const RGB& text_colour)
-{
-	for (size_t i = 0; i < s.size(); i++)
-	{
-		print_char(fbpixels, fb_width, fb_height, char_x_pos, char_y_pos, s[i], text_colour);
-
-		size_t char_width = mimgs[s[i]].width;
-
-		char_x_pos += char_width + 2;
-	}
-
-	cout << endl;
-}
 
 
 bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
@@ -502,7 +517,6 @@ bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vect
 bool init(void)
 {
 	BMP font;
-
 	if (false == font.load("font.bmp"))
 	{
 		cout << "could not load font.bmp" << endl;
@@ -510,10 +524,19 @@ bool init(void)
 	}
 
 
+	const size_t num_chars = 256;
+	const size_t image_width = 256;
+	const size_t image_height = 256;
+	const size_t char_width = 16;
+	const size_t char_height = 16;
+	const size_t num_chars_wide = image_width / char_width;
+	const size_t num_chars_high = image_height / char_height;
+
+
 	size_t char_index = 0;
 	
 	vector< vector<GLubyte> > char_data;
-	vector<unsigned char> char_template(char_width*char_height);
+	vector<unsigned char> char_template(char_width*char_height, 0);
 	char_data.resize(num_chars, char_template);
 
 	for (size_t i = 0; i < num_chars_wide; i++)
@@ -521,13 +544,13 @@ bool init(void)
 		for (size_t j = 0; j < num_chars_high; j++)
 		{
 			size_t left = i*char_width;
-			size_t right = left + char_width - 1;
+			size_t right = left + char_width;
 			size_t top = j * char_height;
-			size_t bottom = top + char_height - 1;
+			size_t bottom = top + char_height;
 
-			for (size_t k = left, x = 0; k <= right; k++, x++)
+			for (size_t k = left, x = 0; k < right; k++, x++)
 			{
-				for (size_t l = top, y = 0; l <= bottom; l++, y++)
+				for (size_t l = top, y = 0; l < bottom; l++, y++)
 				{
 					size_t img_pos = 4*(k * image_height + l);
 					size_t sub_pos = x * char_height + y;
@@ -540,13 +563,53 @@ bool init(void)
 		}
 	}
 	
-	for (size_t n = 0; n < num_chars; n++)
-	{	
+
+
+	//for (size_t i = 0; i < 16 * 16; i++)
+	//	cout << (size_t) char_data[0][i] << endl;
+
+	cout << endl;
+
+	vector<monochrome_image> mimgs;
+	//for (size_t y = 0; y < char_height; y++)
+	//{
+	//	for (size_t x = 0; x < char_width; x++)
+	//	{
+	//		size_t char_data_index = y * char_width + x;
+
+	//		cout << char_data_index << ' ';
+
+	//		cout << (int)char_data[1][char_data_index] << "  ";
+
+	//		//				img.pixel_data
+	//	}
+	//	//cout << endl;
+	//}
+
+
+	// print test char
+	//for (size_t i = 0; i < char_width; i++)
+	//{
+	//	for (size_t j = 0; j < char_height; j++)
+	//	{
+	//		size_t index = i * 16 + j;
+
+	//		size_t val = (size_t)char_data[1][index];
+
+	//		cout << val << ' ';
+
+	//	}
+	//	cout << endl;
+	//}
+
+
+	for (size_t n = 1; n < 2; n++)
+	{
+		monochrome_image img;
+
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
-			monochrome_image img;
-				
-			img.width = char_width / 2;
+			img.width = char_width;
 			img.height = char_height;
 
 			img.pixel_data.resize(img.width * img.height, 0);
@@ -556,7 +619,7 @@ bool init(void)
 		else
 		{
 			size_t first_non_zeroes_column = 0;
-			size_t last_non_zeroes_column = char_width - 1;
+			size_t last_non_zeroes_column = 0;
 
 			for (size_t x = 0; x < char_width; x++)
 			{
@@ -581,36 +644,73 @@ bool init(void)
 
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
+			cout << "Cropped width: " << cropped_width << endl;
+
 			monochrome_image img;
 			img.width = cropped_width;
-			img.height = char_height;
+			img.height = char_height; 
 			img.pixel_data.resize(img.width * img.height, 0);
 
-			for (size_t i = 0; i < num_chars_wide; i++)
+
+			size_t destination_col = 0;
+
+			for (size_t j = 0; j < char_height; j++)
 			{
-				for (size_t j = 0; j < num_chars_high; j++)
+				for (size_t i = 0; i < char_width; j++)
 				{
-					const size_t left = first_non_zeroes_column;
-					const size_t right = left + cropped_width - 1;
-					const size_t top = 0;
-					const size_t bottom = char_height - 1;
+					if(i < first_non_zeroes_column)
+						continue;
 
-					for (size_t k = left, x = 0; k <= right; k++, x++)
-					{
-						for (size_t l = top, y = 0; l <= bottom; l++, y++)
-						{
-							const size_t img_pos = l * char_width + k;
-							const size_t sub_pos = y * cropped_width + x;
+					if (i > last_non_zeroes_column)
+						break;
 
-							img.pixel_data[sub_pos] = char_data[n][img_pos];
-						}
-					}
+					size_t char_data_index = j * char_width + i;
+					size_t img_data_index =  j * cropped_width + destination_col;
+
+					size_t val = (size_t)char_data[n][char_data_index];
+
+					img.pixel_data[img_data_index] = val;
+					cout << (int)img.pixel_data[img_data_index] << ' ';
+
+					destination_col++;
 				}
+
+				cout << endl;
 			}
 
-			mimgs.push_back(img);
+
+
+			//cout << img.width << endl;
+			//cout << img.height << endl;
+
+			//for (size_t i = 0; i < img.height; i++)
+			//{
+			//	for (size_t j = 0; j < img.width; j++)
+			//	{
+			//		size_t val = img.pixel_data[j * img.width + i];
+
+			//		if (val < 100)
+			//		{
+			//			if (val < 10)
+			//			{
+			//				cout << "  ";
+			//			}
+			//			else
+			//			{
+			//				cout << " ";
+			//			}
+			//		}
+
+			//		cout << val << " ";
+			//	}
+
+			//	cout << endl;
+			//}
 		}
 	}
+
+
+
 
 
 
@@ -724,6 +824,31 @@ bool init(void)
 		return false;
 	}
 
+	const size_t num_channels = 4;
+
+	pixels.resize(info.GetWidth() * info.GetHeight() * num_channels);
+
+	for (size_t i = 0; i < info.GetWidth(); i++)
+	{
+		for (size_t j = 0; j < info.GetHeight(); j++)
+		{
+			pixels[num_channels * (i * info.GetHeight() + j) + 2] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 1] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 0] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
+			pixels[num_channels * (i * info.GetHeight() + j) + 3] = info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
+		}
+	}
+
+	glEnable(GL_TEXTURE_2D);
+	glGenTextures(1, texid);
+	glBindTexture(GL_TEXTURE_2D, texid[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.GetWidth(), info.GetHeight(), 0, GL_RGBA, GL_FLOAT, &pixels[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
+
+
 
 	return true;
 }
@@ -732,6 +857,9 @@ void display_func(void)
 {
 	glClearColor(1, 0.5f, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
 
 	glDisable(GL_BLEND);
 	
@@ -784,22 +912,36 @@ void display_func(void)
 
 
 
-	size_t char_x_pos = 10;
-	size_t char_y_pos = 30;
+	const size_t num_channels = 4;
 
-	RGB text_colour;
-	text_colour.r = 255;
-	text_colour.g = 255;
-	text_colour.b = 255;
 
-	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+	vector<GLubyte> fbpixels(num_channels * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
 
 	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World1", text_colour);
-	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos + 20, "Hello World2", text_colour);
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+
+			if (rand() % 2 == 0)
+			{
+				fbpixels[num_channels * (i * win_y + j) + 0] = 255; //info.Pixels[num_channels * (i * info.GetHeight() + j) + 0] / 255.0f;
+				fbpixels[num_channels * (i * win_y + j) + 1] = 127;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 1] / 255.0f;
+				fbpixels[num_channels * (i * win_y + j) + 2] = 0;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 2] / 255.0f;
+			}
+			fbpixels[num_channels * (i * win_y + j) + 3] = 255;// info.Pixels[num_channels * (i * info.GetHeight() + j) + 3] / 255.0f;
+		}
+	}
 
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+
+
+
+
+
+
 
 	glutSwapBuffers();
 }
