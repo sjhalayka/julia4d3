@@ -230,11 +230,11 @@ void generate_cancel_button_func(int control)
 {
 	if (!stop)
 	{
-		cout << "user clicked cancel" << endl;
-\
+		generate_mesh_button->disable();
 		stop = true;
 		gen_thread.join();
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+		generate_mesh_button->enable();
 	}
 	else
 	{
