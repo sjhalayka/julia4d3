@@ -410,13 +410,11 @@ public:
 
 void print_char(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_height, size_t char_x_pos, size_t char_y_pos, unsigned char c, const RGB &text_colour)
 {
-	monochrome_image img = mimgs[c];
-
-	for (size_t i = 0; i < img.width; i++)
+	for (size_t i = 0; i < mimgs[c].width; i++)
 	{
-		for (size_t j = 0; j < img.height; j++)
+		for (size_t j = 0; j < mimgs[c].height; j++)
 		{
-			size_t y = img.height - j;
+			size_t y = mimgs[c].height - j;
 
 			size_t fb_x = char_x_pos + i;
 			size_t fb_y = fb_height - char_y_pos + y;
@@ -426,20 +424,20 @@ void print_char(vector<unsigned char>& fbpixels, size_t fb_width, size_t fb_heig
 				continue;
 
 			size_t fb_index = 4 * (fb_y * fb_width + fb_x);
-			size_t img_index = j * img.width + i;
+			size_t img_index = j * mimgs[c].width + i;
 
 			RGB background_colour;
 			background_colour.r = fbpixels[fb_index + 0];
 			background_colour.g = fbpixels[fb_index + 1];
 			background_colour.b = fbpixels[fb_index + 2];
 
-			const unsigned char alpha = img.pixel_data[img_index];
+			const unsigned char alpha = mimgs[c].pixel_data[img_index];
 			const float alpha_float = alpha / 255.0f;
 
 			RGB target_colour;
-			target_colour.r = int(alpha_float * double(text_colour.r - background_colour.r) + background_colour.r);
-			target_colour.g = int(alpha_float * double(text_colour.g - background_colour.g) + background_colour.g);
-			target_colour.b = int(alpha_float * double(text_colour.b - background_colour.b) + background_colour.b);
+			target_colour.r = static_cast<unsigned char>(alpha_float * double(text_colour.r - background_colour.r) + background_colour.r);
+			target_colour.g = static_cast<unsigned char>(alpha_float * double(text_colour.g - background_colour.g) + background_colour.g);
+			target_colour.b = static_cast<unsigned char>(alpha_float * double(text_colour.b - background_colour.b) + background_colour.b);
 
 			fbpixels[fb_index + 0] = target_colour.r;
 			fbpixels[fb_index + 1] = target_colour.g;
