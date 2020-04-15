@@ -546,7 +546,7 @@ bool init(void)
 		{
 			monochrome_image img;
 				
-			img.width = char_width / 2;
+			img.width = char_width / 4;
 			img.height = char_height;
 
 			img.pixel_data.resize(img.width * img.height, 0);
@@ -798,7 +798,7 @@ void display_func(void)
 
 	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World1", text_colour);
 	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos + 20, "Hello World2", text_colour);
-
+		
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
 	glutSwapBuffers();
