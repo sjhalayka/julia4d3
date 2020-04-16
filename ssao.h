@@ -56,7 +56,8 @@ using namespace std;
 #include "uv_camera.h"
 #include "mesh.h"
 #include "GLUI/glui.h"
-
+#include "string_utilities.h"
+using namespace string_utilities;
 
 
 
@@ -145,6 +146,25 @@ uv_camera main_camera;
 bool generate_button = true;
 
 
+
+
+class fractal_set_parameters
+{
+public:
+	string equation_text;
+	bool randomize_c;
+	bool use_pedestal;
+	float pedestal_y_start;
+	float pedestal_y_end;
+	float C_x, C_y, C_z, C_w;
+	float Z_w;
+	short unsigned int max_iterations;
+	size_t resolution;
+	float infinity;
+	float x_min, x_max;
+	float y_min, y_max;
+	float z_min, z_max;
+};
 
 
 
@@ -277,6 +297,255 @@ void generate_cancel_button_func(int control)
 	{
 		cout << "user clicked generate mesh" << endl;
 
+		fractal_set_parameters p;
+
+		p.equation_text = equation_edittext->text;
+
+		if (p.equation_text == "")
+		{
+			cout << "blank equation text" << endl;
+			return;
+		}
+
+		p.randomize_c = randomize_c_checkbox->get_int_val();
+		p.use_pedestal = use_pedestal_checkbox->get_int_val();
+
+		string temp_string;
+		
+		temp_string = pedestal_y_start_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "pedestal y start is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.pedestal_y_start;
+			cout << p.pedestal_y_start << endl;
+		}
+
+		temp_string = pedestal_y_end_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "pedestal y end is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.pedestal_y_end;
+		}
+
+		temp_string = c_x_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "c.x  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.C_x;
+		}
+
+		temp_string = c_y_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "c.y  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.C_y;
+		}
+
+		temp_string = c_z_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "c.z  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.C_z;
+		}
+
+		temp_string = c_w_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "c.w  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.C_w;
+		}
+
+		temp_string = x_min_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "x min  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.x_min;
+		}
+
+		temp_string = y_min_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "y min  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.y_min;
+		}
+
+		temp_string = z_min_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "z min  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.z_min;
+		}
+
+
+
+
+		temp_string = x_max_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "x max  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.x_max;
+		}
+
+		temp_string = y_max_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "y max  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.y_max;
+		}
+
+		temp_string = z_max_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "z max  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.z_max;
+		}
+
+		temp_string = z_w_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "z.w  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.Z_w;
+		}
+
+		temp_string = infinity_edittext->text;
+
+		if (false == is_real_number(temp_string))
+		{
+			cout << "infinity  is not a real number" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.infinity;
+		}
+
+
+		temp_string = iterations_edittext->text;
+
+		if (false == is_unsigned_short_int(temp_string))
+		{
+			cout << "max iterations is not a short unsigned int" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.max_iterations;
+		}
+
+		temp_string = resolution_edittext->text;
+
+		if (false == is_unsigned_short_int(temp_string))
+		{
+			cout << "resolution is not a short unsigned int" << endl;
+			return;
+		}
+		else
+		{
+			istringstream iss(temp_string);
+			iss >> p.resolution;
+		}
+
+		//cout << "eq text " << p.equation_text << endl;	
+		//cout << "randomize c " << p.randomize_c << endl;
+		//cout << "use pedestal " << p.use_pedestal << endl;
+		//cout << "ped y start " << p.pedestal_y_start << endl;
+		//cout << "ped y end " << p.pedestal_y_end << endl;
+		//cout << "c.x " << p.C_x << endl;
+		//cout << "c.y " << p.C_y << endl;
+		//cout << "c.z " << p.C_z << endl;
+		//cout << "c.w " << p.C_w << endl;
+		//cout << "z_W" << p.Z_w << endl;
+		//cout << "max iter " << p.max_iterations << endl;;
+		//cout << "res " << p.resolution << endl;;
+		//cout << "inf " << p.infinity << endl;;
+		//cout << "x_min " << p.x_min << endl;;
+		//cout << "x_max " << p.x_max << endl;;
+		//cout << "y min " << p.y_min << endl;;
+		//cout << "y_max " << p.y_max << endl;;
+		//cout << "z_min " << p.z_min << endl;;
+		//cout << "z_max " << p.z_max << endl;;
+		//return;
+
 		stop = false;
 		thread_is_running = true;
 		uploaded_to_gpu = false;
@@ -339,18 +608,18 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (false == thread_is_running && generate_button == false)
-	{
+	if (false == thread_is_running && false == generate_button)
+	{	
 		cout << "Thread completed" << endl;
-
-		generate_button = true;
-		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 
 		if (false == uploaded_to_gpu && triangles.size() > 0)
 		{
-			cout << "upload to gpu" << endl;
+			cout << "uploading to gpu" << endl;
 			uploaded_to_gpu = true;
 		}
+
+		generate_button = true;
+		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 	}
 
 	glutPostRedisplay();
