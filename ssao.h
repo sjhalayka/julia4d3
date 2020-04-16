@@ -58,7 +58,9 @@ using namespace std;
 #include "GLUI/glui.h"
 #include "string_utilities.h"
 using namespace string_utilities;
-
+#include "eqparse.h"
+#include "marching_cubes.h"
+using namespace marching_cubes;
 
 
 
@@ -73,7 +75,7 @@ public:
 	float C_x, C_y, C_z, C_w;
 	float Z_w;
 	short unsigned int max_iterations;
-	size_t resolution;
+	short unsigned int resolution;
 	float infinity;
 	float x_min, x_max;
 	float y_min, y_max;
@@ -82,26 +84,163 @@ public:
 
 
 
-void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, const fractal_set_parameters &p, vector<string>& vs, mutex& m)
+void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fractal_set_parameters p, vector<triangle> &t, vector<string>& vs, mutex& m)
 {
 	thread_is_running_flag = true;
+	t.clear();
 
-	auto start_time = std::chrono::system_clock::now();
-	auto end_time = start_time + std::chrono::seconds(5);
+	cout << "starting Thread_func" << endl;
+	cout << " res " << p.resolution << endl;
 
-	while (false == stop_flag)
+	bool make_border = true;
+
+	quaternion C;
+	C.x = p.C_x;
+	C.y = p.C_y;
+	C.z = p.C_z;
+	C.w = p.C_w;
+
+	string error_string;
+	quaternion_julia_set_equation_parser eqparser;
+	string eq = "Z = sin(Z) + C * sin(Z)";
+
+	if (false == eqparser.setup(eq, error_string, C))
 	{
-		m.lock();
-		vs.push_back("test");
-		m.unlock();
-
-		auto curr_time = std::chrono::system_clock::now();
-
-		if (curr_time >= end_time)
-			stop_flag = true;
+		cout << "Equation error: " << error_string << endl;
+		return;
+	}
+	else
+	{
+		cout << "Equation " << eq << " compiled successfully" << endl;
+		cout << p.resolution << endl;
 	}
 
+
+	// When adding a border, use a value that is "much" greater than the threshold.
+	const float border_value = 1.0f + p.infinity;
+
+	vector<triangle> triangles;
+	vector<float> xyplane0(p.resolution * p.resolution, 0);
+	vector<float> xyplane1(p.resolution * p.resolution, 0);
+
+	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
+	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
+	const float step_size_z = (p.z_max - p.z_min) / (p.resolution - 1);
+
+	size_t z = 0;
+
+	quaternion Z(p.x_min, p.y_min, p.z_min, p.Z_w);
+
+	// Calculate 0th xy plane.
+	for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
+	{
+		Z.y = p.y_min;
+
+		for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
+		{
+			if (stop_flag)
+			{
+				thread_is_running_flag = false;
+				return;
+			}
+
+			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+				xyplane0[x * p.resolution + y] = border_value;
+			else
+				xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+		}
+	}
+
+	// Prepare for 1st xy plane.
+	z++;
+	Z.z += step_size_z;
+
+
+
+	size_t box_count = 0;
+
+
+	// Calculate 1st and subsequent xy planes.
+	for (; z < p.resolution; z++, Z.z += step_size_z)
+	{
+		Z.x = p.z_min;
+
+		cout << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1 << endl;
+
+		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
+		{
+			Z.y = p.y_min;
+
+			for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
+			{
+				if (stop_flag)
+				{
+					thread_is_running_flag = false;
+					return;
+				}
+
+				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+					xyplane1[x * p.resolution + y] = border_value;
+				else
+					xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+			}
+		}
+
+		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
+		tesselate_adjacent_xy_plane_pair(stop_flag,
+			box_count,
+			xyplane0, xyplane1,
+			z - 1,
+			triangles,
+			p.infinity, // Use threshold as isovalue.
+			p.x_min, p.x_max, p.resolution,
+			p.y_min, p.y_max, p.resolution,
+			p.z_min, p.z_max, p.resolution);
+
+
+		if (stop_flag)
+		{
+			thread_is_running_flag = false;
+			return;
+		}
+
+		// Swap memory pointers (fast) instead of performing a memory copy (slow).
+		xyplane1.swap(xyplane0);
+	}
+
+	cout << endl;
+
+
 	thread_is_running_flag = false;
+	return;
+
+	//thread_is_running_flag = true;
+
+	//auto start_time = std::chrono::system_clock::now();
+	//auto end_time = start_time + std::chrono::seconds(5);
+
+	//while (false == stop_flag)
+	//{
+	//	m.lock();
+	//	vs.push_back("test");
+	//	m.unlock();
+
+	//	auto curr_time = std::chrono::system_clock::now();
+
+	//	if (curr_time >= end_time)
+	//		stop_flag = true;
+	//}
+
+	//thread_is_running_flag = false;
+
+
+
+
+
+
+
+
+
 }
 
 
@@ -563,6 +702,8 @@ void generate_cancel_button_func(int control)
 		{
 			istringstream iss(temp_string);
 			iss >> p.resolution;
+
+			cout << "Read res " << p.resolution << endl;
 		}
 
 		//cout << "eq text " << p.equation_text << endl;	
@@ -603,7 +744,10 @@ void generate_cancel_button_func(int control)
 		}
 
 		cout << "Starting new thread" << endl;
-		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), ref(p), ref(string_log), ref(thread_mutex));
+
+		cout << "res " << p.resolution << endl;
+
+		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), p, ref(triangles), ref(string_log), ref(thread_mutex));
 		
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
