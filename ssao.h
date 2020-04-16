@@ -1133,24 +1133,24 @@ bool init(void)
 	// Transfer vertex data to GPU
 
 
-	glGenVertexArrays(1, &fractal_vao);
-	glBindVertexArray(fractal_vao);
-	glGenBuffers(1, &fractal_buffers[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
+	//glGenVertexArrays(1, &fractal_vao);
+	//glBindVertexArray(fractal_vao);
+	//glGenBuffers(1, &fractal_buffers[0]);
+	//glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
+	//glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
-	// Set up vertex positions
-	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
+	//// Set up vertex positions
+	//glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	//glEnableVertexAttribArray(0);
 
-	// Set up vertex normals
-	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
+	//// Set up vertex normals
+	//glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	//glEnableVertexAttribArray(1);
 
-	// Transfer index data to GPU
-	glGenBuffers(1, &fractal_buffers[1]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+	//// Transfer index data to GPU
+	//glGenBuffers(1, &fractal_buffers[1]);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
 
 
@@ -1220,19 +1220,6 @@ bool init(void)
 	glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 
-
-
-
-
-
-	BMP info;
-	if (false == info.load("card_texture.bmp"))
-	{
-		cout << "could not load card_texture.bmp" << endl;
-		return false;
-	}
-
-
 	return true;
 }
 
@@ -1266,8 +1253,16 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
-	glBindVertexArray(fractal_vao);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
+	thread_mutex.lock();
+	size_t tri_size = triangles.size();
+	thread_mutex.unlock();
+
+	if (tri_size > 0)
+	{
+		glBindVertexArray(fractal_vao);
+		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
+	}
+
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
