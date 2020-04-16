@@ -2,7 +2,7 @@
 
 
 
-void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<triangle> &t, vector<triangle_index> &triangle_indices, vector<vertex_3_with_normal> &vertices_with_face_normals)
+void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_bool &stop_flag, mutex& m, vector<triangle> &t, vector<triangle_index> &triangle_indices, vector<vertex_3_with_normal> &vertices_with_face_normals)
 {
 	vector<vertex_3_with_index> v;
 
@@ -21,6 +21,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
  
     for(vector<triangle>::const_iterator i = t.begin(); i != t.end(); i++)
     {
+		if (stop_flag)
+			return;
+
         vertex_set.insert(i->vertex[0]);
         vertex_set.insert(i->vertex[1]);
         vertex_set.insert(i->vertex[2]);
@@ -33,6 +36,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
     // Add indices to the vertices.
     for(set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
     {
+		if (stop_flag)
+			return;
+
         size_t index = v.size();
         v.push_back(*i);
         v[index].index = index;
@@ -41,9 +47,14 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
     vertex_set.clear();
 
 	// Re-insert modified vertices into set.
-    for(vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
-        vertex_set.insert(*i);
- 
+	for (vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		vertex_set.insert(*i);
+	}
+
     cout << "Assigning vertex indices to triangles" << endl;
    
     // Find the three vertices for each triangle, by index.
@@ -51,6 +62,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
  
     for(vector<triangle>::iterator i = t.begin(); i != t.end(); i++)
     {
+		if (stop_flag)
+			return;
+
         find_iter = vertex_set.find(i->vertex[0]);
         i->vertex[0].index = find_iter->index;
  
@@ -70,6 +84,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
 	// Assign per-triangle face normals
 	for(size_t i = 0; i < t.size(); i++)
 	{
+		if (stop_flag)
+			return;
+
 		vertex_3 v0 = t[i].vertex[1] - t[i].vertex[0];
 		vertex_3 v1 = t[i].vertex[2] - t[i].vertex[0];
 		vertex_3 fn = v0.cross(v1);
@@ -90,6 +107,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
 
 	for(size_t i = 0; i < v.size(); i++)
 	{
+		if (stop_flag)
+			return;
+
 		// Assign vertex spatial comoponents
 		vertices_with_face_normals[i].x = v[i].x;
 		vertices_with_face_normals[i].y = v[i].y;
@@ -108,6 +128,9 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<t
 
 	for(size_t i = 0; i < t.size(); i++)
 	{
+		if (stop_flag)
+			return;
+
 		// Assign triangle indices
 		triangle_indices[i].index[0] = t[i].vertex[0].index;
 		triangle_indices[i].index[1] = t[i].vertex[1].index;

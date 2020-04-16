@@ -82,6 +82,9 @@ public:
 	float z_min, z_max;
 };
 
+vector<triangle> triangles;
+vector<triangle_index> triangle_indices;
+vector<vertex_3_with_normal> vertices_with_face_normals;
 
 void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fractal_set_parameters p, vector<triangle> &t, vector<string>& vs, mutex& m)
 {
@@ -205,6 +208,9 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fr
 	}
 
 	cout << endl;
+
+	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m, t, triangle_indices, vertices_with_face_normals);
+
 
 
 	thread_is_running_flag = false;
@@ -365,9 +371,7 @@ bool BMP::load(const char* FilePath)
 
 
 
-vector<triangle> triangles;
-vector<triangle_index> triangle_indices;
-vector<vertex_3_with_normal> vertices_with_face_normals;
+
 
 
 
@@ -758,19 +762,56 @@ void myGlutReshape(int x, int y)
 	glutPostRedisplay();
 }
 
+
+GLuint fractal_vao;
+GLuint      render_fbo;
+GLuint      fbo_textures[3];
+GLuint      quad_vao;
+GLuint      points_buffer;
+
 void myGlutIdle(void)
 {
 	if (false == thread_is_running && false == generate_button)
 	{	
-		cout << "Thread completed" << endl;
-		cout << "tris " << triangles.size() << endl;
-
+		// Just in case
+		thread_mutex.lock();
 
 		if (false == uploaded_to_gpu && false == stop && triangles.size() > 0)
 		{
-			cout << "uploading to gpu" << endl;
+			cout << "uploading " << triangles.size() << " triangles to gpu" << endl;
+
+			// Transfer vertex data to GPU
+			GLuint buffers[2];
+
+			// Clean up first
+			glDeleteBuffers(1, &buffers[0]);
+			glDeleteBuffers(1, &buffers[1]);
+			glDeleteVertexArrays(1, &fractal_vao);
+
+			// Transfer vertex data to GPU
+			glGenVertexArrays(1, &fractal_vao);
+			glBindVertexArray(fractal_vao);
+			glGenBuffers(1, &buffers[0]);
+			glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+			glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
+
+			// Set up vertex positions
+			glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+			glEnableVertexAttribArray(0);
+
+			// Set up vertex normals
+			glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+			glEnableVertexAttribArray(1);
+
+			// Transfer index data to GPU
+			glGenBuffers(1, &buffers[1]);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+
 			uploaded_to_gpu = true;
 		}
+
+		thread_mutex.unlock();
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
@@ -781,17 +822,12 @@ void myGlutIdle(void)
 
 
 
-
 vertex_fragment_shader render;
 vertex_fragment_shader ssao;
 
 
 
-GLuint fractal_vao;
-GLuint      render_fbo;
-GLuint      fbo_textures[3];
-GLuint      quad_vao;
-GLuint      points_buffer;
+
 
 
 struct
@@ -1113,31 +1149,6 @@ bool init(void)
 	randomize_points = true;
 	point_count = 10;
 
-	// Transfer vertex data to GPU
-	GLuint buffers[2];
-
-	glGenVertexArrays(1, &fractal_vao);
-	glBindVertexArray(fractal_vao);
-	glGenBuffers(1, &buffers[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
-
-	// Set up vertex positions
-	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(0);
-
-	// Set up vertex normals
-	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	// Transfer index data to GPU
-	glGenBuffers(1, &buffers[1]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
-
-
-
-
 	load_shaders();
 
 	glGenFramebuffers(1, &render_fbo);
@@ -1339,8 +1350,8 @@ void mouse_func(int button, int state, int x, int y)
 	}
 	else if (GLUT_MIDDLE_BUTTON == button)
 	{
-		if (GLUT_DOWN == state)
-			mmb_down = true;
+if (GLUT_DOWN == state)
+					mmb_down = true;
 		else
 			mmb_down = false;
 	}

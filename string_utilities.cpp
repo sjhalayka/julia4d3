@@ -73,28 +73,9 @@ vector<string> string_utilities::stl_str_tok(string token, const string &src_str
 	return dest_vector;
 }
 
-bool string_utilities::is_short_signed_int(const string &src_string)
+bool string_utilities::is_unsigned_short_int(const string &src_string)
 {
 	if(src_string == "" || src_string.size() > 5)
-		return false;
-
-	string temp = lower_string(src_string);
-
-	for(size_t i = 0; i < temp.size(); i++)
-	{
-		if(temp[i] == '-' && i != 0)
-			return false;
-
-		if(!isdigit(temp[i]) && temp[i] != '-')
-			return false;
-	}
-
-	return true;
-}
-
-bool string_utilities::is_unsigned_int(const string &src_string)
-{
-	if(src_string == "" || src_string.length() > 10)
 		return false;
 
 	string temp = lower_string(src_string);
@@ -105,13 +86,9 @@ bool string_utilities::is_unsigned_int(const string &src_string)
 			return false;
 	}
 
-	double num = atof(temp.c_str());
-
-	if(num > 4294967295.0)
-		return false;
-
 	return true;
 }
+
 
 bool string_utilities::is_real_number(const string &src_string)
 {

@@ -4,6 +4,21 @@
 #include "primitives.h"
 
 
+
+
+
+#include <atomic>
+#include <vector>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <string>
+#include <iostream>
+#include <chrono>
+#include <sstream>
+using namespace std;
+
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -31,7 +46,7 @@ using std::numeric_limits;
 bool read_triangles_from_binary_stereo_lithography_file(vector<triangle> &triangles, const char *const file_name);
 void add_box(vector<triangle>& triangles, float max_extent);
 void scale_mesh(vector<triangle> &triangles, float max_extent);
-void get_triangle_indices_and_vertices_with_face_normals_from_triangles(vector<triangle> &t, vector<triangle_index> &triangle_indices, vector<vertex_3_with_normal> &vertices_with_face_normals);
+void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_bool &stop_flag, mutex &m, vector<triangle> &t, vector<triangle_index> &triangle_indices, vector<vertex_3_with_normal> &vertices_with_face_normals);
 
 
 #endif
