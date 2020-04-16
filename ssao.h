@@ -1,11 +1,11 @@
-#ifndef ssao_h
+ï»¿#ifndef ssao_h
 #define ssao_h
 
 
 
 // This is the copyright notice that came with the SSAO code:
 /*
- * Copyright © 2012-2015 Graham Sellers
+ * Copyright ï¿½ 2012-2015 Graham Sellers
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,7 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 
-// Automatically link in the GLUT and GLEW libraries if compiling on MSVC++
+ // Automatically link in the GLUT and GLEW libraries if compiling on MSVC++
 #ifdef _MSC_VER
 #pragma comment(lib, "glew32")
 #pragma comment(lib, "freeglut")
@@ -56,161 +56,38 @@ using namespace std;
 #include "uv_camera.h"
 #include "mesh.h"
 #include "GLUI/glui.h"
-#include "marching_cubes.h"
-using namespace marching_cubes;
-
-#include "eqparse.h"
 
 
+thread gen_thread;
+atomic_bool stop = false;
+vector<string> string_log;
+mutex thread_mutex;
 
 
-
-void thread_func(atomic_bool& stop_flag, atomic_bool &done_generating_flag, vector<triangle> &t, vector<string>& vs, mutex& m)
+void thread_func(atomic_bool& stop_flag, vector<string>& vs, mutex& m)
 {
-	done_generating_flag = false;
-	t.clear();
-
-	float grid_max = 1.5;
-	float grid_min = -grid_max;
-	size_t res = 100;
-
-	bool make_border = true;
-
-	float z_w = 0;
-	quaternion C;
-	C.x = 0.3f;
-	C.y = 0.5f;
-	C.z = 0.4f;
-	C.w = 0.2f;
-	unsigned short int max_iterations = 8;
-	float threshold = 4;
-
-	string error_string;
-	quaternion_julia_set_equation_parser eqparser;
-	if (false == eqparser.setup("Z = sin(Z) + C * sin(Z)", error_string, C))
+	while (false == stop_flag)
 	{
-		cout << "Equation error: " << error_string << endl;
-		done_generating_flag = true;
-		return;
+		m.lock();
+		vs.push_back("test");
+		m.unlock();
 	}
-
-	// When adding a border, use a value that is "much" greater than the threshold.
-	const float border_value = 1.0f + threshold;
-
-	vector<float> xyplane0(res * res, 0);
-	vector<float> xyplane1(res * res, 0);
-
-	const float step_size = (grid_max - grid_min) / (res - 1);
-
-	size_t z = 0;
-
-	quaternion Z(grid_min, grid_min, grid_min, z_w);
-
-	// Calculate 0th xy plane.
-	for (size_t x = 0; x < res; x++, Z.x += step_size)
-	{
-		Z.y = grid_min;
-
-		for (size_t y = 0; y < res; y++, Z.y += step_size)
-		{
-			if (stop_flag)
-			{
-				done_generating_flag = true;
-				return;
-			}
-
-			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == res - 1 || y == res - 1 || z == res - 1))
-				xyplane0[x * res + y] = border_value;
-			else
-				xyplane0[x * res + y] = eqparser.iterate(Z, max_iterations, threshold);
-		}
-	}
-
-	// Prepare for 1st xy plane.
-	z++;
-	Z.z += step_size;
-
-
-
-	size_t box_count = 0;
-
-
-	// Calculate 1st and subsequent xy planes.
-	for (; z < res; z++, Z.z += step_size)
-	{
-		Z.x = grid_min;
-
-		cout << "Calculating triangles from xy-plane pair " << z << " of " << res - 1 << endl;
-
-		for (size_t x = 0; x < res; x++, Z.x += step_size)
-		{
-			Z.y = grid_min;
-
-			for (size_t y = 0; y < res; y++, Z.y += step_size)
-			{
-				if (stop_flag)
-				{
-					done_generating_flag = true;
-					return;
-				}
-
-				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == res - 1 || y == res - 1 || z == res - 1))
-					xyplane1[x * res + y] = border_value;
-				else
-					xyplane1[x * res + y] = eqparser.iterate(Z, max_iterations, threshold);
-			}
-		}
-
-		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-		tesselate_adjacent_xy_plane_pair(
-			stop_flag,
-			box_count,
-			xyplane0, xyplane1,
-			z - 1,
-			t,
-			threshold, // Use threshold as isovalue.
-			grid_min, grid_max, res,
-			grid_min, grid_max, res,
-			grid_min, grid_max, res);
-
-		if (stop_flag)
-		{
-			done_generating_flag = true;
-			return;
-		}
-
-		// Swap memory pointers (fast) instead of performing a memory copy (slow).
-		xyplane1.swap(xyplane0);
-	}
-
-	done_generating_flag = true;
-
-	//while (false == stop_flag)
-	//{
-	//	m.lock();
-	//	vs.push_back("test");
-	//	m.unlock();
-	//}
 }
 
 
 
 
-thread gen_thread;
-atomic_bool stop = true;
-atomic_bool done_generating = false;
-vector<string> string_log;
-mutex thread_mutex;
 
 
 
-GLUI* glui, *glui2;
+
+GLUI* glui, * glui2;
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
 GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
-GLUI_Checkbox* randomize_c_checkbox, *use_pedestal_checkbox;
+GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -250,6 +127,8 @@ float u_spacer = 0.01f;
 float v_spacer = 0.5f * u_spacer;
 float w_spacer = 0.1f;
 uv_camera main_camera;
+
+bool generate_button = true;
 
 
 
@@ -344,25 +223,23 @@ bool BMP::load(const char* FilePath)
 //GLuint texid[] = { 0 };
 
 
-vector<triangle> triangles;
+
 
 
 void generate_cancel_button_func(int control)
 {
 	if (!stop)
 	{
-		generate_mesh_button->disable();
-		stop = true;
+		cout << "user clicked cancel" << endl;
+		\
+			stop = true;
 		gen_thread.join();
-		done_generating = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-		generate_mesh_button->enable();
 	}
 	else
 	{
 		stop = false;
-		done_generating = false;
-		gen_thread = thread(thread_func, ref(stop), ref(done_generating), ref(triangles), ref(string_log), ref(thread_mutex));
+		gen_thread = thread(thread_func, ref(stop), ref(string_log), ref(thread_mutex));
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 	}
 }
@@ -405,29 +282,21 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (true == done_generating)
+	if (!stop)
 	{
-		done_generating = false;
-		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+		cout << "Printing log:" << endl;
 
-		cout << "upload to GPU" << endl;
+		thread_mutex.lock();
+
+		cout << "Nunm log items: " << string_log.size() << endl;
+
+		//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
+		//	cout << *ci << endl;
+
+		string_log.clear();
+
+		thread_mutex.unlock();
 	}
-
-	//if (!stop)
-	//{
-	//	cout << "Printing log:" << endl;
-
-	//	thread_mutex.lock();
-
-	//	cout << "Nunm log items: " << string_log.size() << endl;
-
-	//	//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
-	//	//	cout << *ci << endl;
-
-	//	string_log.clear();
-
-	//	thread_mutex.unlock();
-	//}
 
 	glutPostRedisplay();
 }
@@ -459,7 +328,7 @@ struct
 	} render;
 	struct
 	{
-		GLint           ssao_level;	
+		GLint           ssao_level;
 		GLint           object_level;
 		GLint           ssao_radius;
 		GLint           weight_by_angle;
@@ -479,7 +348,7 @@ unsigned int point_count;
 
 struct SAMPLE_POINTS
 {
-    vertex_4 point[256];
+	vertex_4 point[256];
 	vertex_4 random_vectors[256];
 };
 
@@ -495,7 +364,7 @@ static inline float random_float()
 
 	tmp = seed ^ (seed >> 4) ^ (seed << 15);
 
-	*((unsigned int *) &res) = (tmp >> 9) | 0x3F800000;
+	*((unsigned int*)&res) = (tmp >> 9) | 0x3F800000;
 
 	return (res - 1.0f);
 }
@@ -504,29 +373,29 @@ static inline float random_float()
 void load_shaders()
 {
 	// Set up shader
-	if(false == render.init("render.vs.glsl", "render.fs.glsl"))
+	if (false == render.init("render.vs.glsl", "render.fs.glsl"))
 	{
 		cout << "Could not load render shader" << endl;
 		return;
 	}
 
 	// Set up shader
-	if(false == ssao.init("ssao.vs.glsl", "ssao.fs.glsl"))
+	if (false == ssao.init("ssao.vs.glsl", "ssao.fs.glsl"))
 	{
 		cout << "Could not load SSAO shader" << endl;
 		return;
 	}
-	    
-	uniforms.render.mv_matrix = glGetUniformLocation(render.get_program(), "mv_matrix");
-    uniforms.render.proj_matrix = glGetUniformLocation(render.get_program(), "proj_matrix");
-    uniforms.render.shading_level = glGetUniformLocation(render.get_program(), "shading_level");
 
-    uniforms.ssao.ssao_radius = glGetUniformLocation(ssao.get_program(), "ssao_radius");
-    uniforms.ssao.ssao_level = glGetUniformLocation(ssao.get_program(), "ssao_level");
-    uniforms.ssao.object_level = glGetUniformLocation(ssao.get_program(), "object_level");
-    uniforms.ssao.weight_by_angle = glGetUniformLocation(ssao.get_program(), "weight_by_angle");
-    uniforms.ssao.randomize_points = glGetUniformLocation(ssao.get_program(), "randomize_points");
-    uniforms.ssao.point_count = glGetUniformLocation(ssao.get_program(), "point_count");
+	uniforms.render.mv_matrix = glGetUniformLocation(render.get_program(), "mv_matrix");
+	uniforms.render.proj_matrix = glGetUniformLocation(render.get_program(), "proj_matrix");
+	uniforms.render.shading_level = glGetUniformLocation(render.get_program(), "shading_level");
+
+	uniforms.ssao.ssao_radius = glGetUniformLocation(ssao.get_program(), "ssao_radius");
+	uniforms.ssao.ssao_level = glGetUniformLocation(ssao.get_program(), "ssao_level");
+	uniforms.ssao.object_level = glGetUniformLocation(ssao.get_program(), "object_level");
+	uniforms.ssao.weight_by_angle = glGetUniformLocation(ssao.get_program(), "weight_by_angle");
+	uniforms.ssao.randomize_points = glGetUniformLocation(ssao.get_program(), "randomize_points");
+	uniforms.ssao.point_count = glGetUniformLocation(ssao.get_program(), "point_count");
 }
 
 
@@ -558,7 +427,7 @@ public:
 };
 
 
-void print_char(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c, const RGB &text_colour)
+void print_char(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c, const RGB& text_colour)
 {
 	for (size_t i = 0; i < mimgs[c].width; i++)
 	{
@@ -657,16 +526,16 @@ bool init(void)
 
 
 	size_t char_index = 0;
-	
+
 	vector< vector<GLubyte> > char_data;
-	vector<unsigned char> char_template(char_width*char_height);
+	vector<unsigned char> char_template(char_width * char_height);
 	char_data.resize(num_chars, char_template);
 
 	for (size_t i = 0; i < num_chars_wide; i++)
 	{
 		for (size_t j = 0; j < num_chars_high; j++)
 		{
-			size_t left = i*char_width;
+			size_t left = i * char_width;
 			size_t right = left + char_width - 1;
 			size_t top = j * char_height;
 			size_t bottom = top + char_height - 1;
@@ -675,23 +544,23 @@ bool init(void)
 			{
 				for (size_t l = top, y = 0; l <= bottom; l++, y++)
 				{
-					size_t img_pos = 4*(k * image_height + l);
+					size_t img_pos = 4 * (k * image_height + l);
 					size_t sub_pos = x * char_height + y;
 
 					char_data[char_index][sub_pos] = font.Pixels[img_pos]; // Assume grayscale, only use r component
 				}
 			}
-			
+
 			char_index++;
 		}
 	}
-	
+
 	for (size_t n = 0; n < num_chars; n++)
-	{	
+	{
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
 			monochrome_image img;
-				
+
 			img.width = char_width / 4;
 			img.height = char_height;
 
@@ -773,90 +642,95 @@ bool init(void)
 
 	glGenVertexArrays(1, &fractal_vao);
 	glBindVertexArray(fractal_vao);
-    glGenBuffers(1, &buffers[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size()*6*sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
-    
+	glGenBuffers(1, &buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
+
 	// Set up vertex positions
-	glVertexAttribPointer(0, 6/2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-    glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
 	// Set up vertex normals
-    glVertexAttribPointer(1, 6/2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6/2 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
 
 	// Transfer index data to GPU
 	glGenBuffers(1, &buffers[1]);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size()*3*sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
 
 
 
-    load_shaders();
+	load_shaders();
 
-    glGenFramebuffers(1, &render_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-    glGenTextures(3, fbo_textures);
+	glGenFramebuffers(1, &render_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+	glGenTextures(3, fbo_textures);
 
-    glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
 
-    static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-    glDrawBuffers(2, draw_buffers);
+	glDrawBuffers(2, draw_buffers);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glGenVertexArrays(1, &quad_vao);
-    glBindVertexArray(quad_vao);
+	glGenVertexArrays(1, &quad_vao);
+	glBindVertexArray(quad_vao);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
-    int i;
-    SAMPLE_POINTS point_data;
+	int i;
+	SAMPLE_POINTS point_data;
 
-    for (i = 0; i < 256; i++)
-    {
-        do
-        {
-            point_data.point[i].x = random_float() * 2.0f - 1.0f;
-            point_data.point[i].y = random_float() * 2.0f - 1.0f;
-            point_data.point[i].z = random_float(); //  * 2.0f - 1.0f;
-            point_data.point[i].w = 0.0f;
-        } while (length(point_data.point[i]) > 1.0f);
-        normalize(point_data.point[i]);
-    }
-    for (i = 0; i < 256; i++)
-    {
-        point_data.random_vectors[i].x = random_float();
-        point_data.random_vectors[i].y = random_float();
-        point_data.random_vectors[i].z = random_float();			
-        point_data.random_vectors[i].w = random_float();
-    }
+	for (i = 0; i < 256; i++)
+	{
+		do
+		{
+			point_data.point[i].x = random_float() * 2.0f - 1.0f;
+			point_data.point[i].y = random_float() * 2.0f - 1.0f;
+			point_data.point[i].z = random_float(); //  * 2.0f - 1.0f;
+			point_data.point[i].w = 0.0f;
+		} while (length(point_data.point[i]) > 1.0f);
+		normalize(point_data.point[i]);
+	}
+	for (i = 0; i < 256; i++)
+	{
+		point_data.random_vectors[i].x = random_float();
+		point_data.random_vectors[i].y = random_float();
+		point_data.random_vectors[i].z = random_float();
+		point_data.random_vectors[i].w = random_float();
+	}
 
-    glGenBuffers(1, &points_buffer);
-    glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
+	glGenBuffers(1, &points_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
+
+
+
+
+
 
 	BMP info;
 	if (false == info.load("card_texture.bmp"))
@@ -875,21 +749,21 @@ void display_func(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glDisable(GL_BLEND);
-	
+
 	const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-    static const GLfloat one = 1.0f;
-    static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	static const GLfloat one = 1.0f;
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-    glViewport(0, 0, win_x, win_y);
+	glViewport(0, 0, win_x, win_y);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-    glEnable(GL_DEPTH_TEST);
-	 
-    glClearBufferfv(GL_COLOR, 0, black);
-    glClearBufferfv(GL_COLOR, 1, black);
-    glClearBufferfv(GL_DEPTH, 0, &one);
+	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+	glEnable(GL_DEPTH_TEST);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
+	glClearBufferfv(GL_COLOR, 0, black);
+	glClearBufferfv(GL_COLOR, 1, black);
+	glClearBufferfv(GL_DEPTH, 0, &one);
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
 
 	glUseProgram(render.get_program());
 
@@ -897,30 +771,30 @@ void display_func(void)
 	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
 	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
 
-    glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
 	glBindVertexArray(fractal_vao);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glUseProgram(ssao.get_program());
 
-    glUniform1f(uniforms.ssao.ssao_radius, ssao_radius * float(win_x) / 1000.0f);
-    glUniform1f(uniforms.ssao.ssao_level, show_ao ? (show_shading ? 0.3f : 1.0f) : 0.0f);
-    glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ? 1 : 0);
-    glUniform1i(uniforms.ssao.randomize_points, randomize_points ? 1 : 0);
-    glUniform1ui(uniforms.ssao.point_count, point_count);
+	glUniform1f(uniforms.ssao.ssao_radius, ssao_radius * float(win_x) / 1000.0f);
+	glUniform1f(uniforms.ssao.ssao_level, show_ao ? (show_shading ? 0.3f : 1.0f) : 0.0f);
+	glUniform1i(uniforms.ssao.weight_by_angle, weight_by_angle ? 1 : 0);
+	glUniform1i(uniforms.ssao.randomize_points, randomize_points ? 1 : 0);
+	glUniform1ui(uniforms.ssao.point_count, point_count);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
 
-    glDisable(GL_DEPTH_TEST);
-    glBindVertexArray(quad_vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glDisable(GL_DEPTH_TEST);
+	glBindVertexArray(quad_vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
 
@@ -939,7 +813,7 @@ void display_func(void)
 
 	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World1", text_colour);
 	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos + 20, "Hello World2", text_colour);
-		
+
 	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
 	glutSwapBuffers();
@@ -951,11 +825,11 @@ void reshape_func(int width, int height)
 	win_x = width;
 	win_y = height;
 
-	if(win_x < 1)
+	if (win_x < 1)
 		win_x = 1;
 
-	if(win_y < 1)
-		win_y = 1;	
+	if (win_y < 1)
+		win_y = 1;
 
 	glutSetWindow(win_id);
 	glutReshapeWindow(win_x, win_y);
@@ -964,14 +838,14 @@ void reshape_func(int width, int height)
 
 void keyboard_func(unsigned char key, int x, int y)
 {
-	switch(tolower(key))
+	switch (tolower(key))
 	{
 	case 's':
-		{
+	{
 
 
-			break;
-		}
+		break;
+	}
 
 	default:
 		break;
@@ -980,23 +854,23 @@ void keyboard_func(unsigned char key, int x, int y)
 
 void mouse_func(int button, int state, int x, int y)
 {
-	if(GLUT_LEFT_BUTTON == button)
+	if (GLUT_LEFT_BUTTON == button)
 	{
-		if(GLUT_DOWN == state)
+		if (GLUT_DOWN == state)
 			lmb_down = true;
 		else
 			lmb_down = false;
 	}
-	else if(GLUT_MIDDLE_BUTTON == button)
+	else if (GLUT_MIDDLE_BUTTON == button)
 	{
-		if(GLUT_DOWN == state)
+		if (GLUT_DOWN == state)
 			mmb_down = true;
 		else
 			mmb_down = false;
 	}
-	else if(GLUT_RIGHT_BUTTON == button)
+	else if (GLUT_RIGHT_BUTTON == button)
 	{
-		if(GLUT_DOWN == state)
+		if (GLUT_DOWN == state)
 			rmb_down = true;
 		else
 			rmb_down = false;
@@ -1020,20 +894,20 @@ void motion_func(int x, int y)
 	int mouse_delta_x = mouse_x - prev_mouse_x;
 	int mouse_delta_y = prev_mouse_y - mouse_y;
 
-	if(true == lmb_down && (0 != mouse_delta_x || 0 != mouse_delta_y))
+	if (true == lmb_down && (0 != mouse_delta_x || 0 != mouse_delta_y))
 	{
 		// Rotate camera
-		main_camera.u -= static_cast<float>(mouse_delta_y)*u_spacer;
-		main_camera.v += static_cast<float>(mouse_delta_x)*v_spacer;
+		main_camera.u -= static_cast<float>(mouse_delta_y) * u_spacer;
+		main_camera.v += static_cast<float>(mouse_delta_x) * v_spacer;
 	}
-	else if(true == rmb_down && (0 != mouse_delta_y))
+	else if (true == rmb_down && (0 != mouse_delta_y))
 	{
 		// Move camera
-		main_camera.w -= static_cast<float>(mouse_delta_y)*w_spacer;
+		main_camera.w -= static_cast<float>(mouse_delta_y) * w_spacer;
 
-		if(main_camera.w < 1.1f)
+		if (main_camera.w < 1.1f)
 			main_camera.w = 1.1f;
-		else if(main_camera.w > 20.0f)
+		else if (main_camera.w > 20.0f)
 			main_camera.w = 20.0f;
 	}
 }
