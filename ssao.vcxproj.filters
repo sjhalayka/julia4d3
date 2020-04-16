@@ -72,9 +72,6 @@
     <ClInclude Include="glui\viewmodel.h">
       <Filter>Header Files\GLUI</Filter>
     </ClInclude>
-    <ClInclude Include="TextRenderer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="matrix_utils.cpp">
@@ -185,7 +182,16 @@
     <ClCompile Include="glui\viewmodel.cpp">
       <Filter>Source Files\GLUI</Filter>
     </ClCompile>
-    <ClCompile Include="TextRenderer.cpp">
+    <ClCompile Include="eqparse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="marching_cubes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="quaternion_math.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="string_utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

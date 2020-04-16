@@ -373,15 +373,6 @@ bool BMP::load(const char* FilePath)
 }
 
 
-//
-//vector<GLfloat> pixels;
-//
-//GLuint texid[] = { 0 };
-
-
-
-
-
 
 void generate_cancel_button_func(int control)
 {
@@ -685,26 +676,6 @@ void generate_cancel_button_func(int control)
 			cout << "Read res " << p.resolution << endl;
 		}
 
-		//cout << "eq text " << p.equation_text << endl;	
-		//cout << "randomize c " << p.randomize_c << endl;
-		//cout << "use pedestal " << p.use_pedestal << endl;
-		//cout << "ped y start " << p.pedestal_y_start << endl;
-		//cout << "ped y end " << p.pedestal_y_end << endl;
-		//cout << "c.x " << p.C_x << endl;
-		//cout << "c.y " << p.C_y << endl;
-		//cout << "c.z " << p.C_z << endl;
-		//cout << "c.w " << p.C_w << endl;
-		//cout << "z_W" << p.Z_w << endl;
-		//cout << "max iter " << p.max_iterations << endl;;
-		//cout << "res " << p.resolution << endl;;
-		//cout << "inf " << p.infinity << endl;;
-		//cout << "x_min " << p.x_min << endl;;
-		//cout << "x_max " << p.x_max << endl;;
-		//cout << "y min " << p.y_min << endl;;
-		//cout << "y_max " << p.y_max << endl;;
-		//cout << "z_min " << p.z_min << endl;;
-		//cout << "z_max " << p.z_max << endl;;
-		//return;
 
 		stop = false;
 		thread_is_running = true;
