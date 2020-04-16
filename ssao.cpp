@@ -41,8 +41,6 @@ int main(int argc, char **argv)
 	glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
 	generate_mesh_button = glui->add_button(const_cast<char*>("Generate mesh"), 0, generate_cancel_button_func);
-	export_to_stl_button = glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
-	export_to_stl_button->enabled = false;
 
 	glui->add_separator();
 

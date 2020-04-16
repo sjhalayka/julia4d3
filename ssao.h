@@ -82,14 +82,96 @@ public:
 	float z_min, z_max;
 };
 
+
+
+
+bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, mutex &m, const vector<triangle>& t, const char* const file_name)
+{
+	cout << "Triangle count: " << t.size() << endl;
+
+	if (0 == t.size())
+		return false;
+
+	// Write to file.
+	ofstream out(file_name, ios_base::binary);
+
+	if (out.fail())
+		return false;
+
+	const size_t header_size = 80;
+	vector<char> buffer(header_size, 0);
+	unsigned int num_triangles = static_cast<unsigned int>(t.size()); // Must be 4-byte unsigned int.
+	vertex_3 normal;
+
+
+
+	// Copy everything to a single buffer.
+	// We do this here because calling ofstream::write() only once PER MESH is going to 
+	// send the data to disk faster than if we were to instead call ofstream::write()
+	// thirteen times PER TRIANGLE.
+	// Of course, the trade-off is that we are using 2x the RAM than what's absolutely required,
+	// but the trade-off is often very much worth it (especially so for meshes with millions of triangles).
+	cout << "Generating normal/vertex/attribute buffer" << endl;
+
+	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
+	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
+	buffer.resize(data_size, 0);
+
+	// Use a pointer to assist with the copying.
+	// Should probably use std::copy() instead, but memcpy() does the trick, so whatever...
+	char* cp = &buffer[0];
+
+	for (vector<triangle>::const_iterator i = t.begin(); i != t.end(); i++)
+	{
+		// Get face normal.
+		vertex_3 v0 = i->vertex[1] - i->vertex[0];
+		vertex_3 v1 = i->vertex[2] - i->vertex[0];
+		normal = v0.cross(v1);
+		normal.normalize();
+
+		memcpy(cp, &normal.x, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &normal.y, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &normal.z, sizeof(float)); cp += sizeof(float);
+
+		memcpy(cp, &i->vertex[0].x, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[0].y, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[0].z, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[1].x, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[1].y, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[1].z, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[2].x, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[2].y, sizeof(float)); cp += sizeof(float);
+		memcpy(cp, &i->vertex[2].z, sizeof(float)); cp += sizeof(float);
+
+		cp += sizeof(short unsigned int);
+
+		if (stop_flag)
+			break;
+	}
+
+	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
+
+	// Write blank header.
+	out.write(reinterpret_cast<const char*>(&(buffer[0])), header_size);
+
+	// Do something when cancelled
+	if (true == stop_flag)
+		num_triangles = 0;
+
+	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
+
+	if(false == stop_flag)
+		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
+		
+	out.close();
+
+	return true;
+}
+
+
 vector<triangle> triangles;
 vector<triangle_index> triangle_indices;
 vector<vertex_3_with_normal> vertices_with_face_normals;
-
-
-
-
-
 
 
 void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fractal_set_parameters p, vector<triangle>& t, vector<string>& vs, mutex& m)
@@ -217,6 +299,10 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m, t, triangle_indices, vertices_with_face_normals);
 
+
+	write_triangles_to_binary_stereo_lithography_file(stop_flag, m, t, "out.stl");
+
+
 	thread_is_running_flag = false;
 	return;
 }
@@ -243,7 +329,7 @@ GLUI* glui, * glui2;
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
-GLUI_Button* generate_mesh_button, * export_to_stl_button;
+GLUI_Button* generate_mesh_button;
 
 GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 
@@ -371,7 +457,6 @@ bool BMP::load(const char* FilePath)
 
 	return true;
 }
-
 
 
 void generate_cancel_button_func(int control)
@@ -704,11 +789,6 @@ void generate_cancel_button_func(int control)
 	}
 }
 
-void export_button_func(int control)
-{
-
-
-}
 
 void control_cb(int control)
 {
