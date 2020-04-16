@@ -85,7 +85,7 @@ public:
 
 
 
-bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, mutex &m, const vector<triangle>& t, const char* const file_name)
+bool write_triangles_to_binary_stereo_lithography_file(atomic_bool& stop_flag, mutex& m, const vector<triangle>& t, const char* const file_name)
 {
 	cout << "Triangle count: " << t.size() << endl;
 
@@ -160,9 +160,9 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, m
 
 	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
 
-	if(false == stop_flag)
+	if (false == stop_flag)
 		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
-		
+
 	out.close();
 
 	return true;
@@ -1213,24 +1213,24 @@ bool init(void)
 	// Transfer vertex data to GPU
 
 
-	//glGenVertexArrays(1, &fractal_vao);
-	//glBindVertexArray(fractal_vao);
-	//glGenBuffers(1, &fractal_buffers[0]);
-	//glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-	//glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
+	glGenVertexArrays(1, &fractal_vao);
+	glBindVertexArray(fractal_vao);
+	glGenBuffers(1, &fractal_buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
-	//// Set up vertex positions
-	//glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	//glEnableVertexAttribArray(0);
+	// Set up vertex positions
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
-	//// Set up vertex normals
-	//glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-	//glEnableVertexAttribArray(1);
+	// Set up vertex normals
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
 
-	//// Transfer index data to GPU
-	//glGenBuffers(1, &fractal_buffers[1]);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+	// Transfer index data to GPU
+	glGenBuffers(1, &fractal_buffers[1]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
 
 
