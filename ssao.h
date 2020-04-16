@@ -56,28 +56,151 @@ using namespace std;
 #include "uv_camera.h"
 #include "mesh.h"
 #include "GLUI/glui.h"
+#include "marching_cubes.h"
+using namespace marching_cubes;
+
+#include "eqparse.h"
 
 
-thread gen_thread;
-atomic_bool stop = true;
-vector<string> string_log;
-mutex thread_mutex;
 
 
-void thread_func(atomic_bool& stop_flag, vector<string>& vs, mutex& m)
+
+void thread_func(atomic_bool& stop_flag, atomic_bool &done_generating_flag, vector<triangle> &t, vector<string>& vs, mutex& m)
 {
-	while (false == stop_flag)
+	done_generating_flag = false;
+	t.clear();
+
+	float grid_max = 1.5;
+	float grid_min = -grid_max;
+	size_t res = 100;
+
+	bool make_border = true;
+
+	float z_w = 0;
+	quaternion C;
+	C.x = 0.3f;
+	C.y = 0.5f;
+	C.z = 0.4f;
+	C.w = 0.2f;
+	unsigned short int max_iterations = 8;
+	float threshold = 4;
+
+	string error_string;
+	quaternion_julia_set_equation_parser eqparser;
+	if (false == eqparser.setup("Z = sin(Z) + C * sin(Z)", error_string, C))
 	{
-		m.lock();
-		vs.push_back("test");
-		m.unlock();
+		cout << "Equation error: " << error_string << endl;
+		done_generating_flag = true;
+		return;
 	}
+
+	// When adding a border, use a value that is "much" greater than the threshold.
+	const float border_value = 1.0f + threshold;
+
+	vector<float> xyplane0(res * res, 0);
+	vector<float> xyplane1(res * res, 0);
+
+	const float step_size = (grid_max - grid_min) / (res - 1);
+
+	size_t z = 0;
+
+	quaternion Z(grid_min, grid_min, grid_min, z_w);
+
+	// Calculate 0th xy plane.
+	for (size_t x = 0; x < res; x++, Z.x += step_size)
+	{
+		Z.y = grid_min;
+
+		for (size_t y = 0; y < res; y++, Z.y += step_size)
+		{
+			if (stop_flag)
+			{
+				done_generating_flag = true;
+				return;
+			}
+
+			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == res - 1 || y == res - 1 || z == res - 1))
+				xyplane0[x * res + y] = border_value;
+			else
+				xyplane0[x * res + y] = eqparser.iterate(Z, max_iterations, threshold);
+		}
+	}
+
+	// Prepare for 1st xy plane.
+	z++;
+	Z.z += step_size;
+
+
+
+	size_t box_count = 0;
+
+
+	// Calculate 1st and subsequent xy planes.
+	for (; z < res; z++, Z.z += step_size)
+	{
+		Z.x = grid_min;
+
+		cout << "Calculating triangles from xy-plane pair " << z << " of " << res - 1 << endl;
+
+		for (size_t x = 0; x < res; x++, Z.x += step_size)
+		{
+			Z.y = grid_min;
+
+			for (size_t y = 0; y < res; y++, Z.y += step_size)
+			{
+				if (stop_flag)
+				{
+					done_generating_flag = true;
+					return;
+				}
+
+				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == res - 1 || y == res - 1 || z == res - 1))
+					xyplane1[x * res + y] = border_value;
+				else
+					xyplane1[x * res + y] = eqparser.iterate(Z, max_iterations, threshold);
+			}
+		}
+
+		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
+		tesselate_adjacent_xy_plane_pair(
+			stop_flag,
+			box_count,
+			xyplane0, xyplane1,
+			z - 1,
+			t,
+			threshold, // Use threshold as isovalue.
+			grid_min, grid_max, res,
+			grid_min, grid_max, res,
+			grid_min, grid_max, res);
+
+		if (stop_flag)
+		{
+			done_generating_flag = true;
+			return;
+		}
+
+		// Swap memory pointers (fast) instead of performing a memory copy (slow).
+		xyplane1.swap(xyplane0);
+	}
+
+	done_generating_flag = true;
+
+	//while (false == stop_flag)
+	//{
+	//	m.lock();
+	//	vs.push_back("test");
+	//	m.unlock();
+	//}
 }
 
 
 
 
-
+thread gen_thread;
+atomic_bool stop = true;
+atomic_bool done_generating = false;
+vector<string> string_log;
+mutex thread_mutex;
 
 
 
@@ -127,8 +250,6 @@ float u_spacer = 0.01f;
 float v_spacer = 0.5f * u_spacer;
 float w_spacer = 0.1f;
 uv_camera main_camera;
-
-bool generate_button = true;
 
 
 
@@ -223,7 +344,7 @@ bool BMP::load(const char* FilePath)
 //GLuint texid[] = { 0 };
 
 
-
+vector<triangle> triangles;
 
 
 void generate_cancel_button_func(int control)
@@ -233,13 +354,15 @@ void generate_cancel_button_func(int control)
 		generate_mesh_button->disable();
 		stop = true;
 		gen_thread.join();
+		done_generating = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 		generate_mesh_button->enable();
 	}
 	else
 	{
 		stop = false;
-		gen_thread = thread(thread_func, ref(stop), ref(string_log), ref(thread_mutex));
+		done_generating = false;
+		gen_thread = thread(thread_func, ref(stop), ref(done_generating), ref(triangles), ref(string_log), ref(thread_mutex));
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 	}
 }
@@ -282,21 +405,29 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (!stop)
+	if (true == done_generating)
 	{
-		cout << "Printing log:" << endl;
+		done_generating = false;
+		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 
-		thread_mutex.lock();
-
-		cout << "Nunm log items: " << string_log.size() << endl;
-
-		//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
-		//	cout << *ci << endl;
-
-		string_log.clear();
-
-		thread_mutex.unlock();
+		cout << "upload to GPU" << endl;
 	}
+
+	//if (!stop)
+	//{
+	//	cout << "Printing log:" << endl;
+
+	//	thread_mutex.lock();
+
+	//	cout << "Nunm log items: " << string_log.size() << endl;
+
+	//	//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
+	//	//	cout << *ci << endl;
+
+	//	string_log.clear();
+
+	//	thread_mutex.unlock();
+	//}
 
 	glutPostRedisplay();
 }
@@ -726,11 +857,6 @@ bool init(void)
     glGenBuffers(1, &points_buffer);
     glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
-
-
-
-
-
 
 	BMP info;
 	if (false == info.load("card_texture.bmp"))
