@@ -493,6 +493,24 @@ void generate_cancel_button_func(int control)
 			iss >> p.z_max;
 		}
 
+		if (p.x_min >= p.x_max)
+		{
+			cout << "x min must be less than x max" << endl;
+			return;
+		}
+
+		if (p.y_min >= p.y_max)
+		{
+			cout << "y min must be less than y max" << endl;
+			return;
+		}
+
+		if (p.z_min >= p.z_max)
+		{
+			cout << "z min must be less than z max" << endl;
+			return;
+		}
+
 		temp_string = z_w_edittext->text;
 
 		if (false == is_real_number(temp_string))
@@ -505,6 +523,7 @@ void generate_cancel_button_func(int control)
 			istringstream iss(temp_string);
 			iss >> p.Z_w;
 		}
+
 
 		temp_string = infinity_edittext->text;
 
