@@ -83,14 +83,12 @@ public:
 };
 
 
-
 void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fractal_set_parameters p, vector<triangle> &t, vector<string>& vs, mutex& m)
 {
 	thread_is_running_flag = true;
 	t.clear();
 
 	cout << "starting Thread_func" << endl;
-	cout << " res " << p.resolution << endl;
 
 	bool make_border = true;
 
@@ -102,24 +100,21 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fr
 
 	string error_string;
 	quaternion_julia_set_equation_parser eqparser;
-	string eq = "Z = sin(Z) + C * sin(Z)";
 
-	if (false == eqparser.setup(eq, error_string, C))
+	if (false == eqparser.setup(p.equation_text, error_string, C))
 	{
 		cout << "Equation error: " << error_string << endl;
 		return;
 	}
 	else
 	{
-		cout << "Equation " << eq << " compiled successfully" << endl;
-		cout << p.resolution << endl;
+		cout << "Equation " << p.equation_text << " compiled successfully" << endl;
 	}
 
 
 	// When adding a border, use a value that is "much" greater than the threshold.
 	const float border_value = 1.0f + p.infinity;
 
-	vector<triangle> triangles;
 	vector<float> xyplane0(p.resolution * p.resolution, 0);
 	vector<float> xyplane1(p.resolution * p.resolution, 0);
 
@@ -188,10 +183,11 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fr
 
 		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
 		tesselate_adjacent_xy_plane_pair(stop_flag,
+			m,
 			box_count,
 			xyplane0, xyplane1,
 			z - 1,
-			triangles,
+			t,
 			p.infinity, // Use threshold as isovalue.
 			p.x_min, p.x_max, p.resolution,
 			p.y_min, p.y_max, p.resolution,
@@ -213,34 +209,6 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, fr
 
 	thread_is_running_flag = false;
 	return;
-
-	//thread_is_running_flag = true;
-
-	//auto start_time = std::chrono::system_clock::now();
-	//auto end_time = start_time + std::chrono::seconds(5);
-
-	//while (false == stop_flag)
-	//{
-	//	m.lock();
-	//	vs.push_back("test");
-	//	m.unlock();
-
-	//	auto curr_time = std::chrono::system_clock::now();
-
-	//	if (curr_time >= end_time)
-	//		stop_flag = true;
-	//}
-
-	//thread_is_running_flag = false;
-
-
-
-
-
-
-
-
-
 }
 
 
@@ -795,8 +763,10 @@ void myGlutIdle(void)
 	if (false == thread_is_running && false == generate_button)
 	{	
 		cout << "Thread completed" << endl;
+		cout << "tris " << triangles.size() << endl;
 
-		if (false == uploaded_to_gpu && triangles.size() > 0)
+
+		if (false == uploaded_to_gpu && false == stop && triangles.size() > 0)
 		{
 			cout << "uploading to gpu" << endl;
 			uploaded_to_gpu = true;
