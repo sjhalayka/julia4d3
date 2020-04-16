@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT));
 	glutInitWindowPosition(0, 0);
 
-    win_id = glutCreateWindow(argv[0]);
+    win_id = glutCreateWindow("Julia 4D 3");
 	glewInit();
 	
 	if(false == init())
