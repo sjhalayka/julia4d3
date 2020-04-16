@@ -85,7 +85,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, ve
 
 
 
-thread *gen_thread;
+thread *gen_thread = 0;
 atomic_bool stop = false;
 atomic_bool thread_is_running = false;
 atomic_bool uploaded_to_gpu = false;
@@ -253,26 +253,49 @@ void generate_cancel_button_func(int control)
 		stop = true;
 		uploaded_to_gpu = false;
 
+		cout << "killing thread" << endl;
+
 		if (gen_thread != 0)
 		{
+			stop = true;
+
+			gen_thread->join();
+
 			delete gen_thread;
 			gen_thread = 0;
 			stop = true;
 			thread_is_running = false;
 		}
 		
+		cout << "done killing thread" << endl;	
+
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+
 	}
 	else
 	{
 		cout << "user clicked generate mesh" << endl;
-		stop = false;
-		uploaded_to_gpu = false;
 
 		stop = false;
 		thread_is_running = true;
+		uploaded_to_gpu = false;
+
+		if (gen_thread != 0)
+		{
+			cout << "killing existing thread" << endl;
+
+			stop = true;
+			gen_thread->join();
+
+			delete gen_thread;
+			gen_thread = 0;
+			stop = false;
+		}
+
+		cout << "Starting new thread" << endl;
 		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), ref(string_log), ref(thread_mutex));
+		
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 	}
@@ -322,43 +345,17 @@ void myGlutIdle(void)
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+
+		//if (false == uploaded_to_gpu && tri_count > triangles.size())
+		//{
+		//	cout << "upload to gpu" << endl;
+		//	uploaded_to_gpu = true;
+		//}
+
 	}
 
 
-	//if (true == set_generated && generate_mesh_button->text != "Generate mesh")
-	//{
-	//	cout << "thread done, changing button back to generate mesh" << endl;
 
-	//	generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-
-	//	set_generated = false;
-	//}
-
-	thread_mutex.lock();
-	size_t tri_count = triangles.size();
-	thread_mutex.unlock();
-
-	if (false == uploaded_to_gpu && tri_count > 0)
-	{
-		cout << "upload to gpu" << endl;
-		uploaded_to_gpu = true;
-	}
-
-	//if (!stop)
-	//{
-	//	cout << "Printing log:" << endl;
-
-	//	thread_mutex.lock();
-
-	//	cout << "Nunm log items: " << string_log.size() << endl;
-
-	//	//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
-	//	//	cout << *ci << endl;
-
-	//	string_log.clear();
-
-	//	thread_mutex.unlock();
-	//}
 
 	glutPostRedisplay();
 }
