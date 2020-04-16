@@ -221,13 +221,13 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 	return;
 }
 
-
-GLuint fractal_vao;
-GLuint      render_fbo;
-GLuint      fbo_textures[3];
-GLuint      quad_vao;
-GLuint      points_buffer;
-
+GLuint fractal_buffers[2];
+GLuint fractal_vao = 0;
+GLuint      render_fbo = 0;
+GLuint      fbo_textures[3] = { 0, 0, 0 };
+GLuint      quad_vao = 0;
+GLuint      points_buffer = 0;
+bool gpu_holds_data = false;
 
 thread* gen_thread = 0;
 atomic_bool stop = false;
@@ -776,18 +776,33 @@ void myGlutIdle(void)
 		cout << "Thread completed" << endl;
 		cout << "tris " << triangles.size() << endl;
 
-
 		if (false == uploaded_to_gpu && false == stop && triangles.size() > 0)
 		{
 			cout << "uploading to gpu" << endl;
 
-			// Transfer vertex data to GPU
-			GLuint buffers[2];
+			if (glIsVertexArray(fractal_vao))
+			{
+				cout << "cleaning up fractal vao" << endl;
+				glDeleteVertexArrays(1, &fractal_vao);
+			}
 
+			if (glIsBuffer(fractal_buffers[0]))
+			{
+				cout << "cleaning up buffer 0" << endl;
+				glDeleteBuffers(1, &fractal_buffers[0]);
+			}
+
+			if (glIsBuffer(fractal_buffers[1]))
+			{
+				cout << "cleaning up buffer 1" << endl;
+				glDeleteBuffers(1, &fractal_buffers[1]);
+			}
+
+			cout << "uploading vertex with normals" << endl;
 			glGenVertexArrays(1, &fractal_vao);
 			glBindVertexArray(fractal_vao);
-			glGenBuffers(1, &buffers[0]);
-			glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+			glGenBuffers(1, &fractal_buffers[0]);
+			glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
 			glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
 			// Set up vertex positions
@@ -798,11 +813,13 @@ void myGlutIdle(void)
 			glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
 			glEnableVertexAttribArray(1);
 
+			cout << "uploading index data" << endl;
 			// Transfer index data to GPU
-			glGenBuffers(1, &buffers[1]);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+			glGenBuffers(1, &fractal_buffers[1]);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
+			cout << "Done uploading to GPU" << endl;
 			uploaded_to_gpu = true;
 		}
 
@@ -1143,26 +1160,26 @@ bool init(void)
 	point_count = 10;
 
 	// Transfer vertex data to GPU
-	//GLuint buffers[2];
 
-	//glGenVertexArrays(1, &fractal_vao);
-	//glBindVertexArray(fractal_vao);
-	//glGenBuffers(1, &buffers[0]);
-	//glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-	//glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
-	//// Set up vertex positions
-	//glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	//glEnableVertexAttribArray(0);
+	glGenVertexArrays(1, &fractal_vao);
+	glBindVertexArray(fractal_vao);
+	glGenBuffers(1, &fractal_buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
-	//// Set up vertex normals
-	//glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-	//glEnableVertexAttribArray(1);
+	// Set up vertex positions
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
-	//// Transfer index data to GPU
-	//glGenBuffers(1, &buffers[1]);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+	// Set up vertex normals
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	// Transfer index data to GPU
+	glGenBuffers(1, &fractal_buffers[1]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
 
 
