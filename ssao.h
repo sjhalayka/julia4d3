@@ -60,18 +60,32 @@ using namespace std;
 
 thread gen_thread;
 atomic_bool stop = false;
+atomic_bool set_generated = false;
+atomic_bool uploaded_to_gpu = false;
 vector<string> string_log;
 mutex thread_mutex;
 
 
-void thread_func(atomic_bool& stop_flag, vector<string>& vs, mutex& m)
+void thread_func(atomic_bool& stop_flag, atomic_bool &set_generated_flag, vector<string>& vs, mutex& m)
 {
+	set_generated_flag = false;
+
+	auto start_time = std::chrono::system_clock::now();
+	auto end_time = start_time + std::chrono::seconds(5);
+
 	while (false == stop_flag)
 	{
 		m.lock();
 		vs.push_back("test");
 		m.unlock();
+
+		auto curr_time = std::chrono::system_clock::now();
+
+		if (curr_time >= end_time)
+			stop_flag = true;
 	}
+
+	set_generated_flag = true;
 }
 
 
@@ -224,22 +238,31 @@ bool BMP::load(const char* FilePath)
 
 
 
+vector<triangle> triangles;
+vector<triangle_index> triangle_indices;
+vector<vertex_3_with_normal> vertices_with_face_normals;
+
+
 
 
 void generate_cancel_button_func(int control)
 {
-	if (!stop)
+	if (false == stop)
 	{
 		cout << "user clicked cancel" << endl;
-		\
-			stop = true;
-		gen_thread.join();
+		stop = true;
+
+		if(gen_thread.joinable())
+			gen_thread.join();
+		
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 	}
 	else
 	{
+		cout << "user clicked generate mesh" << endl;
 		stop = false;
-		gen_thread = thread(thread_func, ref(stop), ref(string_log), ref(thread_mutex));
+		uploaded_to_gpu = false;
+		gen_thread = thread(thread_func, ref(stop), ref(set_generated), ref(string_log), ref(thread_mutex));
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 	}
 }
@@ -282,28 +305,45 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (!stop)
+	if (true == set_generated && generate_mesh_button->text != "Generate mesh")
 	{
-		cout << "Printing log:" << endl;
+		cout << "thread done, changing button back to generate mesh" << endl;
 
-		thread_mutex.lock();
+		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 
-		cout << "Nunm log items: " << string_log.size() << endl;
-
-		//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
-		//	cout << *ci << endl;
-
-		string_log.clear();
-
-		thread_mutex.unlock();
+		set_generated = false;
 	}
+
+	thread_mutex.lock();
+	size_t tri_count = triangles.size();
+	thread_mutex.unlock();
+
+	if (false == uploaded_to_gpu && tri_count > 0)
+	{
+		cout << "upload to gpu" << endl;
+		uploaded_to_gpu = true;
+	}
+
+	//if (!stop)
+	//{
+	//	cout << "Printing log:" << endl;
+
+	//	thread_mutex.lock();
+
+	//	cout << "Nunm log items: " << string_log.size() << endl;
+
+	//	//for (vector<string>::const_iterator ci = string_log.begin(); ci != string_log.end(); ci++)
+	//	//	cout << *ci << endl;
+
+	//	string_log.clear();
+
+	//	thread_mutex.unlock();
+	//}
 
 	glutPostRedisplay();
 }
 
 
-vector<triangle_index> triangle_indices;
-vector<vertex_3_with_normal> vertices_with_face_normals;
 
 
 vertex_fragment_shader render;
