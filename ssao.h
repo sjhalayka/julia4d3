@@ -339,23 +339,19 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (false == thread_is_running && generate_button == false)//generate_mesh_button->text == "Cancel")
+	if (false == thread_is_running && generate_button == false)
 	{
 		cout << "Thread completed" << endl;
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 
-		//if (false == uploaded_to_gpu && tri_count > triangles.size())
-		//{
-		//	cout << "upload to gpu" << endl;
-		//	uploaded_to_gpu = true;
-		//}
-
+		if (false == uploaded_to_gpu && triangles.size() > 0)
+		{
+			cout << "upload to gpu" << endl;
+			uploaded_to_gpu = true;
+		}
 	}
-
-
-
 
 	glutPostRedisplay();
 }
