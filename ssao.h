@@ -58,17 +58,11 @@ using namespace std;
 #include "GLUI/glui.h"
 
 
-thread gen_thread;
-atomic_bool stop = false;
-atomic_bool set_generated = false;
-atomic_bool uploaded_to_gpu = false;
-vector<string> string_log;
-mutex thread_mutex;
 
 
-void thread_func(atomic_bool& stop_flag, atomic_bool &set_generated_flag, vector<string>& vs, mutex& m)
+void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, vector<string>& vs, mutex& m)
 {
-	set_generated_flag = false;
+	thread_is_running_flag = true;
 
 	auto start_time = std::chrono::system_clock::now();
 	auto end_time = start_time + std::chrono::seconds(5);
@@ -85,12 +79,18 @@ void thread_func(atomic_bool& stop_flag, atomic_bool &set_generated_flag, vector
 			stop_flag = true;
 	}
 
-	set_generated_flag = true;
+	thread_is_running_flag = false;
 }
 
 
 
 
+thread *gen_thread;
+atomic_bool stop = false;
+atomic_bool thread_is_running = false;
+atomic_bool uploaded_to_gpu = false;
+vector<string> string_log;
+mutex thread_mutex;
 
 
 
@@ -247,14 +247,21 @@ vector<vertex_3_with_normal> vertices_with_face_normals;
 
 void generate_cancel_button_func(int control)
 {
-	if (false == stop)
+	if (generate_button == false)
 	{
 		cout << "user clicked cancel" << endl;
 		stop = true;
+		uploaded_to_gpu = false;
 
-		if(gen_thread.joinable())
-			gen_thread.join();
+		if (gen_thread != 0)
+		{
+			delete gen_thread;
+			gen_thread = 0;
+			stop = true;
+			thread_is_running = false;
+		}
 		
+		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 	}
 	else
@@ -262,7 +269,11 @@ void generate_cancel_button_func(int control)
 		cout << "user clicked generate mesh" << endl;
 		stop = false;
 		uploaded_to_gpu = false;
-		gen_thread = thread(thread_func, ref(stop), ref(set_generated), ref(string_log), ref(thread_mutex));
+
+		stop = false;
+		thread_is_running = true;
+		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), ref(string_log), ref(thread_mutex));
+		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 	}
 }
@@ -305,14 +316,23 @@ void myGlutReshape(int x, int y)
 
 void myGlutIdle(void)
 {
-	if (true == set_generated && generate_mesh_button->text != "Generate mesh")
+	if (false == thread_is_running && generate_button == false)//generate_mesh_button->text == "Cancel")
 	{
-		cout << "thread done, changing button back to generate mesh" << endl;
+		cout << "Thread completed" << endl;
 
+		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-
-		set_generated = false;
 	}
+
+
+	//if (true == set_generated && generate_mesh_button->text != "Generate mesh")
+	//{
+	//	cout << "thread done, changing button back to generate mesh" << endl;
+
+	//	generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+
+	//	set_generated = false;
+	//}
 
 	thread_mutex.lock();
 	size_t tri_count = triangles.size();
