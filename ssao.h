@@ -339,6 +339,27 @@ void generate_cancel_button_func(int control)
 			iss >> p.pedestal_y_end;
 		}
 
+		if (p.pedestal_y_start < 0 || p.pedestal_y_start > 1)
+		{
+			cout << "pedestal y start must be between 0 and 1" << endl;
+			return;
+		}
+
+		if (p.pedestal_y_end < 0 || p.pedestal_y_end > 1)
+		{
+			cout << "pedestal y end must be between 0 and 1" << endl;
+			return;
+		}
+
+		if (p.pedestal_y_start >= p.pedestal_y_end)
+		{
+			cout << "Y start must be smaller than y_end" << endl;
+			return;
+		}
+
+
+
+
 		temp_string = c_x_edittext->text;
 
 		if (false == is_real_number(temp_string))
