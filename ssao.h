@@ -61,7 +61,28 @@ using namespace string_utilities;
 
 
 
-void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, vector<string>& vs, mutex& m)
+
+class fractal_set_parameters
+{
+public:
+	string equation_text;
+	bool randomize_c;
+	bool use_pedestal;
+	float pedestal_y_start;
+	float pedestal_y_end;
+	float C_x, C_y, C_z, C_w;
+	float Z_w;
+	short unsigned int max_iterations;
+	size_t resolution;
+	float infinity;
+	float x_min, x_max;
+	float y_min, y_max;
+	float z_min, z_max;
+};
+
+
+
+void thread_func(atomic_bool& stop_flag, atomic_bool &thread_is_running_flag, const fractal_set_parameters &p, vector<string>& vs, mutex& m)
 {
 	thread_is_running_flag = true;
 
@@ -144,27 +165,6 @@ float w_spacer = 0.1f;
 uv_camera main_camera;
 
 bool generate_button = true;
-
-
-
-
-class fractal_set_parameters
-{
-public:
-	string equation_text;
-	bool randomize_c;
-	bool use_pedestal;
-	float pedestal_y_start;
-	float pedestal_y_end;
-	float C_x, C_y, C_z, C_w;
-	float Z_w;
-	short unsigned int max_iterations;
-	size_t resolution;
-	float infinity;
-	float x_min, x_max;
-	float y_min, y_max;
-	float z_min, z_max;
-};
 
 
 
@@ -563,7 +563,7 @@ void generate_cancel_button_func(int control)
 		}
 
 		cout << "Starting new thread" << endl;
-		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), ref(string_log), ref(thread_mutex));
+		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), ref(p), ref(string_log), ref(thread_mutex));
 		
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
