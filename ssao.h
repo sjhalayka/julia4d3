@@ -484,7 +484,7 @@ void generate_cancel_button_func(int control)
 			delete gen_thread;
 			gen_thread = 0;
 			stop = true;
-			thread_is_running = false;
+		//	thread_is_running = false;
 		}
 
 		cout << "done killing thread" << endl;
@@ -793,11 +793,6 @@ void generate_cancel_button_func(int control)
 	}
 }
 
-void export_button_func(int control)
-{
-
-
-}
 
 void control_cb(int control)
 {
