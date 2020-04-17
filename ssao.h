@@ -864,7 +864,7 @@ void upload_to_gpu(void)
 	glBindVertexArray(fractal_vao);
 	glGenBuffers(1, &fractal_buffers[0]);
 	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
 	// Set up vertex positions
 	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
@@ -877,7 +877,7 @@ void upload_to_gpu(void)
 	// Transfer index data to GPU
 	glGenBuffers(1, &fractal_buffers[1]);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 }
 
 void myGlutIdle(void)
