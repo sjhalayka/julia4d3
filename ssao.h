@@ -62,34 +62,67 @@ using namespace string_utilities;
 #include "marching_cubes.h"
 using namespace marching_cubes;
 
+#include "logging_system.h"
+#include "bmp.h"
+#include "fractal_set_parameters.h"
 
 
-class fractal_set_parameters
-{
-public:
-	string equation_text;
-	bool randomize_c;
-	bool use_pedestal;
-	float pedestal_y_start;
-	float pedestal_y_end;
-	float C_x, C_y, C_z, C_w;
-	float Z_w;
-	short unsigned int max_iterations;
-	short unsigned int resolution;
-	float infinity;
-	float x_min, x_max;
-	float y_min, y_max;
-	float z_min, z_max;
-};
+
+GLint win_id = 0;
+GLuint win_x = 800;
+GLuint win_y = 600;
+bool lmb_down = false;
+bool mmb_down = false;
+bool rmb_down = false;
+GLuint mouse_x = 0;
+GLuint mouse_y = 0;
+float u_spacer = 0.01f;
+float v_spacer = 0.5f * u_spacer;
+float w_spacer = 0.1f;
+uv_camera main_camera;
+
+GLUI* glui, * glui2;
+
+GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
+
+GLUI_Button* generate_mesh_button, * export_to_stl_button;
+
+GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
+
+GLUI_EditText* pedestal_y_start_edittext;
+GLUI_EditText* pedestal_y_end_edittext;
+
+GLUI_EditText* equation_edittext;
+
+GLUI_EditText* c_x_edittext;
+GLUI_EditText* c_y_edittext;
+GLUI_EditText* c_z_edittext;
+GLUI_EditText* c_w_edittext;
+
+GLUI_EditText* x_min_edittext;
+GLUI_EditText* y_min_edittext;
+GLUI_EditText* z_min_edittext;
+
+GLUI_EditText* x_max_edittext;
+GLUI_EditText* y_max_edittext;
+GLUI_EditText* z_max_edittext;
+
+GLUI_EditText* z_w_edittext;
+GLUI_EditText* iterations_edittext;
+GLUI_EditText* resolution_edittext;
+GLUI_EditText* infinity_edittext;
+
+GLUI_StaticText* status;
 
 vector<triangle> triangles;
 vector<triangle_index> triangle_indices;
 vector<vertex_3_with_normal> vertices_with_face_normals;
 
 
-bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, const vector<triangle>& triangles, const char* const file_name)
+
+bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, const char* const file_name)
 {
-	cout << "Triangle count: " << triangles.size() << endl;
+//	cout << "Triangle count: " << triangles.size() << endl;
 
 	if (0 == triangles.size())
 		return false;
@@ -112,7 +145,7 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 	// thirteen times PER TRIANGLE.
 	// Of course, the trade-off is that we are using 2x the RAM than what's absolutely required,
 	// but the trade-off is often very much worth it (especially so for meshes with millions of triangles).
-	cout << "Generating normal/vertex/attribute buffer" << endl;
+	//cout << "Generating normal/vertex/attribute buffer" << endl;
 
 	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
 	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
@@ -160,12 +193,12 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
 
 
-	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
+//	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
 
 	if(false == stop_flag)
 		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
 	
-	cout << "Done writing out.stl" << endl;
+//	cout << "Done writing out.stl" << endl;
 
 	out.close();
 
@@ -174,15 +207,149 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 
 
 
+void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_bool& stop_flag, mutex& m)
+{
+	vector<vertex_3_with_index> v;
 
-void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fractal_set_parameters p, vector<triangle>& t, vector<string>& vs, mutex& m)
+	triangle_indices.clear();
+	vertices_with_face_normals.clear();
+
+	if (0 == triangles.size())
+		return;
+
+	cout << "Welding vertices" << endl;
+
+	// Insert unique vertices into set.
+	set<vertex_3_with_index> vertex_set;
+
+	for (vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		vertex_set.insert(i->vertex[0]);
+		vertex_set.insert(i->vertex[1]);
+		vertex_set.insert(i->vertex[2]);
+	}
+
+	cout << "Vertices: " << vertex_set.size() << endl;
+
+	cout << "Generating vertex indices" << endl;
+
+	// Add indices to the vertices.
+	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		size_t index = v.size();
+		v.push_back(*i);
+		v[index].index = static_cast<GLuint>(index);
+	}
+
+	vertex_set.clear();
+
+	// Re-insert modified vertices into set.
+	for (vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		vertex_set.insert(*i);
+	}
+
+	cout << "Assigning vertex indices to triangles" << endl;
+
+	// Find the three vertices for each triangle, by index.
+	set<vertex_3_with_index>::iterator find_iter;
+
+	for (vector<triangle>::iterator i = triangles.begin(); i != triangles.end(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		find_iter = vertex_set.find(i->vertex[0]);
+		i->vertex[0].index = find_iter->index;
+
+		find_iter = vertex_set.find(i->vertex[1]);
+		i->vertex[1].index = find_iter->index;
+
+		find_iter = vertex_set.find(i->vertex[2]);
+		i->vertex[2].index = find_iter->index;
+	}
+
+	vertex_set.clear();
+
+	cout << "Calculating normals" << endl;
+
+	vertices_with_face_normals.resize(v.size());
+
+	// Assign per-triangle face normals
+	for (size_t i = 0; i < triangles.size(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		vertex_3 v0 = triangles[i].vertex[1] - triangles[i].vertex[0];
+		vertex_3 v1 = triangles[i].vertex[2] - triangles[i].vertex[0];
+		vertex_3 fn = v0.cross(v1);
+		fn.normalize();
+
+		vertices_with_face_normals[triangles[i].vertex[0].index].nx += fn.x;
+		vertices_with_face_normals[triangles[i].vertex[0].index].ny += fn.y;
+		vertices_with_face_normals[triangles[i].vertex[0].index].nz += fn.z;
+		vertices_with_face_normals[triangles[i].vertex[1].index].nx += fn.x;
+		vertices_with_face_normals[triangles[i].vertex[1].index].ny += fn.y;
+		vertices_with_face_normals[triangles[i].vertex[1].index].nz += fn.z;
+		vertices_with_face_normals[triangles[i].vertex[2].index].nx += fn.x;
+		vertices_with_face_normals[triangles[i].vertex[2].index].ny += fn.y;
+		vertices_with_face_normals[triangles[i].vertex[2].index].nz += fn.z;
+	}
+
+	cout << "Generating final index/vertex data" << endl;
+
+	for (size_t i = 0; i < v.size(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		// Assign vertex spatial comoponents
+		vertices_with_face_normals[i].x = v[i].x;
+		vertices_with_face_normals[i].y = v[i].y;
+		vertices_with_face_normals[i].z = v[i].z;
+
+		// Normalize face normal
+		vertex_3 temp_face_normal(vertices_with_face_normals[i].nx, vertices_with_face_normals[i].ny, vertices_with_face_normals[i].nz);
+		temp_face_normal.normalize();
+
+		vertices_with_face_normals[i].nx = temp_face_normal.x;
+		vertices_with_face_normals[i].ny = temp_face_normal.y;
+		vertices_with_face_normals[i].nz = temp_face_normal.z;
+	}
+
+	triangle_indices.resize(triangles.size());
+
+	for (size_t i = 0; i < triangles.size(); i++)
+	{
+		if (stop_flag)
+			return;
+
+		// Assign triangle indices
+		triangle_indices[i].index[0] = triangles[i].vertex[0].index;
+		triangle_indices[i].index[1] = triangles[i].vertex[1].index;
+		triangle_indices[i].index[2] = triangles[i].vertex[2].index;
+	}
+
+	cout << "Done" << endl;
+}
+
+void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fractal_set_parameters p, vector<string>& vs, mutex& m)
 {
 	thread_is_running_flag = true;
 
-	m.lock();
-	t.clear();
-
-	cout << "starting Thread_func" << endl;
+	triangles.clear();
+	vertices_with_face_normals.clear();
+	triangle_indices.clear();
 
 	bool make_border = true;
 
@@ -198,20 +365,15 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 	if (false == eqparser.setup(p.equation_text, error_string, C))
 	{
 		cout << "Equation error: " << error_string << endl;
-		m.unlock();
 		return;
 	}
-	else
-	{
-		cout << "Equation " << p.equation_text << " compiled successfully" << endl;
-	}
-
 
 	// When adding a border, use a value that is "much" greater than the threshold.
 	const float border_value = 1.0f + p.infinity;
 
-	vector<float> xyplane0(p.resolution * p.resolution, 0);
-	vector<float> xyplane1(p.resolution * p.resolution, 0);
+	size_t num_voxels = p.resolution * p.resolution;
+	vector<float> xyplane0(num_voxels, 0);
+	vector<float> xyplane1(num_voxels, 0);
 
 	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
 	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
@@ -231,14 +393,13 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			if (stop_flag)
 			{
 				thread_is_running_flag = false;
-				m.unlock();
 				return;
 			}
 
 			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-				xyplane0[x * p.resolution + y] = border_value;
+				xyplane0[y * p.resolution + x] = border_value;
 			else
-				xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+				xyplane0[y * p.resolution + x] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 		}
 	}
 
@@ -256,7 +417,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 	{
 		Z.x = p.z_min;
 
-		cout << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1 << endl;
+		//cout << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1 << endl;
 
 		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
 		{
@@ -266,15 +427,14 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			{
 				if (stop_flag)
 				{
-					m.unlock();
 					thread_is_running_flag = false;
 					return;
 				}
 
 				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-					xyplane1[x * p.resolution + y] = border_value;
+					xyplane1[y * p.resolution + x] = border_value;
 				else
-					xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+					xyplane1[y * p.resolution + x] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 			}
 		}
 
@@ -283,7 +443,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			box_count,
 			xyplane0, xyplane1,
 			z - 1,
-			t,
+			triangles,
 			p.infinity, // Use threshold as isovalue.
 			p.x_min, p.x_max, p.resolution,
 			p.y_min, p.y_max, p.resolution,
@@ -292,7 +452,6 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 		if (stop_flag)
 		{
-			m.unlock();
 			thread_is_running_flag = false;
 			return;
 		}
@@ -301,18 +460,17 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 		xyplane1.swap(xyplane0);
 	}
 
-	cout << endl;
-	
-	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m, t, triangle_indices, vertices_with_face_normals);
-	write_triangles_to_binary_stereo_lithography_file(stop_flag, t, "out.stl");
-	
-	m.unlock();
+	if (false == stop_flag)
+	{
+		get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m);
+		write_triangles_to_binary_stereo_lithography_file(stop_flag, "out.stl");
+	}
 
 	thread_is_running_flag = false;
 	return;
 }
 
-GLuint fractal_buffers[2];
+GLuint fractal_buffers[2] = { 0, 0 };
 GLuint fractal_vao = 0;
 GLuint      render_fbo = 0;
 GLuint      fbo_textures[3] = { 0, 0, 0 };
@@ -327,153 +485,295 @@ atomic_bool uploaded_to_gpu = false;
 vector<string> string_log;
 mutex thread_mutex;
 
-
-
-
-GLUI* glui, * glui2;
-
-GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
-
-GLUI_Button* generate_mesh_button, * export_to_stl_button;
-
-GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
-
-GLUI_EditText* pedestal_y_start_edittext;
-GLUI_EditText* pedestal_y_end_edittext;
-
-GLUI_EditText* equation_edittext;
-
-GLUI_EditText* c_x_edittext;
-GLUI_EditText* c_y_edittext;
-GLUI_EditText* c_z_edittext;
-GLUI_EditText* c_w_edittext;
-
-GLUI_EditText* x_min_edittext;
-GLUI_EditText* y_min_edittext;
-GLUI_EditText* z_min_edittext;
-
-GLUI_EditText* x_max_edittext;
-GLUI_EditText* y_max_edittext;
-GLUI_EditText* z_max_edittext;
-
-GLUI_EditText* z_w_edittext;
-GLUI_EditText* iterations_edittext;
-GLUI_EditText* resolution_edittext;
-GLUI_EditText* infinity_edittext;
-
-GLUI_StaticText* status;
-
-
-GLint win_id = 0;
-GLuint win_x = 800;
-GLuint win_y = 600;
-bool lmb_down = false;
-bool mmb_down = false;
-bool rmb_down = false;
-GLuint mouse_x = 0;
-GLuint mouse_y = 0;
-float u_spacer = 0.01f;
-float v_spacer = 0.5f * u_spacer;
-float w_spacer = 0.1f;
-uv_camera main_camera;
-
 bool generate_button = true;
 
 
 
 
 
-class BMP
+
+
+
+
+bool obtain_control_contents(fractal_set_parameters &p)
 {
-public:
-	std::uint32_t width, height;
-	std::uint16_t BitsPerPixel;
-	std::vector<unsigned char> Pixels;
+	p.equation_text = equation_edittext->text;
 
-public:
-	BMP(void)
+	if (p.equation_text == "")
 	{
-
-	}
-
-	bool load(const char* filePath);
-	std::vector<std::uint8_t> GetPixels() const { return this->Pixels; }
-	std::uint32_t GetWidth() const { return this->width; }
-	std::uint32_t GetHeight() const { return this->height; }
-	bool HasAlphaChannel() { return BitsPerPixel == 32; }
-};
-
-
-
-bool BMP::load(const char* FilePath)
-{
-	std::fstream hFile(FilePath, std::ios::in | std::ios::binary);
-	if (!hFile.is_open()) return false;
-
-	hFile.seekg(0, std::ios::end);
-	std::size_t Length = hFile.tellg();
-	hFile.seekg(0, std::ios::beg);
-	std::vector<std::uint8_t> FileInfo(Length);
-	hFile.read(reinterpret_cast<char*>(FileInfo.data()), 54);
-
-	if (FileInfo[0] != 'B' && FileInfo[1] != 'M')
-	{
-		hFile.close();
+		cout << "blank equation text" << endl;
 		return false;
 	}
 
-	// if (FileInfo[28] != 24 && FileInfo[28] != 32)
-	if (FileInfo[28] != 32)
+	p.randomize_c = randomize_c_checkbox->get_int_val();
+	p.use_pedestal = use_pedestal_checkbox->get_int_val();
+
+	string temp_string;
+
+	temp_string = pedestal_y_start_edittext->text;
+
+	if (false == is_real_number(temp_string))
 	{
-		hFile.close();
+		cout << "pedestal y start is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.pedestal_y_start;
+		cout << p.pedestal_y_start << endl;
+	}
+
+	temp_string = pedestal_y_end_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "pedestal y end is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.pedestal_y_end;
+	}
+
+	if (p.pedestal_y_start < 0 || p.pedestal_y_start > 1)
+	{
+		cout << "pedestal y start must be between 0 and 1" << endl;
 		return false;
 	}
 
-	BitsPerPixel = FileInfo[28];
-	width = FileInfo[18] + (FileInfo[19] << 8);
-	height = FileInfo[22] + (FileInfo[23] << 8);
-	std::uint32_t PixelsOffset = FileInfo[10] + (FileInfo[11] << 8);
-	std::uint32_t size = ((width * BitsPerPixel + 31) / 32) * 4 * height;
-	Pixels.resize(size);
-
-	hFile.seekg(PixelsOffset, std::ios::beg);
-	hFile.read(reinterpret_cast<char*>(Pixels.data()), size);
-	hFile.close();
-
-
-	// Reverse row order
-	short unsigned int num_rows_to_swap = height;
-	vector<unsigned char> buffer(static_cast<size_t>(width) * 4);
-
-	if (0 != height % 2)
-		num_rows_to_swap--;
-
-	num_rows_to_swap /= 2;
-
-	for (size_t i = 0; i < num_rows_to_swap; i++)
+	if (p.pedestal_y_end < 0 || p.pedestal_y_end > 1)
 	{
-		size_t y_first = i * static_cast<size_t>(width) * 4;
-		size_t y_last = (static_cast<size_t>(height) - 1 - i) * static_cast<size_t>(width) * 4;
+		cout << "pedestal y end must be between 0 and 1" << endl;
+		return false;
+	}
 
-		memcpy(&buffer[0], &Pixels[y_first], static_cast<size_t>(width) * 4);
-		memcpy(&Pixels[y_first], &Pixels[y_last], static_cast<size_t>(width) * 4);
-		memcpy(&Pixels[y_last], &buffer[0], static_cast<size_t>(width) * 4);
+	if (p.pedestal_y_start >= p.pedestal_y_end)
+	{
+		cout << "Y start must be smaller than y_end" << endl;
+		return false;
+	}
+
+
+
+
+	temp_string = c_x_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "c.x  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.C_x;
+	}
+
+	temp_string = c_y_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "c.y  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.C_y;
+	}
+
+	temp_string = c_z_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "c.z  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.C_z;
+	}
+
+	temp_string = c_w_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "c.w  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.C_w;
+	}
+
+	temp_string = x_min_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "x min  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.x_min;
+	}
+
+	temp_string = y_min_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "y min  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.y_min;
+	}
+
+	temp_string = z_min_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "z min  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.z_min;
+	}
+
+
+
+
+	temp_string = x_max_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "x max  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.x_max;
+	}
+
+	temp_string = y_max_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "y max  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.y_max;
+	}
+
+	temp_string = z_max_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "z max  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.z_max;
+	}
+
+	if (p.x_min >= p.x_max)
+	{
+		cout << "x min must be less than x max" << endl;
+		return false;
+	}
+
+	if (p.y_min >= p.y_max)
+	{
+		cout << "y min must be less than y max" << endl;
+		return false;
+	}
+
+	if (p.z_min >= p.z_max)
+	{
+		cout << "z min must be less than z max" << endl;
+		return false;
+	}
+
+	temp_string = z_w_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "z.w  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.Z_w;
+	}
+
+
+	temp_string = infinity_edittext->text;
+
+	if (false == is_real_number(temp_string))
+	{
+		cout << "infinity  is not a real number" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.infinity;
+	}
+
+
+	temp_string = iterations_edittext->text;
+
+	if (false == is_unsigned_short_int(temp_string))
+	{
+		cout << "max iterations is not a short unsigned int" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.max_iterations;
+	}
+
+	temp_string = resolution_edittext->text;
+
+	if (false == is_unsigned_short_int(temp_string))
+	{
+		cout << "resolution is not a short unsigned int" << endl;
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.resolution;
+
+		cout << "Read res " << p.resolution << endl;
 	}
 
 	return true;
 }
 
-
-
 void generate_cancel_button_func(int control)
 {
 	if (generate_button == false)
 	{
-		cout << "user clicked cancel" << endl;
 		stop = true;
 		uploaded_to_gpu = false;
-
-		cout << "killing thread" << endl;
 
 		if (gen_thread != 0)
 		{
@@ -484,298 +784,23 @@ void generate_cancel_button_func(int control)
 			delete gen_thread;
 			gen_thread = 0;
 			stop = true;
-		//	thread_is_running = false;
 		}
-
-		cout << "done killing thread" << endl;
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-
 	}
 	else
 	{
-		cout << "user clicked generate mesh" << endl;
-
 		fractal_set_parameters p;
 
-		p.equation_text = equation_edittext->text;
-
-		if (p.equation_text == "")
-		{
-			cout << "blank equation text" << endl;
+		if (false == obtain_control_contents(p))
 			return;
-		}
-
-		p.randomize_c = randomize_c_checkbox->get_int_val();
-		p.use_pedestal = use_pedestal_checkbox->get_int_val();
-
-		string temp_string;
-
-		temp_string = pedestal_y_start_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "pedestal y start is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.pedestal_y_start;
-			cout << p.pedestal_y_start << endl;
-		}
-
-		temp_string = pedestal_y_end_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "pedestal y end is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.pedestal_y_end;
-		}
-
-		if (p.pedestal_y_start < 0 || p.pedestal_y_start > 1)
-		{
-			cout << "pedestal y start must be between 0 and 1" << endl;
-			return;
-		}
-
-		if (p.pedestal_y_end < 0 || p.pedestal_y_end > 1)
-		{
-			cout << "pedestal y end must be between 0 and 1" << endl;
-			return;
-		}
-
-		if (p.pedestal_y_start >= p.pedestal_y_end)
-		{
-			cout << "Y start must be smaller than y_end" << endl;
-			return;
-		}
-
-
-
-
-		temp_string = c_x_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "c.x  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.C_x;
-		}
-
-		temp_string = c_y_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "c.y  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.C_y;
-		}
-
-		temp_string = c_z_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "c.z  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.C_z;
-		}
-
-		temp_string = c_w_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "c.w  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.C_w;
-		}
-
-		temp_string = x_min_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "x min  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.x_min;
-		}
-
-		temp_string = y_min_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "y min  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.y_min;
-		}
-
-		temp_string = z_min_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "z min  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.z_min;
-		}
-
-
-
-
-		temp_string = x_max_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "x max  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.x_max;
-		}
-
-		temp_string = y_max_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "y max  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.y_max;
-		}
-
-		temp_string = z_max_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "z max  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.z_max;
-		}
-
-		if (p.x_min >= p.x_max)
-		{
-			cout << "x min must be less than x max" << endl;
-			return;
-		}
-
-		if (p.y_min >= p.y_max)
-		{
-			cout << "y min must be less than y max" << endl;
-			return;
-		}
-
-		if (p.z_min >= p.z_max)
-		{
-			cout << "z min must be less than z max" << endl;
-			return;
-		}
-
-		temp_string = z_w_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "z.w  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.Z_w;
-		}
-
-
-		temp_string = infinity_edittext->text;
-
-		if (false == is_real_number(temp_string))
-		{
-			cout << "infinity  is not a real number" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.infinity;
-		}
-
-
-		temp_string = iterations_edittext->text;
-
-		if (false == is_unsigned_short_int(temp_string))
-		{
-			cout << "max iterations is not a short unsigned int" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.max_iterations;
-		}
-
-		temp_string = resolution_edittext->text;
-
-		if (false == is_unsigned_short_int(temp_string))
-		{
-			cout << "resolution is not a short unsigned int" << endl;
-			return;
-		}
-		else
-		{
-			istringstream iss(temp_string);
-			iss >> p.resolution;
-
-			cout << "Read res " << p.resolution << endl;
-		}
-
 
 		stop = false;
-		thread_is_running = true;
 		uploaded_to_gpu = false;
 
 		if (gen_thread != 0)
 		{
-			cout << "killing existing thread" << endl;
-
 			stop = true;
 			gen_thread->join();
 
@@ -784,9 +809,7 @@ void generate_cancel_button_func(int control)
 			stop = false;
 		}
 
-		cout << "Starting new thread" << endl;
-\
-		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), p, ref(triangles), ref(string_log), ref(thread_mutex));
+		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), p, ref(string_log), ref(thread_mutex));
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
@@ -814,67 +837,56 @@ void myGlutReshape(int x, int y)
 	glutReshapeWindow(win_x, win_y);
 	glViewport(0, 0, win_x, win_y);
 
-
-	//int tx, ty, tw, th;
-	//GLUI_Master.get_viewport_area(&tx, &ty, &tw, &th);
-	//glViewport(tx, ty, tw, th);
-
-	//xy_aspect = (float)tw / (float)th;
-
 	glutPostRedisplay();
+}
+
+void upload_to_gpu(void)
+{
+	if (glIsVertexArray(fractal_vao))
+	{
+		glDeleteVertexArrays(1, &fractal_vao);
+		fractal_vao = 0;
+	}
+
+	if (glIsBuffer(fractal_buffers[0]))
+	{
+		glDeleteBuffers(1, &fractal_buffers[0]);
+		fractal_buffers[0] = 0;
+	}
+
+	if (glIsBuffer(fractal_buffers[1]))
+	{
+		glDeleteBuffers(1, &fractal_buffers[1]);
+		fractal_buffers[1] = 0;
+	}
+
+	glGenVertexArrays(1, &fractal_vao);
+	glBindVertexArray(fractal_vao);
+	glGenBuffers(1, &fractal_buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_DYNAMIC_DRAW);
+
+	// Set up vertex positions
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	// Set up vertex normals
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	// Transfer index data to GPU
+	glGenBuffers(1, &fractal_buffers[1]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_DYNAMIC_DRAW);
 }
 
 void myGlutIdle(void)
 {
 	if (false == thread_is_running && false == generate_button)
 	{
-		cout << "Thread completed" << endl;
-		cout << "tris " << triangles.size() << endl;
-
 		if (false == uploaded_to_gpu && false == stop && triangles.size() > 0)
 		{
-			cout << "uploading to gpu" << endl;
-
-			if (glIsVertexArray(fractal_vao))
-			{
-				cout << "cleaning up fractal vao" << endl;
-				glDeleteVertexArrays(1, &fractal_vao);
-			}
-
-			if (glIsBuffer(fractal_buffers[0]))
-			{
-				cout << "cleaning up buffer 0" << endl;
-				glDeleteBuffers(1, &fractal_buffers[0]);
-			}
-
-			if (glIsBuffer(fractal_buffers[1]))
-			{
-				cout << "cleaning up buffer 1" << endl;
-				glDeleteBuffers(1, &fractal_buffers[1]);
-			}
-
-			cout << "uploading vertex with normals" << endl;
-			glGenVertexArrays(1, &fractal_vao);
-			glBindVertexArray(fractal_vao);
-			glGenBuffers(1, &fractal_buffers[0]);
-			glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-			glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
-
-			// Set up vertex positions
-			glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-			glEnableVertexAttribArray(0);
-
-			// Set up vertex normals
-			glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-			glEnableVertexAttribArray(1);
-
-			cout << "uploading index data" << endl;
-			// Transfer index data to GPU
-			glGenBuffers(1, &fractal_buffers[1]);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
-
-			cout << "Done uploading to GPU" << endl;
+			upload_to_gpu();
 			uploaded_to_gpu = true;
 		}
 
@@ -885,7 +897,11 @@ void myGlutIdle(void)
 	glutPostRedisplay();
 }
 
-
+void passive_motion_func(int x, int y)
+{
+	mouse_x = x;
+	mouse_y = y;
+}
 
 
 vertex_fragment_shader render;
@@ -1204,8 +1220,6 @@ bool init(void)
 		}
 	}
 
-
-
 	ssao_level = 1.0f;
 	ssao_radius = 0.05f;
 	show_shading = true;
@@ -1214,54 +1228,12 @@ bool init(void)
 	randomize_points = true;
 	point_count = 10;
 
-	// Transfer vertex data to GPU
-
 	if (false == uploaded_to_gpu)
 	{
-		if (glIsVertexArray(fractal_vao))
-		{
-			cout << "cleaning up fractal vao" << endl;
-			glDeleteVertexArrays(1, &fractal_vao);
-		}
-
-		if (glIsBuffer(fractal_buffers[0]))
-		{
-			cout << "cleaning up buffer 0" << endl;
-			glDeleteBuffers(1, &fractal_buffers[0]);
-		}
-
-		if (glIsBuffer(fractal_buffers[1]))
-		{
-			cout << "cleaning up buffer 1" << endl;
-			glDeleteBuffers(1, &fractal_buffers[1]);
-		}
-
-		cout << "uploading vertex with normals" << endl;
-		glGenVertexArrays(1, &fractal_vao);
-		glBindVertexArray(fractal_vao);
-		glGenBuffers(1, &fractal_buffers[0]);
-		glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-		glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
-
-		// Set up vertex positions
-		glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-
-		// Set up vertex normals
-		glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(1);
-
-		cout << "uploading index data" << endl;
-		// Transfer index data to GPU
-		glGenBuffers(1, &fractal_buffers[1]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
-
+		upload_to_gpu();
 		uploaded_to_gpu = true;
 		cout << "Done uploading to GPU" << endl;
 	}
-
-
 
 	load_shaders();
 
@@ -1328,19 +1300,6 @@ bool init(void)
 	glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 
-
-
-
-
-
-	BMP info;
-	if (false == info.load("card_texture.bmp"))
-	{
-		cout << "could not load card_texture.bmp" << endl;
-		return false;
-	}
-
-
 	return true;
 }
 
@@ -1399,8 +1358,6 @@ void display_func(void)
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
 
 
 	size_t char_x_pos = 10;
@@ -1481,11 +1438,6 @@ void mouse_func(int button, int state, int x, int y)
 	}
 }
 
-void myGlutMotion(int x, int y)
-{
-//	glutPostRedisplay();
-}
-
 
 void motion_func(int x, int y)
 {
@@ -1516,10 +1468,85 @@ void motion_func(int x, int y)
 	}
 }
 
-void passive_motion_func(int x, int y)
+
+
+void setup_gui(void)
 {
-	mouse_x = x;
-	mouse_y = y;
+	glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
+
+	generate_mesh_button = glui->add_button(const_cast<char*>("Generate mesh"), 0, generate_cancel_button_func);
+
+	glui->add_separator();
+
+	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
+	equation_edittext->set_text("Z = Z*Z + C");
+	equation_edittext->set_w(150);
+
+	glui->add_separator();
+
+	randomize_c_checkbox = glui->add_checkbox("Randomize C");
+	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
+	use_pedestal_checkbox->set_int_val(1);
+
+	pedestal_y_start_edittext = glui->add_edittext(const_cast<char*>("Pedestal y start:"), 0, const_cast<char*>("1.0"), 3, control_cb);
+	pedestal_y_start_edittext->set_text("0.0");
+
+	pedestal_y_end_edittext = glui->add_edittext(const_cast<char*>("Pedestal y end:"), 0, const_cast<char*>("1.0"), 3, control_cb);
+	pedestal_y_end_edittext->set_text("0.1");
+
+
+	glui->add_separator();
+
+	obj_panel = glui->add_panel(const_cast<char*>("Constant"));
+
+	obj_panel->set_alignment(GLUI_ALIGN_LEFT);
+
+	c_x_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.x:"), -1, const_cast<char*>("0.2866"), 3, control_cb);
+	c_x_edittext->set_text("0.2866");
+
+	c_y_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.y:"), -1, const_cast<char*>("0.5133"), 3, control_cb);
+	c_y_edittext->set_text("0.5133");
+
+	c_z_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.z:"), -1, const_cast<char*>("0.46"), 3, control_cb);
+	c_z_edittext->set_text("0.46");
+
+	c_w_edittext = glui->add_edittext_to_panel(obj_panel, const_cast<char*>("C.w:"), -1, const_cast<char*>("0.2467"), 3, control_cb);
+	c_w_edittext->set_text("0.2467");
+
+	obj_panel2 = glui->add_panel(const_cast<char*>("Various parameters"));
+
+	obj_panel2->set_alignment(GLUI_ALIGN_LEFT);
+
+	z_w_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Z.w:"), -1, const_cast<char*>("0.0"), 3, control_cb);
+	z_w_edittext->set_text("0.0");
+
+	iterations_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Max iterations:"), -1, const_cast<char*>("8"), 3, control_cb);
+	iterations_edittext->set_text("8");
+
+	resolution_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Resolution:"), -1, const_cast<char*>("100"), 3, control_cb);
+	resolution_edittext->set_text("100");
+
+	infinity_edittext = glui->add_edittext_to_panel(obj_panel2, const_cast<char*>("Infinity:"), -1, const_cast<char*>("4.0"), 3, control_cb);
+	infinity_edittext->set_text("4.0");
+
+	obj_panel3 = glui->add_panel(const_cast<char*>("Space min/max"));
+
+	obj_panel3->set_alignment(GLUI_ALIGN_LEFT);
+
+	x_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	y_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	z_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	x_min_edittext->set_text("-1.5");
+	y_min_edittext->set_text("-1.5");
+	z_min_edittext->set_text("-1.5");
+
+	x_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X max:"), -1, const_cast<char*>("1.5"), 3, control_cb);
+	y_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y max:"), -1, const_cast<char*>("1.5"), 3, control_cb);
+	z_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z max:"), -1, const_cast<char*>("1.5"), 3, control_cb);
+	x_max_edittext->set_text("1.5");
+	y_max_edittext->set_text("1.5");
+	z_max_edittext->set_text("1.5");
 }
+
 
 #endif
