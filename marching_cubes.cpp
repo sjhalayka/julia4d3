@@ -408,7 +408,7 @@ short unsigned int marching_cubes::tesselate_grid_cube(const float isovalue, con
 	return ntriang;
 }
 
-bool marching_cubes::tesselate_adjacent_xy_plane_pair(atomic_bool &stop_flag, mutex& m, size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
+bool marching_cubes::tesselate_adjacent_xy_plane_pair(atomic_bool &stop_flag, size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
 {
     const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
     const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
@@ -539,12 +539,8 @@ bool marching_cubes::tesselate_adjacent_xy_plane_pair(atomic_bool &stop_flag, mu
 			if (number_of_triangles_generated > 0)
 				box_count++;
 
-			m.lock();
-
             for(short unsigned int i = 0; i < number_of_triangles_generated; i++)
                  triangles.push_back(temp_triangle_array[i]);
-
-			m.unlock();
         }
     }
 
