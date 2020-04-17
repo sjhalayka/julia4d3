@@ -1336,7 +1336,10 @@ void display_func(void)
 	if (uploaded_to_gpu)
 	{
 		glBindVertexArray(fractal_vao);
+
+		thread_mutex.lock();
 		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
+		thread_mutex.unlock();
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
