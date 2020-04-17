@@ -39,7 +39,6 @@
 #pragma comment(lib, "freeglut")
 #endif
 
-
 #include <atomic>
 #include <vector>
 #include <chrono>
@@ -66,6 +65,8 @@ using namespace marching_cubes;
 #include "bmp.h"
 #include "fractal_set_parameters.h"
 
+
+logging_system log_system;
 
 
 GLint win_id = 0;
@@ -118,9 +119,25 @@ vector<triangle> triangles;
 vector<triangle_index> triangle_indices;
 vector<vertex_3_with_normal> vertices_with_face_normals;
 
+GLuint fractal_buffers[2] = { 0, 0 };
+GLuint fractal_vao = 0;
+GLuint      render_fbo = 0;
+GLuint      fbo_textures[3] = { 0, 0, 0 };
+GLuint      quad_vao = 0;
+GLuint      points_buffer = 0;
+bool gpu_holds_data = false;
 
+thread* gen_thread = 0;
+atomic_bool stop = false;
+atomic_bool thread_is_running = false;
+atomic_bool uploaded_to_gpu = false;
+vector<string> string_log;
+mutex thread_mutex;
 
-bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, const char* const file_name)
+bool generate_button = true;
+unsigned int triangle_buffer = 0;
+
+bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name)
 {
 //	cout << "Triangle count: " << triangles.size() << endl;
 
@@ -157,7 +174,7 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 
 	for (vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			break;
 
 		// Get face normal.
@@ -186,7 +203,7 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 	// Write blank header.
 	out.write(reinterpret_cast<const char*>(&(buffer[0])), header_size);
 
-	if (stop_flag)
+	if (stop)
 		num_triangles = 0;
 
 	// Write number of triangles.
@@ -195,7 +212,7 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 
 //	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
 
-	if(false == stop_flag)
+	if(false == stop)
 		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
 	
 //	cout << "Done writing out.stl" << endl;
@@ -207,7 +224,7 @@ bool write_triangles_to_binary_stereo_lithography_file(atomic_bool &stop_flag, c
 
 
 
-void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_bool& stop_flag, mutex& m)
+void get_triangle_indices_and_vertices_with_face_normals_from_triangles(void)
 {
 	vector<vertex_3_with_index> v;
 
@@ -224,7 +241,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 
 	for (vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		vertex_set.insert(i->vertex[0]);
@@ -239,7 +256,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	// Add indices to the vertices.
 	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		size_t index = v.size();
@@ -252,7 +269,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	// Re-insert modified vertices into set.
 	for (vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		vertex_set.insert(*i);
@@ -265,7 +282,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 
 	for (vector<triangle>::iterator i = triangles.begin(); i != triangles.end(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		find_iter = vertex_set.find(i->vertex[0]);
@@ -287,7 +304,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	// Assign per-triangle face normals
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		vertex_3 v0 = triangles[i].vertex[1] - triangles[i].vertex[0];
@@ -310,7 +327,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 
 	for (size_t i = 0; i < v.size(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		// Assign vertex spatial comoponents
@@ -331,7 +348,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
-		if (stop_flag)
+		if (stop)
 			return;
 
 		// Assign triangle indices
@@ -343,9 +360,11 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	cout << "Done" << endl;
 }
 
-void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fractal_set_parameters p, vector<string>& vs, mutex& m)
+void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
 {
-	thread_is_running_flag = true;
+	thread_is_running = true;
+
+
 
 	triangles.clear();
 	vertices_with_face_normals.clear();
@@ -390,9 +409,9 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 		for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
 		{
-			if (stop_flag)
+			if (stop)
 			{
-				thread_is_running_flag = false;
+				thread_is_running = false;
 				return;
 			}
 
@@ -425,9 +444,9 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 			for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
 			{
-				if (stop_flag)
+				if (stop)
 				{
-					thread_is_running_flag = false;
+					thread_is_running = false;
 					return;
 				}
 
@@ -439,7 +458,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 		}
 
 		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-		tesselate_adjacent_xy_plane_pair(stop_flag,
+		tesselate_adjacent_xy_plane_pair(stop,
 			box_count,
 			xyplane0, xyplane1,
 			z - 1,
@@ -450,9 +469,9 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			p.z_min, p.z_max, p.resolution);
 
 
-		if (stop_flag)
+		if (stop)
 		{
-			thread_is_running_flag = false;
+			thread_is_running = false;
 			return;
 		}
 
@@ -460,32 +479,17 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 		xyplane1.swap(xyplane0);
 	}
 
-	if (false == stop_flag)
+	if (false == stop)
 	{
-		get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m);
-		write_triangles_to_binary_stereo_lithography_file(stop_flag, "out.stl");
+		get_triangle_indices_and_vertices_with_face_normals_from_triangles();
+		write_triangles_to_binary_stereo_lithography_file("out.stl");
 	}
 
-	thread_is_running_flag = false;
+	thread_is_running = false;
 	return;
 }
 
-GLuint fractal_buffers[2] = { 0, 0 };
-GLuint fractal_vao = 0;
-GLuint      render_fbo = 0;
-GLuint      fbo_textures[3] = { 0, 0, 0 };
-GLuint      quad_vao = 0;
-GLuint      points_buffer = 0;
-bool gpu_holds_data = false;
 
-thread* gen_thread = 0;
-atomic_bool stop = false;
-atomic_bool thread_is_running = false;
-atomic_bool uploaded_to_gpu = false;
-vector<string> string_log;
-mutex thread_mutex;
-
-bool generate_button = true;
 
 
 
@@ -809,7 +813,7 @@ void generate_cancel_button_func(int control)
 			stop = false;
 		}
 
-		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), p, ref(string_log), ref(thread_mutex));
+		gen_thread = new thread(thread_func, p, ref(string_log), ref(thread_mutex));
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
@@ -859,7 +863,7 @@ void upload_to_gpu(void)
 		glDeleteBuffers(1, &fractal_buffers[1]);
 		fractal_buffers[1] = 0;
 	}
-
+	
 	glGenVertexArrays(1, &fractal_vao);
 	glBindVertexArray(fractal_vao);
 	glGenBuffers(1, &fractal_buffers[0]);
@@ -867,12 +871,14 @@ void upload_to_gpu(void)
 	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
 	// Set up vertex positions
-	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+
 	// Set up vertex normals
-	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
 
 	// Transfer index data to GPU
 	glGenBuffers(1, &fractal_buffers[1]);
@@ -1117,6 +1123,7 @@ bool init(void)
 		return false;
 	}
 
+	glGenBuffers(1, &triangle_buffer);
 
 	size_t char_index = 0;
 
@@ -1335,8 +1342,67 @@ void display_func(void)
 	
 	if (uploaded_to_gpu)
 	{
-		glBindVertexArray(fractal_vao);
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
+		vector<GLfloat> vertex_data = {
+
+			// 3D position, 2D texture coordinate
+
+			// card front
+			-0.025f, -0.025f,  0.0f, // vertex 0
+			 0.025f, -0.025f,  0.0f, // vertex 1
+			 0.025f,  0.025f,  0.0f, // vertex 2
+			-0.025f, -0.025f,  0.0f, // vertex 0
+			 0.025f,  0.025f,  0.0f, // vertex 2
+			-0.025f,  0.025f,  0.0f, // vertex 3
+
+			// card back
+			 0.025f,  0.025f,  0.0f, // vertex 2
+			 0.025f, -0.025f,  0.0f, // vertex 1
+			-0.025f, -0.025f,  0.0f, // vertex 0
+			 0.025f,  0.025f,  0.0f, // vertex 2
+			-0.025f, -0.025f,  0.0f, // vertex 0
+			-0.025f,  0.025f,  0.0f  // vertex 3
+		};
+
+		const GLuint components_per_vertex = 3;
+		const GLuint components_per_position = 3;
+
+		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
+
+		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+
+		glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+			components_per_position,
+			GL_FLOAT,
+			GL_FALSE,
+			components_per_vertex * sizeof(GLfloat),
+			NULL);
+
+		// Draw 12 vertices per card
+		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+
+		//glBegin(GL_TRIANGLES);
+		//for (size_t i = 0; i < triangles.size(); i++)
+		//{
+		//	//vertex_3 v0 = triangles[i].vertex[1] - triangles[i].vertex[0];
+		//	//vertex_3 v1 = triangles[i].vertex[2] - triangles[i].vertex[0];
+		//	//vertex_3 fn = v0.cross(v1);
+		//	//fn.normalize();
+		//	//
+		//	//glNormal3f(1, 1, 1);
+		//	//glVertex3f(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+		//	//glVertex3f(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+		//	//glVertex3f(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+		//	////glNormal3f(fn.x, fn.y, fn.z);
+		//	////glNormal3f(fn.x, fn.y, fn.z);
+		//	////glNormal3f(fn.x, fn.y, fn.z);
+
+		//}
+		//glEnd();
+//		glBindVertexArray(fractal_vao);
+//		glDrawElements(GL_TRIANGLES, static_cast<GLuint>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1360,22 +1426,32 @@ void display_func(void)
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
-	size_t char_x_pos = 10;
-	size_t char_y_pos = 30;
+	if (log_system.get_contents_size() > 0)
+	{
+		size_t char_x_pos = 10;
+		size_t char_y_pos = 30;
 
-	RGB text_colour;
-	text_colour.r = 255;
-	text_colour.g = 255;
-	text_colour.b = 255;
+		RGB text_colour;
+		text_colour.r = 255;
+		text_colour.g = 255;
+		text_colour.b = 255;
 
-	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+		vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
 
-	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+		glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, "Hello World1", text_colour);
-	print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos + 20, "Hello World2", text_colour);
+		thread_mutex.lock();
+		for (size_t i = 0; i < log_system.get_contents_size(); i++)
+		{
+			string s;
+			log_system.get_string_from_contents(i, s);
+			print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
+			char_y_pos += 20;
+		}
+		thread_mutex.unlock();
 
-	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+	}
 
 	glutSwapBuffers();
 }
