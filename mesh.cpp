@@ -6,15 +6,11 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 {
 	vector<vertex_3_with_index> v;
 
-	m.lock();
 	triangle_indices.clear();
 	vertices_with_face_normals.clear();
 
-	if (0 == t.size())
-	{
-		m.unlock();
+	if(0 == t.size())
 		return;
-	}
 
 	cout << "Triangles: " << t.size() << endl;
 	
@@ -26,10 +22,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
     for(vector<triangle>::const_iterator i = t.begin(); i != t.end(); i++)
     {
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
         vertex_set.insert(i->vertex[0]);
         vertex_set.insert(i->vertex[1]);
@@ -41,17 +34,14 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
     cout << "Generating vertex indices" << endl;
  
     // Add indices to the vertices.
-	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
-	{
+    for(set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
+    {
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
-		size_t index = v.size();
-		v.push_back(*i);
-		v[index].index = static_cast<GLuint>(index);
+        size_t index = v.size();
+        v.push_back(*i);
+        v[index].index = index;
     }
  
     vertex_set.clear();
@@ -60,10 +50,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	for (vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
 	{
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
 		vertex_set.insert(*i);
 	}
@@ -76,10 +63,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
     for(vector<triangle>::iterator i = t.begin(); i != t.end(); i++)
     {
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
         find_iter = vertex_set.find(i->vertex[0]);
         i->vertex[0].index = find_iter->index;
@@ -96,15 +80,12 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	cout << "Calculating normals" << endl;
 
 	vertices_with_face_normals.resize(v.size());
-
+	
 	// Assign per-triangle face normals
 	for(size_t i = 0; i < t.size(); i++)
 	{
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
 		vertex_3 v0 = t[i].vertex[1] - t[i].vertex[0];
 		vertex_3 v1 = t[i].vertex[2] - t[i].vertex[0];
@@ -127,10 +108,7 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	for(size_t i = 0; i < v.size(); i++)
 	{
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
 		// Assign vertex spatial comoponents
 		vertices_with_face_normals[i].x = v[i].x;
@@ -151,18 +129,13 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(atomic_b
 	for(size_t i = 0; i < t.size(); i++)
 	{
 		if (stop_flag)
-		{
-			m.unlock();
 			return;
-		}
 
 		// Assign triangle indices
 		triangle_indices[i].index[0] = t[i].vertex[0].index;
 		triangle_indices[i].index[1] = t[i].vertex[1].index;
 		triangle_indices[i].index[2] = t[i].vertex[2].index;
 	}
-
-	m.unlock();
 
 	cout << "Done" << endl;
 }

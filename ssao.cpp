@@ -4,7 +4,14 @@
 
 int main(int argc, char **argv)
 {
-	vector<triangle> input_triangles;
+	if (false == read_triangles_from_binary_stereo_lithography_file(triangles, "sample.stl"))
+	{
+		cout << "Error: Could not properly read sample file " << endl;
+		return 2;
+	}
+
+	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop, thread_mutex, triangles, triangle_indices, vertices_with_face_normals);
+	uploaded_to_gpu = true;
 
     glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
@@ -41,6 +48,8 @@ int main(int argc, char **argv)
 	glui = GLUI_Master.create_glui_subwindow(win_id, GLUI_SUBWINDOW_RIGHT);
 
 	generate_mesh_button = glui->add_button(const_cast<char*>("Generate mesh"), 0, generate_cancel_button_func);
+	export_to_stl_button = glui->add_button(const_cast<char*>("Export to STL"), 0, export_button_func);
+	export_to_stl_button->enabled = false;
 
 	glui->add_separator();
 
@@ -128,5 +137,6 @@ int main(int argc, char **argv)
 
     glutMainLoop();
 
+    
     return 0;
 }

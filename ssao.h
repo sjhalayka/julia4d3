@@ -82,96 +82,14 @@ public:
 	float z_min, z_max;
 };
 
-
-
-
-bool write_triangles_to_binary_stereo_lithography_file(atomic_bool& stop_flag, mutex& m, const vector<triangle>& t, const char* const file_name)
-{
-	cout << "Triangle count: " << t.size() << endl;
-
-	if (0 == t.size())
-		return false;
-
-	// Write to file.
-	ofstream out(file_name, ios_base::binary);
-
-	if (out.fail())
-		return false;
-
-	const size_t header_size = 80;
-	vector<char> buffer(header_size, 0);
-	unsigned int num_triangles = static_cast<unsigned int>(t.size()); // Must be 4-byte unsigned int.
-	vertex_3 normal;
-
-
-
-	// Copy everything to a single buffer.
-	// We do this here because calling ofstream::write() only once PER MESH is going to 
-	// send the data to disk faster than if we were to instead call ofstream::write()
-	// thirteen times PER TRIANGLE.
-	// Of course, the trade-off is that we are using 2x the RAM than what's absolutely required,
-	// but the trade-off is often very much worth it (especially so for meshes with millions of triangles).
-	cout << "Generating normal/vertex/attribute buffer" << endl;
-
-	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
-	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
-	buffer.resize(data_size, 0);
-
-	// Use a pointer to assist with the copying.
-	// Should probably use std::copy() instead, but memcpy() does the trick, so whatever...
-	char* cp = &buffer[0];
-
-	for (vector<triangle>::const_iterator i = t.begin(); i != t.end(); i++)
-	{
-		// Get face normal.
-		vertex_3 v0 = i->vertex[1] - i->vertex[0];
-		vertex_3 v1 = i->vertex[2] - i->vertex[0];
-		normal = v0.cross(v1);
-		normal.normalize();
-
-		memcpy(cp, &normal.x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &normal.y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &normal.z, sizeof(float)); cp += sizeof(float);
-
-		memcpy(cp, &i->vertex[0].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[0].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[0].z, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].z, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].z, sizeof(float)); cp += sizeof(float);
-
-		cp += sizeof(short unsigned int);
-
-		if (stop_flag)
-			break;
-	}
-
-	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
-
-	// Write blank header.
-	out.write(reinterpret_cast<const char*>(&(buffer[0])), header_size);
-
-	// Do something when cancelled
-	if (true == stop_flag)
-		num_triangles = 0;
-
-	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
-
-	if (false == stop_flag)
-		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
-
-	out.close();
-
-	return true;
-}
-
-
 vector<triangle> triangles;
 vector<triangle_index> triangle_indices;
 vector<vertex_3_with_normal> vertices_with_face_normals;
+
+
+
+
+
 
 
 void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fractal_set_parameters p, vector<triangle>& t, vector<string>& vs, mutex& m)
@@ -299,10 +217,6 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m, t, triangle_indices, vertices_with_face_normals);
 
-
-	write_triangles_to_binary_stereo_lithography_file(stop_flag, m, t, "out.stl");
-
-
 	thread_is_running_flag = false;
 	return;
 }
@@ -329,7 +243,7 @@ GLUI* glui, * glui2;
 
 GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
-GLUI_Button* generate_mesh_button;
+GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
 GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 
@@ -457,6 +371,7 @@ bool BMP::load(const char* FilePath)
 
 	return true;
 }
+
 
 
 void generate_cancel_button_func(int control)
@@ -779,9 +694,7 @@ void generate_cancel_button_func(int control)
 		}
 
 		cout << "Starting new thread" << endl;
-
-		cout << "res " << p.resolution << endl;
-
+\
 		gen_thread = new thread(thread_func, ref(stop), ref(thread_is_running), p, ref(triangles), ref(string_log), ref(thread_mutex));
 
 		generate_button = false;
@@ -789,6 +702,11 @@ void generate_cancel_button_func(int control)
 	}
 }
 
+void export_button_func(int control)
+{
+
+
+}
 
 void control_cb(int control)
 {
@@ -1213,24 +1131,24 @@ bool init(void)
 	// Transfer vertex data to GPU
 
 
-	//glGenVertexArrays(1, &fractal_vao);
-	//glBindVertexArray(fractal_vao);
-	//glGenBuffers(1, &fractal_buffers[0]);
-	//glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-	//glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
+	glGenVertexArrays(1, &fractal_vao);
+	glBindVertexArray(fractal_vao);
+	glGenBuffers(1, &fractal_buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
 
-	//// Set up vertex positions
-	//glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-	//glEnableVertexAttribArray(0);
+	// Set up vertex positions
+	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
-	//// Set up vertex normals
-	//glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-	//glEnableVertexAttribArray(1);
+	// Set up vertex normals
+	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
 
-	//// Transfer index data to GPU
-	//glGenBuffers(1, &fractal_buffers[1]);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
+	// Transfer index data to GPU
+	glGenBuffers(1, &fractal_buffers[1]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 
 
 
@@ -1300,6 +1218,19 @@ bool init(void)
 	glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 
+
+
+
+
+
+	BMP info;
+	if (false == info.load("card_texture.bmp"))
+	{
+		cout << "could not load card_texture.bmp" << endl;
+		return false;
+	}
+
+
 	return true;
 }
 
@@ -1333,14 +1264,8 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
-	if (uploaded_to_gpu)
-	{
-		glBindVertexArray(fractal_vao);
-
-		thread_mutex.lock();
-		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
-		thread_mutex.unlock();
-	}
+	glBindVertexArray(fractal_vao);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(triangle_indices.size() * 3), GL_UNSIGNED_INT, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1445,7 +1370,7 @@ void mouse_func(int button, int state, int x, int y)
 
 void myGlutMotion(int x, int y)
 {
-	glutPostRedisplay();
+//	glutPostRedisplay();
 }
 
 
