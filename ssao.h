@@ -1342,9 +1342,49 @@ void display_func(void)
 	
 	if (uploaded_to_gpu)
 	{
-		vector<GLfloat> vertex_data = {
+		vector<GLfloat> vertex_data;
+	
+		for (size_t i = 0; i < triangles.size(); i++)
+		{
+			size_t v0_index = triangles[i].vertex[0].index;
+			size_t v1_index = triangles[i].vertex[0].index;
+			size_t v2_index = triangles[i].vertex[0].index;
 
-			// 3D position, 2D texture coordinate
+			vertex_3 v0 = triangles[i].vertex[0];
+			vertex_3 v1 = triangles[i].vertex[1];
+			vertex_3 v2 = triangles[i].vertex[2];
+
+			vertex_3 fn0 = triangles[i].vertex[1] - triangles[i].vertex[0];
+			vertex_3 fn1 = triangles[i].vertex[2] - triangles[i].vertex[0];
+			vertex_3 fn = fn0.cross(fn1);
+			fn.normalize();
+
+			vertex_data.push_back(v0.x);
+			vertex_data.push_back(v0.y);
+			vertex_data.push_back(v0.z);
+			vertex_data.push_back(fn.x);
+			vertex_data.push_back(fn.y);
+			vertex_data.push_back(fn.z);
+
+			vertex_data.push_back(v1.x);
+			vertex_data.push_back(v1.y);
+			vertex_data.push_back(v1.z);
+			vertex_data.push_back(fn.x);
+			vertex_data.push_back(fn.y);
+			vertex_data.push_back(fn.z);
+
+			vertex_data.push_back(v2.x);
+			vertex_data.push_back(v2.y);
+			vertex_data.push_back(v2.z);
+			vertex_data.push_back(fn.x);
+			vertex_data.push_back(fn.y);
+			vertex_data.push_back(fn.z);
+		}
+
+		/* = {
+
+
+			// 3D position
 
 			// card front
 			-0.025f, -0.025f,  0.0f, // vertex 0
@@ -1361,9 +1401,10 @@ void display_func(void)
 			 0.025f,  0.025f,  0.0f, // vertex 2
 			-0.025f, -0.025f,  0.0f, // vertex 0
 			-0.025f,  0.025f,  0.0f  // vertex 3
-		};
+		};*/
 
-		const GLuint components_per_vertex = 3;
+		const GLuint components_per_vertex = 6;
+		const GLuint components_per_normal = 3;
 		const GLuint components_per_position = 3;
 
 		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
@@ -1379,6 +1420,15 @@ void display_func(void)
 			GL_FALSE,
 			components_per_vertex * sizeof(GLfloat),
 			NULL);
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
+			components_per_normal,
+			GL_FLOAT,
+			GL_TRUE,
+			components_per_vertex * sizeof(GLfloat),
+			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
+
 
 		// Draw 12 vertices per card
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
