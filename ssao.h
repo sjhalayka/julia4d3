@@ -181,7 +181,6 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 	m.lock();
 	t.clear();
-	m.unlock();
 
 	cout << "starting Thread_func" << endl;
 
@@ -199,6 +198,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 	if (false == eqparser.setup(p.equation_text, error_string, C))
 	{
 		cout << "Equation error: " << error_string << endl;
+		m.unlock();
 		return;
 	}
 	else
@@ -231,6 +231,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			if (stop_flag)
 			{
 				thread_is_running_flag = false;
+				m.unlock();
 				return;
 			}
 
@@ -265,6 +266,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 			{
 				if (stop_flag)
 				{
+					m.unlock();
 					thread_is_running_flag = false;
 					return;
 				}
@@ -290,6 +292,7 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 		if (stop_flag)
 		{
+			m.unlock();
 			thread_is_running_flag = false;
 			return;
 		}
@@ -300,12 +303,10 @@ void thread_func(atomic_bool& stop_flag, atomic_bool& thread_is_running_flag, fr
 
 	cout << endl;
 	
-	m.lock();
 	get_triangle_indices_and_vertices_with_face_normals_from_triangles(stop_flag, m, t, triangle_indices, vertices_with_face_normals);
-	m.unlock();
-
 	write_triangles_to_binary_stereo_lithography_file(stop_flag, t, "out.stl");
 	
+	m.unlock();
 
 	thread_is_running_flag = false;
 	return;
@@ -834,8 +835,6 @@ void myGlutIdle(void)
 		{
 			cout << "uploading to gpu" << endl;
 
-			thread_mutex.lock();
-
 			if (glIsVertexArray(fractal_vao))
 			{
 				cout << "cleaning up fractal vao" << endl;
@@ -855,7 +854,6 @@ void myGlutIdle(void)
 			}
 
 			cout << "uploading vertex with normals" << endl;
-
 			glGenVertexArrays(1, &fractal_vao);
 			glBindVertexArray(fractal_vao);
 			glGenBuffers(1, &fractal_buffers[0]);
@@ -875,7 +873,6 @@ void myGlutIdle(void)
 			glGenBuffers(1, &fractal_buffers[1]);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
-			thread_mutex.unlock();
 
 			cout << "Done uploading to GPU" << endl;
 			uploaded_to_gpu = true;
@@ -1332,6 +1329,16 @@ bool init(void)
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 
 
+
+
+
+
+	BMP info;
+	if (false == info.load("card_texture.bmp"))
+	{
+		cout << "could not load card_texture.bmp" << endl;
+		return false;
+	}
 
 
 	return true;
