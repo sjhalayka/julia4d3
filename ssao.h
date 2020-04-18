@@ -484,14 +484,16 @@ void thread_func(fractal_set_parameters p)
 			}
 			else
 			{
-				xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-
 				const float y_span = (p.y_max - p.y_min);
 				const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
 
 				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
 				{
 					xyplane0[x * p.resolution + y] = p.infinity - 0.00001f;
+				}
+				else
+				{
+					xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 				}
 			}
 		}
@@ -536,14 +538,16 @@ void thread_func(fractal_set_parameters p)
 				}
 				else
 				{
-					xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-
 					const float y_span = (p.y_max - p.y_min);
 					const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
 
 					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
 					{
 						xyplane1[x * p.resolution + y] = p.infinity - 0.00001f;
+					}
+					else
+					{
+						xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 					}
 				}
 			}
@@ -1940,8 +1944,8 @@ void setup_gui(void)
 	equation_edittext->set_w(150);
 
 	glui->add_separator();
-rainbow_colouring_checkbox
-	 = glui->add_checkbox("Rainbow colouring");
+	
+	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
 	use_pedestal_checkbox->set_int_val(1);
@@ -1950,7 +1954,7 @@ rainbow_colouring_checkbox
 	pedestal_y_start_edittext->set_text("0.0");
 
 	pedestal_y_end_edittext = glui->add_edittext(const_cast<char*>("Pedestal y end:"), 0, const_cast<char*>("1.0"), 3, control_cb);
-	pedestal_y_end_edittext->set_text("0.1");
+	pedestal_y_end_edittext->set_text("0.15");
 
 
 	glui->add_separator();
