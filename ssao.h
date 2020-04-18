@@ -1347,61 +1347,38 @@ void display_func(void)
 		for (size_t i = 0; i < triangles.size(); i++)
 		{
 			size_t v0_index = triangles[i].vertex[0].index;
-			size_t v1_index = triangles[i].vertex[0].index;
-			size_t v2_index = triangles[i].vertex[0].index;
+			size_t v1_index = triangles[i].vertex[1].index;
+			size_t v2_index = triangles[i].vertex[2].index;
 
-			vertex_3 v0 = triangles[i].vertex[0];
-			vertex_3 v1 = triangles[i].vertex[1];
-			vertex_3 v2 = triangles[i].vertex[2];
+			vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+			vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+			vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
 
-			vertex_3 fn0 = triangles[i].vertex[1] - triangles[i].vertex[0];
-			vertex_3 fn1 = triangles[i].vertex[2] - triangles[i].vertex[0];
-			vertex_3 fn = fn0.cross(fn1);
-			fn.normalize();
+			vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+			vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+			vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
 
 			vertex_data.push_back(v0.x);
 			vertex_data.push_back(v0.y);
 			vertex_data.push_back(v0.z);
-			vertex_data.push_back(fn.x);
-			vertex_data.push_back(fn.y);
-			vertex_data.push_back(fn.z);
+			vertex_data.push_back(v0_fn.x);
+			vertex_data.push_back(v0_fn.y);
+			vertex_data.push_back(v0_fn.z);
 
 			vertex_data.push_back(v1.x);
 			vertex_data.push_back(v1.y);
 			vertex_data.push_back(v1.z);
-			vertex_data.push_back(fn.x);
-			vertex_data.push_back(fn.y);
-			vertex_data.push_back(fn.z);
+			vertex_data.push_back(v1_fn.x);
+			vertex_data.push_back(v1_fn.y);
+			vertex_data.push_back(v1_fn.z);
 
 			vertex_data.push_back(v2.x);
 			vertex_data.push_back(v2.y);
 			vertex_data.push_back(v2.z);
-			vertex_data.push_back(fn.x);
-			vertex_data.push_back(fn.y);
-			vertex_data.push_back(fn.z);
+			vertex_data.push_back(v2_fn.x);
+			vertex_data.push_back(v2_fn.y);
+			vertex_data.push_back(v2_fn.z);
 		}
-
-		/* = {
-
-
-			// 3D position
-
-			// card front
-			-0.025f, -0.025f,  0.0f, // vertex 0
-			 0.025f, -0.025f,  0.0f, // vertex 1
-			 0.025f,  0.025f,  0.0f, // vertex 2
-			-0.025f, -0.025f,  0.0f, // vertex 0
-			 0.025f,  0.025f,  0.0f, // vertex 2
-			-0.025f,  0.025f,  0.0f, // vertex 3
-
-			// card back
-			 0.025f,  0.025f,  0.0f, // vertex 2
-			 0.025f, -0.025f,  0.0f, // vertex 1
-			-0.025f, -0.025f,  0.0f, // vertex 0
-			 0.025f,  0.025f,  0.0f, // vertex 2
-			-0.025f, -0.025f,  0.0f, // vertex 0
-			-0.025f,  0.025f,  0.0f  // vertex 3
-		};*/
 
 		const GLuint components_per_vertex = 6;
 		const GLuint components_per_normal = 3;
