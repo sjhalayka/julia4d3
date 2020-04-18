@@ -862,7 +862,11 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		istringstream iss(temp_string);
 		iss >> p.resolution;
 
-		cout << "Read res " << p.resolution << endl;
+		if (p.resolution < 3)
+		{
+			cout << "resolution must be greater than or equal to 3" << endl;
+			return false;
+		}
 	}
 
 	return true;
