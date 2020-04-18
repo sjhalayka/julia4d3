@@ -349,7 +349,7 @@ void get_vertices_with_face_normals_from_triangles(void)
 	cout << "Done" << endl;
 }
 
-void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
+void thread_func(fractal_set_parameters p)
 {
 	thread_is_running = true;
 
@@ -364,12 +364,20 @@ void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
 	C.z = p.C_z;
 	C.w = p.C_w;
 
+	ostringstream oss;
+
 	string error_string;
 	quaternion_julia_set_equation_parser eqparser;
 
 	if (false == eqparser.setup(p.equation_text, error_string, C))
 	{
-		cout << "Equation error: " << error_string << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Equation error: " << error_string;
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return;
 	}
 
@@ -422,7 +430,12 @@ void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
 	{
 		Z.x = p.z_min;
 
-		//cout << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1 << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
 
 		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
 		{
@@ -799,7 +812,7 @@ void generate_cancel_button_func(int control)
 			stop = false;
 		}
 
-		gen_thread = new thread(thread_func, p, ref(string_log), ref(thread_mutex));
+		gen_thread = new thread(thread_func, p);
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
