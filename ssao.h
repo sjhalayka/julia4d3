@@ -142,7 +142,14 @@ unsigned int triangle_buffer = 0;
 
 bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name)
 {
-//	cout << "Triangle count: " << triangles.size() << endl;
+	ostringstream oss;
+
+	oss.clear();
+	oss.str("");
+	oss << "Triangle count: " << triangles.size();
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	if (0 == triangles.size())
 		return false;
@@ -165,7 +172,13 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	// thirteen times PER TRIANGLE.
 	// Of course, the trade-off is that we are using 2x the RAM than what's absolutely required,
 	// but the trade-off is often very much worth it (especially so for meshes with millions of triangles).
-	//cout << "Generating normal/vertex/attribute buffer" << endl;
+
+	oss.clear();
+	oss.str("");
+	oss << "Generating normal/vertex/attribute buffer";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
 	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
@@ -212,13 +225,22 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	// Write number of triangles.
 	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
 
-
-//	cout << "Writing " << data_size / 1048576 << " MB of data to binary Stereo Lithography file: " << file_name << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Writing " << data_size / 1048576.0 << " MB of data to STL file: " << file_name;
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	if(false == stop)
 		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
-	
-//	cout << "Done writing out.stl" << endl;
+
+	oss.clear();
+	oss.str("");
+	oss << "Done writing out.stl";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	out.close();
 
@@ -236,7 +258,14 @@ void get_vertices_with_face_normals_from_triangles(void)
 	if (0 == triangles.size())
 		return;
 
-	cout << "Welding vertices" << endl;
+	ostringstream oss;
+
+	oss.clear();
+	oss.str("");
+	oss << "Welding vertices";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	// Insert unique vertices into set.
 	set<vertex_3_with_index> vertex_set;
@@ -251,9 +280,21 @@ void get_vertices_with_face_normals_from_triangles(void)
 		vertex_set.insert(i->vertex[2]);
 	}
 
-	cout << "Vertices: " << vertex_set.size() << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Vertices: " << vertex_set.size();
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
-	cout << "Generating vertex indices" << endl;
+
+	oss.clear();
+	oss.str("");
+	oss << "Generating vertex indices";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
+
 
 	// Add indices to the vertices.
 	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
@@ -277,7 +318,13 @@ void get_vertices_with_face_normals_from_triangles(void)
 		vertex_set.insert(*i);
 	}
 
-	cout << "Assigning vertex indices to triangles" << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Assigning vertex indices to triangles";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
+
 
 	// Find the three vertices for each triangle, by index.
 	set<vertex_3_with_index>::iterator find_iter;
@@ -299,7 +346,12 @@ void get_vertices_with_face_normals_from_triangles(void)
 
 	vertex_set.clear();
 
-	cout << "Calculating normals" << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Calculating normals";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	vertices_with_face_normals.resize(v.size());
 
@@ -325,7 +377,12 @@ void get_vertices_with_face_normals_from_triangles(void)
 		vertices_with_face_normals[triangles[i].vertex[2].index].nz += fn.z;
 	}
 
-	cout << "Generating final index/vertex data" << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Generating final index/vertex data";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 
 	for (size_t i = 0; i < v.size(); i++)
 	{
@@ -346,7 +403,12 @@ void get_vertices_with_face_normals_from_triangles(void)
 		vertices_with_face_normals[i].nz = temp_face_normal.z;
 	}
 
-	cout << "Done" << endl;
+	oss.clear();
+	oss.str("");
+	oss << "Done";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
 }
 
 void thread_func(fractal_set_parameters p)
