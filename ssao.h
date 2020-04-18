@@ -54,7 +54,7 @@ using namespace std;
 #include "matrix_utils.h"
 #include "uv_camera.h"
 #include "mesh.h"
-#include "GLUI/glui.h"
+#include "glui/glui.h"
 #include "string_utilities.h"
 using namespace string_utilities;
 #include "eqparse.h"
@@ -67,6 +67,10 @@ using namespace marching_cubes;
 
 
 logging_system log_system;
+
+vector<GLfloat> vertex_data;
+
+
 
 
 GLint win_id = 0;
@@ -129,7 +133,7 @@ bool gpu_holds_data = false;
 thread* gen_thread = 0;
 atomic_bool stop = false;
 atomic_bool thread_is_running = false;
-atomic_bool uploaded_to_gpu = false;
+atomic_bool vertex_data_refreshed = false;
 vector<string> string_log;
 mutex thread_mutex;
 
@@ -759,7 +763,7 @@ void generate_cancel_button_func(int control)
 	if (generate_button == false)
 	{
 		stop = true;
-		uploaded_to_gpu = false;
+		vertex_data_refreshed = false;
 
 		if (gen_thread != 0)
 		{
@@ -783,7 +787,7 @@ void generate_cancel_button_func(int control)
 			return;
 
 		stop = false;
-		uploaded_to_gpu = false;
+		vertex_data_refreshed = false;
 
 		if (gen_thread != 0)
 		{
@@ -826,8 +830,45 @@ void myGlutReshape(int x, int y)
 	glutPostRedisplay();
 }
 
-void upload_to_gpu(void)
+void refresh_vertex_data(void)
 {
+	vertex_data.clear();
+
+	for (size_t i = 0; i < triangles.size(); i++)
+	{
+		size_t v0_index = triangles[i].vertex[0].index;
+		size_t v1_index = triangles[i].vertex[1].index;
+		size_t v2_index = triangles[i].vertex[2].index;
+
+		vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+		vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+		vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+
+		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+
+		vertex_data.push_back(v0.x);
+		vertex_data.push_back(v0.y);
+		vertex_data.push_back(v0.z);
+		vertex_data.push_back(v0_fn.x);
+		vertex_data.push_back(v0_fn.y);
+		vertex_data.push_back(v0_fn.z);
+
+		vertex_data.push_back(v1.x);
+		vertex_data.push_back(v1.y);
+		vertex_data.push_back(v1.z);
+		vertex_data.push_back(v1_fn.x);
+		vertex_data.push_back(v1_fn.y);
+		vertex_data.push_back(v1_fn.z);
+
+		vertex_data.push_back(v2.x);
+		vertex_data.push_back(v2.y);
+		vertex_data.push_back(v2.z);
+		vertex_data.push_back(v2_fn.x);
+		vertex_data.push_back(v2_fn.y);
+		vertex_data.push_back(v2_fn.z);
+	}
 
 }
 
@@ -835,10 +876,10 @@ void myGlutIdle(void)
 {
 	if (false == thread_is_running && false == generate_button)
 	{
-		if (false == uploaded_to_gpu && false == stop && triangles.size() > 0)
+		if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
 		{
-			upload_to_gpu();
-			uploaded_to_gpu = true;
+			refresh_vertex_data();
+			vertex_data_refreshed = true;
 		}
 
 		generate_button = true;
@@ -1180,13 +1221,6 @@ bool init(void)
 	randomize_points = true;
 	point_count = 10;
 
-	if (false == uploaded_to_gpu)
-	{
-		upload_to_gpu();
-		uploaded_to_gpu = true;
-		cout << "Done uploading to GPU" << endl;
-	}
-
 	load_shaders();
 
 	glGenFramebuffers(1, &render_fbo);
@@ -1285,46 +1319,8 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 	
-	if (uploaded_to_gpu)
+	if (vertex_data_refreshed)
 	{
-		vector<GLfloat> vertex_data;
-	
-		for (size_t i = 0; i < triangles.size(); i++)
-		{
-			size_t v0_index = triangles[i].vertex[0].index;
-			size_t v1_index = triangles[i].vertex[1].index;
-			size_t v2_index = triangles[i].vertex[2].index;
-
-			vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
-			vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
-			vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
-
-			vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-			vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-			vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-
-			vertex_data.push_back(v0.x);
-			vertex_data.push_back(v0.y);
-			vertex_data.push_back(v0.z);
-			vertex_data.push_back(v0_fn.x);
-			vertex_data.push_back(v0_fn.y);
-			vertex_data.push_back(v0_fn.z);
-
-			vertex_data.push_back(v1.x);
-			vertex_data.push_back(v1.y);
-			vertex_data.push_back(v1.z);
-			vertex_data.push_back(v1_fn.x);
-			vertex_data.push_back(v1_fn.y);
-			vertex_data.push_back(v1_fn.z);
-
-			vertex_data.push_back(v2.x);
-			vertex_data.push_back(v2.y);
-			vertex_data.push_back(v2.z);
-			vertex_data.push_back(v2_fn.x);
-			vertex_data.push_back(v2_fn.y);
-			vertex_data.push_back(v2_fn.z);
-		}
-
 		const GLuint components_per_vertex = 6;
 		const GLuint components_per_normal = 3;
 		const GLuint components_per_position = 3;
@@ -1332,8 +1328,7 @@ void display_func(void)
 		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
 
 		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
-
-		glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_DYNAMIC_DRAW);
 
 		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
 		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
@@ -1351,30 +1346,8 @@ void display_func(void)
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
 
-
 		// Draw 12 vertices per card
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
-
-		//glBegin(GL_TRIANGLES);
-		//for (size_t i = 0; i < triangles.size(); i++)
-		//{
-		//	//vertex_3 v0 = triangles[i].vertex[1] - triangles[i].vertex[0];
-		//	//vertex_3 v1 = triangles[i].vertex[2] - triangles[i].vertex[0];
-		//	//vertex_3 fn = v0.cross(v1);
-		//	//fn.normalize();
-		//	//
-		//	//glNormal3f(1, 1, 1);
-		//	//glVertex3f(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-		//	//glVertex3f(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-		//	//glVertex3f(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-		//	////glNormal3f(fn.x, fn.y, fn.z);
-		//	////glNormal3f(fn.x, fn.y, fn.z);
-		//	////glNormal3f(fn.x, fn.y, fn.z);
-
-		//}
-		//glEnd();
-//		glBindVertexArray(fractal_vao);
-//		glDrawElements(GL_TRIANGLES, static_cast<GLuint>(triangle_indices.size()*3), GL_UNSIGNED_INT, 0);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
