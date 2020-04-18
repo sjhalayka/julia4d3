@@ -491,7 +491,7 @@ void thread_func(fractal_set_parameters p)
 
 				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
 				{
-					xyplane0[x * p.resolution + y] = 0.0;
+					xyplane0[x * p.resolution + y] = p.infinity - 0.00001f;
 				}
 			}
 		}
@@ -543,7 +543,7 @@ void thread_func(fractal_set_parameters p)
 
 					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
 					{
-						xyplane1[x * p.resolution + y] = 0.0;
+						xyplane1[x * p.resolution + y] = p.infinity - 0.00001f;
 					}
 				}
 			}
