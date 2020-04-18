@@ -16,15 +16,15 @@ int main(int argc, char **argv)
     win_id = glutCreateWindow("Julia 4D 3");
 	glewInit();
 	
-	if (false == read_triangles_from_binary_stereo_lithography_file(triangles, "sample.stl"))
-	{
-		cout << "Error: Could not properly read sample file " << endl;
-		return 2;
-	}
+	//if (false == read_triangles_from_binary_stereo_lithography_file(triangles, "sample.stl"))
+	//{
+	//	cout << "Error: Could not properly read sample file " << endl;
+	//	return 2;
+	//}
 
-	stop = false;
-	get_triangle_indices_and_vertices_with_face_normals_from_triangles();
-	uploaded_to_gpu = false;
+	//stop = false;
+	//get_vertices_with_face_normals_from_triangles();
+	//uploaded_to_gpu = false;
  
 	if(false == init())
 		return 3;
