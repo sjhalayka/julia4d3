@@ -909,6 +909,8 @@ void refresh_vertex_data(void)
 {
 	vertex_data.clear();
 
+
+
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
 		vertex_3 colour(1.0f, 0.5f, 0.0);
