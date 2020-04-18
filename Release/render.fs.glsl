@@ -10,6 +10,7 @@ in VS_OUT
     vec3 N;
     vec3 L;
     vec3 V;
+    vec3 vertex_colour;
 } fs_in;
 
 // Material properties
@@ -29,7 +30,7 @@ void main(void)
     vec3 R = reflect(-L, N);
 
     // Compute the diffuse and specular components for each fragment
-    vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+    vec3 diffuse = max(dot(N, L), 0.0) * fs_in.vertex_colour;//diffuse_albedo;
     diffuse *= diffuse;
     vec3 specular = pow(max(dot(R, V), 0.0), specular_power) * specular_albedo;
 
