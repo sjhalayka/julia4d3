@@ -92,7 +92,7 @@ GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
 GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
-GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
+GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -1039,7 +1039,62 @@ RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned 
 	return rgb;
 }
 
-void refresh_vertex_data(void)
+void refresh_vertex_data_blue(void)
+{
+	vertex_data.clear();
+
+	for (size_t i = 0; i < triangles.size(); i++)
+	{
+		vertex_3 colour(0.0f, 0.8f, 1.0f);
+
+		size_t v0_index = triangles[i].vertex[0].index;
+		size_t v1_index = triangles[i].vertex[1].index;
+		size_t v2_index = triangles[i].vertex[2].index;
+
+		vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+		vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+		vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+
+		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+
+		vertex_data.push_back(v0.x);
+		vertex_data.push_back(v0.y);
+		vertex_data.push_back(v0.z);
+		vertex_data.push_back(v0_fn.x);
+		vertex_data.push_back(v0_fn.y);
+		vertex_data.push_back(v0_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+
+		vertex_data.push_back(v1.x);
+		vertex_data.push_back(v1.y);
+		vertex_data.push_back(v1.z);
+		vertex_data.push_back(v1_fn.x);
+		vertex_data.push_back(v1_fn.y);
+		vertex_data.push_back(v1_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+
+		vertex_data.push_back(v2.x);
+		vertex_data.push_back(v2.y);
+		vertex_data.push_back(v2.z);
+		vertex_data.push_back(v2_fn.x);
+		vertex_data.push_back(v2_fn.y);
+		vertex_data.push_back(v2_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+	}
+
+}
+
+
+
+void refresh_vertex_data_rainbow(void)
 {
 	vertex_data.clear();
 
@@ -1171,6 +1226,15 @@ void refresh_vertex_data(void)
 
 }
 
+void refresh_vertex_data(void)
+{
+	int do_rainbow = rainbow_colouring_checkbox->get_int_val();
+
+	if (do_rainbow)
+		refresh_vertex_data_rainbow();
+	else
+		refresh_vertex_data_blue();
+}
 
 void myGlutIdle(void)
 {
@@ -1808,7 +1872,8 @@ void setup_gui(void)
 	equation_edittext->set_w(150);
 
 	glui->add_separator();
-
+rainbow_colouring_checkbox
+	 = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
 	use_pedestal_checkbox->set_int_val(1);
