@@ -479,9 +479,21 @@ void thread_func(fractal_set_parameters p)
 			}
 
 			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+			{
 				xyplane0[x * p.resolution + y] = border_value;
+			}
 			else
+			{
 				xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+
+				const float y_span = (p.y_max - p.y_min);
+				const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
+
+				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+				{
+					xyplane0[x * p.resolution + y] = 0.0;
+				}
+			}
 		}
 	}
 
@@ -519,9 +531,21 @@ void thread_func(fractal_set_parameters p)
 				}
 
 				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+				{
 					xyplane1[x * p.resolution + y] = border_value;
+				}
 				else
+				{
 					xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+
+					const float y_span = (p.y_max - p.y_min);
+					const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
+
+					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+					{
+						xyplane1[x * p.resolution + y] = 0.0;
+					}
+				}
 			}
 		}
 
