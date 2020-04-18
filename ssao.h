@@ -472,9 +472,9 @@ void thread_func(fractal_set_parameters p)
 			}
 
 			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-				xyplane0[y * p.resolution + x] = border_value;
+				xyplane0[x * p.resolution + y] = border_value;
 			else
-				xyplane0[y * p.resolution + x] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+				xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 		}
 	}
 
@@ -512,9 +512,9 @@ void thread_func(fractal_set_parameters p)
 				}
 
 				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-					xyplane1[y * p.resolution + x] = border_value;
+					xyplane1[x * p.resolution + y] = border_value;
 				else
-					xyplane1[y * p.resolution + x] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+					xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
 			}
 		}
 
@@ -911,6 +911,8 @@ void refresh_vertex_data(void)
 
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
+		vertex_3 colour(1.0f, 0.5f, 0.0);
+
 		size_t v0_index = triangles[i].vertex[0].index;
 		size_t v1_index = triangles[i].vertex[1].index;
 		size_t v2_index = triangles[i].vertex[2].index;
@@ -929,6 +931,9 @@ void refresh_vertex_data(void)
 		vertex_data.push_back(v0_fn.x);
 		vertex_data.push_back(v0_fn.y);
 		vertex_data.push_back(v0_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
 
 		vertex_data.push_back(v1.x);
 		vertex_data.push_back(v1.y);
@@ -936,6 +941,9 @@ void refresh_vertex_data(void)
 		vertex_data.push_back(v1_fn.x);
 		vertex_data.push_back(v1_fn.y);
 		vertex_data.push_back(v1_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
 
 		vertex_data.push_back(v2.x);
 		vertex_data.push_back(v2.y);
@@ -943,9 +951,13 @@ void refresh_vertex_data(void)
 		vertex_data.push_back(v2_fn.x);
 		vertex_data.push_back(v2_fn.y);
 		vertex_data.push_back(v2_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
 	}
 
 }
+
 
 void myGlutIdle(void)
 {
@@ -1396,9 +1408,10 @@ void display_func(void)
 	
 	if (vertex_data_refreshed)
 	{
-		const GLuint components_per_vertex = 6;
+		const GLuint components_per_vertex = 9;
 		const GLuint components_per_normal = 3;
 		const GLuint components_per_position = 3;
+		const GLuint components_per_colour = 3;
 
 		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
 
@@ -1420,6 +1433,14 @@ void display_func(void)
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
+			components_per_colour,
+			GL_FLOAT,
+			GL_TRUE,
+			components_per_vertex * sizeof(GLfloat),
+			(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
 
 		// Draw 12 vertices per card
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
