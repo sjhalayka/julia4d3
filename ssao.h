@@ -116,7 +116,6 @@ GLUI_EditText* infinity_edittext;
 GLUI_StaticText* status;
 
 vector<triangle> triangles;
-vector<triangle_index> triangle_indices;
 vector<vertex_3_with_normal> vertices_with_face_normals;
 
 GLuint fractal_buffers[2] = { 0, 0 };
@@ -224,11 +223,10 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 
 
 
-void get_triangle_indices_and_vertices_with_face_normals_from_triangles(void)
+void get_vertices_with_face_normals_from_triangles(void)
 {
 	vector<vertex_3_with_index> v;
 
-	triangle_indices.clear();
 	vertices_with_face_normals.clear();
 
 	if (0 == triangles.size())
@@ -344,19 +342,6 @@ void get_triangle_indices_and_vertices_with_face_normals_from_triangles(void)
 		vertices_with_face_normals[i].nz = temp_face_normal.z;
 	}
 
-	triangle_indices.resize(triangles.size());
-
-	for (size_t i = 0; i < triangles.size(); i++)
-	{
-		if (stop)
-			return;
-
-		// Assign triangle indices
-		triangle_indices[i].index[0] = triangles[i].vertex[0].index;
-		triangle_indices[i].index[1] = triangles[i].vertex[1].index;
-		triangle_indices[i].index[2] = triangles[i].vertex[2].index;
-	}
-
 	cout << "Done" << endl;
 }
 
@@ -364,11 +349,8 @@ void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
 {
 	thread_is_running = true;
 
-
-
 	triangles.clear();
 	vertices_with_face_normals.clear();
-	triangle_indices.clear();
 
 	bool make_border = true;
 
@@ -481,7 +463,7 @@ void thread_func(fractal_set_parameters p, vector<string>& vs, mutex& m)
 
 	if (false == stop)
 	{
-		get_triangle_indices_and_vertices_with_face_normals_from_triangles();
+		get_vertices_with_face_normals_from_triangles();
 		write_triangles_to_binary_stereo_lithography_file("out.stl");
 	}
 
@@ -846,44 +828,7 @@ void myGlutReshape(int x, int y)
 
 void upload_to_gpu(void)
 {
-	if (glIsVertexArray(fractal_vao))
-	{
-		glDeleteVertexArrays(1, &fractal_vao);
-		fractal_vao = 0;
-	}
 
-	if (glIsBuffer(fractal_buffers[0]))
-	{
-		glDeleteBuffers(1, &fractal_buffers[0]);
-		fractal_buffers[0] = 0;
-	}
-
-	if (glIsBuffer(fractal_buffers[1]))
-	{
-		glDeleteBuffers(1, &fractal_buffers[1]);
-		fractal_buffers[1] = 0;
-	}
-	
-	glGenVertexArrays(1, &fractal_vao);
-	glBindVertexArray(fractal_vao);
-	glGenBuffers(1, &fractal_buffers[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, fractal_buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, vertices_with_face_normals.size() * 6 * sizeof(float), &vertices_with_face_normals[0], GL_STATIC_DRAW);
-
-	// Set up vertex positions
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(0, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
-
-	// Set up vertex normals
-	glEnableVertexAttribArray(1);
-
-	glVertexAttribPointer(1, 6 / 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(6 / 2 * sizeof(GLfloat)));
-
-	// Transfer index data to GPU
-	glGenBuffers(1, &fractal_buffers[1]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, fractal_buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangle_indices.size() * 3 * sizeof(GLuint), &triangle_indices[0], GL_STATIC_DRAW);
 }
 
 void myGlutIdle(void)
