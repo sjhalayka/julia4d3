@@ -1045,6 +1045,12 @@ void refresh_vertex_data_blue(void)
 
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
+		if (stop)
+		{
+			vertex_data.clear();
+			return;
+		}
+
 		vertex_3 colour(0.0f, 0.8f, 1.0f);
 
 		size_t v0_index = triangles[i].vertex[0].index;
@@ -1103,6 +1109,9 @@ void refresh_vertex_data_rainbow(void)
 
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
+		if (stop)
+			return;
+
 		size_t v0_index = triangles[i].vertex[0].index;
 		size_t v1_index = triangles[i].vertex[1].index;
 		size_t v2_index = triangles[i].vertex[2].index;
@@ -1145,6 +1154,12 @@ void refresh_vertex_data_rainbow(void)
 
 	for (size_t i = 0; i < triangles.size(); i++)
 	{
+		if (stop)
+		{
+			vertex_data.clear();
+			return;
+		}
+
 		vertex_3 colour(1.0f, 0.5f, 0.0);
 
 		size_t v0_index = triangles[i].vertex[0].index;
@@ -1228,13 +1243,42 @@ void refresh_vertex_data_rainbow(void)
 
 void refresh_vertex_data(void)
 {
+	ostringstream oss;
+
+	oss.clear();
+	oss.str("");
+	oss << "Refreshing vertex data";
+	thread_mutex.lock();
+	log_system.add_string_to_contents(oss.str());
+	thread_mutex.unlock();
+
 	int do_rainbow = rainbow_colouring_checkbox->get_int_val();
 
 	if (do_rainbow)
 		refresh_vertex_data_rainbow();
 	else
 		refresh_vertex_data_blue();
+
+	if (stop)
+	{
+		oss.clear();
+		oss.str("");
+		oss << "Cancelled refreshing vertex data";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+	}
+	else
+	{
+		oss.clear();
+		oss.str("");
+		oss << "Done refreshing vertex data";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+	}
 }
+
 
 void myGlutIdle(void)
 {
@@ -1678,7 +1722,7 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 	
-	if (vertex_data_refreshed)
+	if (vertex_data_refreshed && vertex_data.size() > 0)
 	{
 		const GLuint components_per_vertex = 9;
 		const GLuint components_per_normal = 3;
