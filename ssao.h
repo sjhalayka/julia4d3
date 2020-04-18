@@ -140,6 +140,13 @@ mutex thread_mutex;
 bool generate_button = true;
 unsigned int triangle_buffer = 0;
 
+class RGB
+{
+public:
+	unsigned char r, g, b;
+};
+
+
 bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name)
 {
 	ostringstream oss;
@@ -905,9 +912,179 @@ void myGlutReshape(int x, int y)
 	glutPostRedisplay();
 }
 
+
+RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned char bri_percent)
+{
+	float R = 0.0f;
+	float G = 0.0f;
+	float B = 0.0f;
+
+	if (hue_degree > 359)
+		hue_degree = 359;
+
+	if (sat_percent > 100)
+		sat_percent = 100;
+
+	if (bri_percent > 100)
+		bri_percent = 100;
+
+	float hue_pos = 6.0f - ((static_cast<float>(hue_degree) / 359.0f) * 6.0f);
+
+	if (hue_pos >= 0.0f && hue_pos < 1.0f)
+	{
+		R = 255.0f;
+		G = 0.0f;
+		B = 255.0f * hue_pos;
+	}
+	else if (hue_pos >= 1.0f && hue_pos < 2.0f)
+	{
+		hue_pos -= 1.0f;
+
+		R = 255.0f - (255.0f * hue_pos);
+		G = 0.0f;
+		B = 255.0f;
+	}
+	else if (hue_pos >= 2.0f && hue_pos < 3.0f)
+	{
+		hue_pos -= 2.0f;
+
+		R = 0.0f;
+		G = 255.0f * hue_pos;
+		B = 255.0f;
+	}
+	else if (hue_pos >= 3.0f && hue_pos < 4.0f)
+	{
+		hue_pos -= 3.0f;
+
+		R = 0.0f;
+		G = 255.0f;
+		B = 255.0f - (255.0f * hue_pos);
+	}
+	else if (hue_pos >= 4.0f && hue_pos < 5.0f)
+	{
+		hue_pos -= 4.0f;
+
+		R = 255.0f * hue_pos;
+		G = 255.0f;
+		B = 0.0f;
+	}
+	else
+	{
+		hue_pos -= 5.0f;
+
+		R = 255.0f;
+		G = 255.0f - (255.0f * hue_pos);
+		B = 0.0f;
+	}
+
+	if (100 != sat_percent)
+	{
+		if (0 == sat_percent)
+		{
+			R = 255.0f;
+			G = 255.0f;
+			B = 255.0f;
+		}
+		else
+		{
+			if (255.0f != R)
+				R += ((255.0f - R) / 100.0f) * (100.0f - sat_percent);
+			if (255.0f != G)
+				G += ((255.0f - G) / 100.0f) * (100.0f - sat_percent);
+			if (255.0f != B)
+				B += ((255.0f - B) / 100.0f) * (100.0f - sat_percent);
+		}
+	}
+
+	if (100 != bri_percent)
+	{
+		if (0 == bri_percent)
+		{
+			R = 0.0f;
+			G = 0.0f;
+			B = 0.0f;
+		}
+		else
+		{
+			if (0.0f != R)
+				R *= static_cast<float>(bri_percent) / 100.0f;
+			if (0.0f != G)
+				G *= static_cast<float>(bri_percent) / 100.0f;
+			if (0.0f != B)
+				B *= static_cast<float>(bri_percent) / 100.0f;
+		}
+	}
+
+	if (R < 0.0f)
+		R = 0.0f;
+	else if (R > 255.0f)
+		R = 255.0f;
+
+	if (G < 0.0f)
+		G = 0.0f;
+	else if (G > 255.0f)
+		G = 255.0f;
+
+	if (B < 0.0f)
+		B = 0.0f;
+	else if (B > 255.0f)
+		B = 255.0f;
+
+	RGB rgb;
+
+	rgb.r = static_cast<unsigned char>(R);
+	rgb.g = static_cast<unsigned char>(G);
+	rgb.b = static_cast<unsigned char>(B);
+
+	return rgb;
+}
+
 void refresh_vertex_data(void)
 {
 	vertex_data.clear();
+
+	float min_3d_length = FLT_MAX;
+	float max_3d_length = FLT_MIN;
+
+	for (size_t i = 0; i < triangles.size(); i++)
+	{
+		size_t v0_index = triangles[i].vertex[0].index;
+		size_t v1_index = triangles[i].vertex[1].index;
+		size_t v2_index = triangles[i].vertex[2].index;
+
+		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+
+		float vertex_length = v0.length();
+
+		if (vertex_length > max_3d_length)
+			max_3d_length = vertex_length;
+
+		if (vertex_length < min_3d_length)
+			min_3d_length = vertex_length;
+
+		vertex_length = v1.length();
+
+		if (vertex_length > max_3d_length)
+			max_3d_length = vertex_length;
+
+		if (vertex_length < min_3d_length)
+			min_3d_length = vertex_length;
+
+		vertex_length = v2.length();
+
+		if (vertex_length > max_3d_length)
+			max_3d_length = vertex_length;
+
+		if (vertex_length < min_3d_length)
+			min_3d_length = vertex_length;
+	}
+
+	double max_rainbow = 360.0;
+	double min_rainbow = 360.0;
+
+
 
 
 
@@ -927,6 +1104,17 @@ void refresh_vertex_data(void)
 		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
 		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
 
+		float vertex_length = v0.length() - min_3d_length;
+
+		RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
+
 		vertex_data.push_back(v0.x);
 		vertex_data.push_back(v0.y);
 		vertex_data.push_back(v0.z);
@@ -937,6 +1125,17 @@ void refresh_vertex_data(void)
 		vertex_data.push_back(colour.y);
 		vertex_data.push_back(colour.z);
 
+		vertex_length = v1.length() - min_3d_length;
+
+		rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
+
 		vertex_data.push_back(v1.x);
 		vertex_data.push_back(v1.y);
 		vertex_data.push_back(v1.z);
@@ -946,6 +1145,18 @@ void refresh_vertex_data(void)
 		vertex_data.push_back(colour.x);
 		vertex_data.push_back(colour.y);
 		vertex_data.push_back(colour.z);
+
+
+		vertex_length = v2.length() - min_3d_length;
+
+		rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
 
 		vertex_data.push_back(v2.x);
 		vertex_data.push_back(v2.y);
@@ -1094,11 +1305,6 @@ const size_t num_chars_wide = image_width / char_width;
 const size_t num_chars_high = image_height / char_height;
 
 
-class RGB
-{
-public:
-	unsigned char r, g, b;
-};
 
 
 void print_char(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c, const RGB& text_colour)
