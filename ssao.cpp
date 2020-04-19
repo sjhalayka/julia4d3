@@ -4,6 +4,8 @@
 
 int main(int argc, char **argv)
 {
+	srand(time(0));
+
 	log_system.set_max_size(20);
 	log_system.add_string_to_contents("Welcome to Julia 4D 3");
 
@@ -19,32 +21,22 @@ int main(int argc, char **argv)
 	if(false == init())
 		return 3;
 
-    glutDisplayFunc(display_func);
 
-	glutKeyboardFunc(keyboard_func);
-	glutMouseFunc(mouse_func);
-	glutMotionFunc(motion_func);
-	glutPassiveMotionFunc(passive_motion_func);
-
-	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
-	GLUI_Master.set_glutIdleFunc(myGlutIdle);
 	
 	setup_gui();
 
-    /**** Link windows to GLUI, and register idle callback ******/
-
     glui->set_main_gfx_window(win_id);
+	
+	GLUI_Master.set_glutDisplayFunc(display_func);
+	GLUI_Master.set_glutKeyboardFunc(keyboard_func);
+	GLUI_Master.set_glutMouseFunc(mouse_func);
+	GLUI_Master.set_glutReshapeFunc(myGlutReshape);
+	GLUI_Master.set_glutIdleFunc(myGlutIdle);
 
+	glutMotionFunc(motion_func);
+	glutPassiveMotionFunc(passive_motion_func);
 
-
-    /**** We register the idle callback with GLUI, *not* with GLUT ****/
-
-
-
-
-
-    glutMainLoop();
-
+	glutMainLoop();
     
     return 0;
 }
