@@ -449,7 +449,6 @@ void thread_func(fractal_set_parameters p)
 		thread_mutex.lock();
 		log_system.add_string_to_contents(oss.str());
 		thread_mutex.unlock();
-
 		thread_is_running = false;
 		return;
 	}
@@ -2109,6 +2108,8 @@ void display_func(void)
 		vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
 
 		glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+		// Do anything you like here... for instance, use OpenCV for convolution
 
 		thread_mutex.lock();
 		for (size_t i = 0; i < log_system.get_contents_size(); i++)
