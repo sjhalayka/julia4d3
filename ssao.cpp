@@ -20,8 +20,6 @@ int main(int argc, char **argv)
  
 	if(false == init())
 		return 3;
-
-
 	
 	setup_gui();
 

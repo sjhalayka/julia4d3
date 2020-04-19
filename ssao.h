@@ -93,6 +93,8 @@ GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
 GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
+GLUI_Checkbox* draw_console_checkbox;
+
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -2022,7 +2024,7 @@ void display_func(void)
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
-	if (log_system.get_contents_size() > 0)
+	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
 		size_t char_x_pos = 10;
 		size_t char_y_pos = 30;
@@ -2156,6 +2158,8 @@ void setup_gui(void)
 
 	glui->add_separator();
 	
+	draw_console_checkbox = glui->add_checkbox("Draw console text");
+	draw_console_checkbox->set_int_val(1);
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
