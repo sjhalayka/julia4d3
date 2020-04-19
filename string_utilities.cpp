@@ -73,7 +73,7 @@ vector<string> string_utilities::stl_str_tok(string token, const string &src_str
 	return dest_vector;
 }
 
-bool string_utilities::is_unsigned_short_int(const string &src_string)
+bool string_utilities::is_unsigned_int(const string &src_string)
 {
 	if(src_string == "" || src_string.size() > 5)
 		return false;

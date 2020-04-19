@@ -18,7 +18,7 @@ namespace string_utilities
 
 	std::vector< std::string > stl_str_tok(std::string token, const std::string &SrcString);
 
-	bool is_unsigned_short_int(const std::string &src_string);
+	bool is_unsigned_int(const std::string &src_string);
 	bool is_real_number(const std::string &src_string);
 };
 

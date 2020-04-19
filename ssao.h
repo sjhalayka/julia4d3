@@ -1010,11 +1010,11 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	temp_string = iterations_edittext->text;
 
-	if (false == is_unsigned_short_int(temp_string))
+	if (false == is_unsigned_int(temp_string))
 	{
 		oss.clear();
 		oss.str("");
-		oss << "max iterations is not a short unsigned int";
+		oss << "max iterations is not an unsigned int";
 		thread_mutex.lock();
 		log_system.add_string_to_contents(oss.str());
 		thread_mutex.unlock();
@@ -1029,11 +1029,11 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	temp_string = resolution_edittext->text;
 
-	if (false == is_unsigned_short_int(temp_string))
+	if (false == is_unsigned_int(temp_string))
 	{
 		oss.clear();
 		oss.str("");
-		oss << "resolution is not a short unsigned int";
+		oss << "resolution is not an unsigned int";
 		thread_mutex.lock();
 		log_system.add_string_to_contents(oss.str());
 		thread_mutex.unlock();
@@ -1979,7 +1979,6 @@ void display_func(void)
 	main_camera.calculate_camera_matrices(win_x, win_y);
 	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
 	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
-
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 	
 	if (draw_axis_checkbox->get_int_val())
@@ -2142,7 +2141,6 @@ void display_func(void)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
-
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -2176,9 +2174,6 @@ void display_func(void)
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
-
-
-
 
 	glutSwapBuffers();
 }
