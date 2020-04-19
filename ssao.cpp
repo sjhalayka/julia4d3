@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv)
 {
-	srand(time(0));
+	srand(static_cast<unsigned int>(time(0)));
 
 	log_system.set_max_size(20);
 	log_system.add_string_to_contents("Welcome to Julia 4D 3");

@@ -597,6 +597,8 @@ void thread_func(fractal_set_parameters p)
 
 bool obtain_control_contents(fractal_set_parameters &p)
 {
+	ostringstream oss;
+
 	if (p.randomize_c = randomize_c_checkbox->get_int_val())
 	{
 		float c_x = rand() / static_cast<float>(RAND_MAX);
@@ -615,8 +617,6 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 		if (rand() % 2 == 0)
 			c_w = -c_w;
-
-		ostringstream oss;
 
 		oss.clear();
 		oss.str("");
@@ -644,7 +644,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (p.equation_text == "")
 	{
-		cout << "blank equation text" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "blank equation text";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
@@ -657,7 +663,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "pedestal y start is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "pedestal y start is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -671,7 +683,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "pedestal y end is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "pedestal y end is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -682,19 +700,37 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (p.pedestal_y_start < 0 || p.pedestal_y_start > 1)
 	{
-		cout << "pedestal y start must be between 0 and 1" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "pedestal y start must be between 0 and 1";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
 	if (p.pedestal_y_end < 0 || p.pedestal_y_end > 1)
 	{
-		cout << "pedestal y end must be between 0 and 1" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "pedestal y end must be between 0 and 1";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
 	if (p.pedestal_y_start >= p.pedestal_y_end)
 	{
-		cout << "Y start must be smaller than y_end" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Y start must be smaller than y_end";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
@@ -705,7 +741,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "c.x  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "c.x  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -718,7 +760,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "c.y  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "c.y  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -731,7 +779,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "c.z  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "c.z  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -744,7 +798,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "c.w  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "c.w  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -757,7 +817,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "x min  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "x min  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -770,7 +836,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "y min  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "y min  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -783,7 +855,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "z min  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "z min  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -799,7 +877,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "x max  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "x max  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -812,7 +896,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "y max  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "y max  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -825,7 +915,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "z max  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "z max  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -836,19 +932,37 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (p.x_min >= p.x_max)
 	{
-		cout << "x min must be less than x max" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "x min must be less than x max";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
 	if (p.y_min >= p.y_max)
 	{
-		cout << "y min must be less than y max" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "y min must be less than y max";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
 	if (p.z_min >= p.z_max)
 	{
-		cout << "z min must be less than z max" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "z min must be less than z max";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 
@@ -856,7 +970,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "z.w  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "z.w  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -870,7 +990,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_real_number(temp_string))
 	{
-		cout << "infinity  is not a real number" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "infinity  is not a real number";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -884,7 +1010,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_unsigned_short_int(temp_string))
 	{
-		cout << "max iterations is not a short unsigned int" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "max iterations is not a short unsigned int";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -897,7 +1029,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 	if (false == is_unsigned_short_int(temp_string))
 	{
-		cout << "resolution is not a short unsigned int" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "resolution is not a short unsigned int";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
 	}
 	else
@@ -907,7 +1045,13 @@ bool obtain_control_contents(fractal_set_parameters &p)
 
 		if (p.resolution < 3)
 		{
-			cout << "resolution must be greater than or equal to 3" << endl;
+			oss.clear();
+			oss.str("");
+			oss << "resolution must be greater than or equal to 3";
+			thread_mutex.lock();
+			log_system.add_string_to_contents(oss.str());
+			thread_mutex.unlock();
+
 			return false;
 		}
 	}
@@ -919,6 +1063,15 @@ void generate_cancel_button_func(int control)
 {
 	if (generate_button == false)
 	{
+		ostringstream oss;
+
+		oss.clear();
+		oss.str("");
+		oss << "Aborting";
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		stop = true;
 		vertex_data_refreshed = false;
 
@@ -941,8 +1094,18 @@ void generate_cancel_button_func(int control)
 		fractal_set_parameters p;
 
 		if (false == obtain_control_contents(p))
-			return;
+		{
+			ostringstream oss;
 
+			oss.clear();
+			oss.str("");
+			oss << "Aborting";
+			thread_mutex.lock();
+			log_system.add_string_to_contents(oss.str());
+			thread_mutex.unlock();
+
+			return;
+		}
 		stop = false;
 		vertex_data_refreshed = false;
 
