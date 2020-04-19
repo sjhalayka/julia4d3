@@ -1575,6 +1575,7 @@ struct
 	{
 		GLint           mv_matrix;
 		GLint           proj_matrix;
+		GLint			flat_colour;
 	} flat;
 } uniforms;
 
@@ -1646,6 +1647,7 @@ void load_shaders()
 
 	uniforms.flat.mv_matrix = glGetUniformLocation(flat.get_program(), "mv_matrix");
 	uniforms.flat.proj_matrix = glGetUniformLocation(flat.get_program(), "proj_matrix");
+	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
 }
 
 
@@ -1984,10 +1986,15 @@ void display_func(void)
 	{
 		glUseProgram(flat.get_program());
 
+		main_camera.calculate_camera_matrices(win_x, win_y);
+		glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+		glUniformMatrix4fv(uniforms.flat.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+
 		const GLuint components_per_vertex = 3;
 		const GLuint components_per_position = 3;
 
 		flat_data.clear();
+
 		flat_data.push_back(0);
 		flat_data.push_back(0);
 		flat_data.push_back(0);
@@ -1995,24 +2002,66 @@ void display_func(void)
 		flat_data.push_back(0);
 		flat_data.push_back(0);
 
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(1);
-		flat_data.push_back(0);
-
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(1);
+		glUniform3f(uniforms.flat.flat_colour, 1.0, 0.0, 0.0);
 
 		glDeleteBuffers(1, &axis_buffer);
 		glGenBuffers(1, &axis_buffer);
 
-		const GLuint num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+		GLuint num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+			components_per_position,
+			GL_FLOAT,
+			GL_FALSE,
+			components_per_vertex * sizeof(GLfloat),
+			NULL);
+
+		glDrawArrays(GL_LINES, 0, num_vertices);
+
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(1);
+		flat_data.push_back(0);
+
+		glUniform3f(uniforms.flat.flat_colour, 0.0, 1.0, 0.0);
+
+		glDeleteBuffers(1, &axis_buffer);
+		glGenBuffers(1, &axis_buffer);
+
+		num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+			components_per_position,
+			GL_FLOAT,
+			GL_FALSE,
+			components_per_vertex * sizeof(GLfloat),
+			NULL);
+
+		glDrawArrays(GL_LINES, 0, num_vertices);
+
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(1);
+
+		glUniform3f(uniforms.flat.flat_colour, 0.0, 0.0, 1.0);
+
+		glDeleteBuffers(1, &axis_buffer);
+		glGenBuffers(1, &axis_buffer);
+
+		num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
 
 		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
 		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
@@ -2125,11 +2174,7 @@ void display_func(void)
 	}
 
 
-	glUseProgram(flat.get_program());
 
-	main_camera.calculate_camera_matrices(win_x, win_y);
-	glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-	glUniformMatrix4fv(uniforms.flat.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
 
 	glutSwapBuffers();
 }
