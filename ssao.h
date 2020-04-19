@@ -597,6 +597,49 @@ void thread_func(fractal_set_parameters p)
 
 bool obtain_control_contents(fractal_set_parameters &p)
 {
+	if (p.randomize_c = randomize_c_checkbox->get_int_val())
+	{
+		float c_x = rand() / static_cast<float>(RAND_MAX);
+		float c_y = rand() / static_cast<float>(RAND_MAX);
+		float c_z = rand() / static_cast<float>(RAND_MAX);
+		float c_w = rand() / static_cast<float>(RAND_MAX);
+
+		if (rand() % 2 == 0)
+			c_x = -c_x;
+
+		if (rand() % 2 == 0)
+			c_y = -c_y;
+
+		if (rand() % 2 == 0)
+			c_z = -c_z;
+
+		if (rand() % 2 == 0)
+			c_w = -c_w;
+
+		ostringstream oss;
+
+		oss.clear();
+		oss.str("");
+		oss << c_x;
+		c_x_edittext->set_text(oss.str());
+
+		oss.clear();
+		oss.str("");
+		oss << c_y;
+		c_y_edittext->set_text(oss.str());
+
+		oss.clear();
+		oss.str("");
+		oss << c_z;
+		c_z_edittext->set_text(oss.str());
+
+		oss.clear();
+		oss.str("");
+		oss << c_w;
+		c_w_edittext->set_text(oss.str());
+	}
+
+
 	p.equation_text = equation_edittext->text;
 
 	if (p.equation_text == "")
