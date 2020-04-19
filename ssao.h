@@ -1357,6 +1357,8 @@ void refresh_vertex_data(void)
 
 void myGlutIdle(void)
 {
+	glutSetWindow(win_id);
+
 	if (false == thread_is_running && false == generate_button)
 	{
 		if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
