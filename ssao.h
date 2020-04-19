@@ -1970,6 +1970,9 @@ void display_func(void)
 		const GLuint components_per_position = 3;
 		const GLuint components_per_colour = 3;
 
+		glDeleteBuffers(1, &triangle_buffer);
+		glGenBuffers(1, &triangle_buffer);
+
 		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
 
 		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
