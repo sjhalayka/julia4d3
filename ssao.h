@@ -93,7 +93,7 @@ GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
 GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
-
+GLUI_Checkbox* draw_axis_checkbox;
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -123,8 +123,7 @@ GLUI_StaticText* status;
 vector<triangle> triangles;
 vector<vertex_3_with_normal> vertices_with_face_normals;
 
-GLuint fractal_buffers[2] = { 0, 0 };
-GLuint fractal_vao = 0;
+
 GLuint      render_fbo = 0;
 GLuint      fbo_textures[3] = { 0, 0, 0 };
 GLuint      quad_vao = 0;
@@ -1981,7 +1980,7 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 	
-	if (draw_axis)
+	if (draw_axis_checkbox->get_int_val())
 	{
 		glUseProgram(flat.get_program());
 
@@ -2026,7 +2025,6 @@ void display_func(void)
 			components_per_vertex * sizeof(GLfloat),
 			NULL);
 
-		// Draw 12 vertices per card
 		glDrawArrays(GL_LINES, 0, num_vertices);
 	}
 
@@ -2240,6 +2238,8 @@ void setup_gui(void)
 	
 	draw_console_checkbox = glui->add_checkbox("Draw console text");
 	draw_console_checkbox->set_int_val(1);
+	draw_axis_checkbox = glui->add_checkbox("Draw axis");
+	draw_axis_checkbox->set_int_val(1);
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
