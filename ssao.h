@@ -69,8 +69,7 @@ using namespace marching_cubes;
 logging_system log_system;
 
 vector<GLfloat> vertex_data;
-
-
+vector<GLfloat> flat_data;
 
 
 GLint win_id = 0;
@@ -141,6 +140,9 @@ mutex thread_mutex;
 
 bool generate_button = true;
 unsigned int triangle_buffer = 0;
+unsigned int axis_buffer = 0;
+
+bool draw_axis = true;
 
 class RGB
 {
@@ -1547,6 +1549,7 @@ void passive_motion_func(int x, int y)
 
 vertex_fragment_shader render;
 vertex_fragment_shader ssao;
+vertex_fragment_shader flat;
 
 
 
@@ -1569,6 +1572,11 @@ struct
 		GLint           randomize_points;
 		GLint           point_count;
 	} ssao;
+	struct
+	{
+		GLint           mv_matrix;
+		GLint           proj_matrix;
+	} flat;
 } uniforms;
 
 bool  show_shading;
@@ -1612,6 +1620,12 @@ void load_shaders()
 		cout << "Could not load render shader" << endl;
 		return;
 	}
+	
+	if (false == flat.init("flat.vs.glsl", "flat.fs.glsl"))
+	{
+		cout << "Could not load flat shader" << endl;
+		return;
+	}
 
 	// Set up shader
 	if (false == ssao.init("ssao.vs.glsl", "ssao.fs.glsl"))
@@ -1630,6 +1644,9 @@ void load_shaders()
 	uniforms.ssao.weight_by_angle = glGetUniformLocation(ssao.get_program(), "weight_by_angle");
 	uniforms.ssao.randomize_points = glGetUniformLocation(ssao.get_program(), "randomize_points");
 	uniforms.ssao.point_count = glGetUniformLocation(ssao.get_program(), "point_count");
+
+	uniforms.flat.mv_matrix = glGetUniformLocation(flat.get_program(), "mv_matrix");
+	uniforms.flat.proj_matrix = glGetUniformLocation(flat.get_program(), "proj_matrix");
 }
 
 
@@ -1754,6 +1771,7 @@ bool init(void)
 	}
 
 	glGenBuffers(1, &triangle_buffer);
+	glGenBuffers(1, &axis_buffer);
 
 	size_t char_index = 0;
 
@@ -1963,8 +1981,60 @@ void display_func(void)
 
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 	
+	if (draw_axis)
+	{
+		glUseProgram(flat.get_program());
+
+		const GLuint components_per_vertex = 3;
+		const GLuint components_per_position = 3;
+
+		flat_data.clear();
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(1);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(1);
+		flat_data.push_back(0);
+
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(0);
+		flat_data.push_back(1);
+
+		glDeleteBuffers(1, &axis_buffer);
+		glGenBuffers(1, &axis_buffer);
+
+		const GLuint num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+			components_per_position,
+			GL_FLOAT,
+			GL_FALSE,
+			components_per_vertex * sizeof(GLfloat),
+			NULL);
+
+		// Draw 12 vertices per card
+		glDrawArrays(GL_LINES, 0, num_vertices);
+	}
+
+
 	if (vertex_data_refreshed && vertex_data.size() > 0)
 	{
+		glUseProgram(render.get_program());
+
 		const GLuint components_per_vertex = 9;
 		const GLuint components_per_normal = 3;
 		const GLuint components_per_position = 3;
@@ -2053,6 +2123,13 @@ void display_func(void)
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
+
+
+	glUseProgram(flat.get_program());
+
+	main_camera.calculate_camera_matrices(win_x, win_y);
+	glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	glUniformMatrix4fv(uniforms.flat.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
 
 	glutSwapBuffers();
 }
