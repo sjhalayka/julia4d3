@@ -2022,6 +2022,8 @@ void display_func(void)
 
 		glDrawArrays(GL_LINES, 0, num_vertices);
 
+		flat_data.clear();
+
 		flat_data.push_back(0);
 		flat_data.push_back(0);
 		flat_data.push_back(0);
@@ -2048,6 +2050,8 @@ void display_func(void)
 			NULL);
 
 		glDrawArrays(GL_LINES, 0, num_vertices);
+
+		flat_data.clear();
 
 		flat_data.push_back(0);
 		flat_data.push_back(0);
