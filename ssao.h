@@ -450,6 +450,7 @@ void thread_func(fractal_set_parameters p)
 		log_system.add_string_to_contents(oss.str());
 		thread_mutex.unlock();
 
+		thread_is_running = false;
 		return;
 	}
 
