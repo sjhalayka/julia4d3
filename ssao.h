@@ -676,7 +676,6 @@ bool obtain_control_contents(fractal_set_parameters &p)
 	{
 		istringstream iss(temp_string);
 		iss >> p.pedestal_y_start;
-		cout << p.pedestal_y_start << endl;
 	}
 
 	temp_string = pedestal_y_end_edittext->text;
