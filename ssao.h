@@ -95,6 +95,8 @@ GLUI_Button* generate_mesh_button, * export_to_stl_button;
 GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
+GLUI_Checkbox* gpu_acceleration_checkbox;
+
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -142,7 +144,6 @@ bool generate_button = true;
 unsigned int triangle_buffer = 0;
 unsigned int axis_buffer = 0;
 
-bool draw_axis = true;
 
 class RGB
 {
@@ -422,7 +423,7 @@ void get_vertices_with_face_normals_from_triangles(void)
 	thread_mutex.unlock();
 }
 
-void thread_func(fractal_set_parameters p)
+void thread_func_cpu(fractal_set_parameters p)
 {
 	thread_is_running = true;
 
@@ -591,6 +592,173 @@ void thread_func(fractal_set_parameters p)
 
 
 
+
+void thread_func_gpu(fractal_set_parameters p)
+{
+	thread_is_running = true;
+
+	triangles.clear();
+	vertices_with_face_normals.clear();
+
+	bool make_border = true;
+
+	quaternion C;
+	C.x = p.C_x;
+	C.y = p.C_y;
+	C.z = p.C_z;
+	C.w = p.C_w;
+
+	ostringstream oss;
+
+	string error_string;
+	quaternion_julia_set_equation_parser eqparser;
+
+	if (false == eqparser.setup(p.equation_text, error_string, C))
+	{
+		oss.clear();
+		oss.str("");
+		oss << "Equation error: " << error_string;
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+		thread_is_running = false;
+		return;
+	}
+
+	// When adding a border, use a value that is "much" greater than the threshold.
+	const float border_value = 1.0f + p.infinity;
+
+	size_t num_voxels = p.resolution * p.resolution;
+	vector<float> xyplane0(num_voxels, 0);
+	vector<float> xyplane1(num_voxels, 0);
+
+	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
+	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
+	const float step_size_z = (p.z_max - p.z_min) / (p.resolution - 1);
+
+	size_t z = 0;
+
+	quaternion Z(p.x_min, p.y_min, p.z_min, p.Z_w);
+
+	// Calculate 0th xy plane.
+	for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
+	{
+		Z.y = p.y_min;
+
+		for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
+		{
+			if (stop)
+			{
+				thread_is_running = false;
+				return;
+			}
+
+			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+			{
+				xyplane0[x * p.resolution + y] = border_value;
+			}
+			else
+			{
+				const float y_span = (p.y_max - p.y_min);
+				const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
+
+				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+				{
+					xyplane0[x * p.resolution + y] = p.infinity - 0.00001f;
+				}
+				else
+				{
+					xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+				}
+			}
+		}
+	}
+
+	// Prepare for 1st xy plane.
+	z++;
+	Z.z += step_size_z;
+
+
+
+	size_t box_count = 0;
+
+
+	// Calculate 1st and subsequent xy planes.
+	for (; z < p.resolution; z++, Z.z += step_size_z)
+	{
+		Z.x = p.z_min;
+
+		oss.clear();
+		oss.str("");
+		oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
+		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
+		{
+			Z.y = p.y_min;
+
+			for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
+			{
+				if (stop)
+				{
+					thread_is_running = false;
+					return;
+				}
+
+				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
+				{
+					xyplane1[x * p.resolution + y] = border_value;
+				}
+				else
+				{
+					const float y_span = (p.y_max - p.y_min);
+					const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
+
+					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+					{
+						xyplane1[x * p.resolution + y] = p.infinity - 0.00001f;
+					}
+					else
+					{
+						xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
+					}
+				}
+			}
+		}
+
+		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
+		tesselate_adjacent_xy_plane_pair(stop,
+			box_count,
+			xyplane0, xyplane1,
+			z - 1,
+			triangles,
+			p.infinity, // Use threshold as isovalue.
+			p.x_min, p.x_max, p.resolution,
+			p.y_min, p.y_max, p.resolution,
+			p.z_min, p.z_max, p.resolution);
+
+
+		if (stop)
+		{
+			thread_is_running = false;
+			return;
+		}
+
+		// Swap memory pointers (fast) instead of performing a memory copy (slow).
+		xyplane1.swap(xyplane0);
+	}
+
+	if (false == stop)
+	{
+		get_vertices_with_face_normals_from_triangles();
+		write_triangles_to_binary_stereo_lithography_file("out.stl");
+	}
+
+	thread_is_running = false;
+	return;
+}
 
 
 
@@ -1122,7 +1290,10 @@ void generate_cancel_button_func(int control)
 			stop = false;
 		}
 
-		gen_thread = new thread(thread_func, p);
+		if(gpu_acceleration_checkbox->get_int_val())
+			gen_thread = new thread(thread_func_gpu, p);
+		else
+			gen_thread = new thread(thread_func_cpu, p);
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
@@ -2314,6 +2485,10 @@ void setup_gui(void)
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
+
+	gpu_acceleration_checkbox = glui->add_checkbox("Use GPU acceleration");
+	gpu_acceleration_checkbox->set_int_val(1);
+
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
