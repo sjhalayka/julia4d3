@@ -1293,6 +1293,20 @@ void generate_cancel_button_func(int control)
 
 		if (gpu_acceleration_checkbox->get_int_val())
 		{
+			ostringstream oss;
+			oss.clear();
+			oss.str("");
+			oss << "GPU compute shader initialization failure. Aborting";
+			thread_mutex.lock();
+			log_system.add_string_to_contents(oss.str());
+			thread_mutex.unlock();
+
+			// (re-) init comp shader
+			// 
+			return;
+
+
+
 			gen_thread = new thread(thread_func_gpu, p);
 		}
 		else
