@@ -133,7 +133,6 @@ GLuint      render_fbo = 0;
 GLuint      fbo_textures[3] = { 0, 0, 0 };
 GLuint      quad_vao = 0;
 GLuint      points_buffer = 0;
-bool gpu_holds_data = false;
 
 thread* gen_thread = 0;
 atomic_bool stop = false;
@@ -812,27 +811,47 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 		glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_pixels[0]);
 
+		quaternion tempq;
+		tempq.x = p.x_min;
+		tempq.y = p.y_min;
+		tempq.z = Z.z;
+		tempq.w = 1.0f;
+
+
 		// Make a border, so that the mesh is closed around the edges
-		for (size_t x = 0; x < p.resolution; x++)
+		for (size_t x = 0; x < p.resolution; x++, tempq.x += step_size_x)
 		{
-			for (size_t y = 0; y < p.resolution; y++)
+			tempq.y = p.y_min;
+
+			for (size_t y = 0; y < p.resolution; y++, tempq.y += step_size_y)
 			{
+				if (stop)
+				{
+					thread_is_running = false;
+					glDeleteTextures(1, &tex_output);
+					glDeleteTextures(1, &tex_input);
+					glDeleteProgram(compute_shader_program);
+					glutDestroyWindow(win_id2);
+					return;
+				}
+
 				if (z == 0 || z == p.resolution - 1 ||
 					x == 0 || x == p.resolution - 1 ||
 					y == 0 || y == p.resolution - 1)
 				{
-					if (stop)
-					{
-						thread_is_running = false;
-						glDeleteTextures(1, &tex_output);
-						glDeleteTextures(1, &tex_input);
-						glDeleteProgram(compute_shader_program);
-						glutDestroyWindow(win_id2);
-						return;
-					}
-
 					const size_t index = num_output_channels * (y * p.resolution + x);
 					output_pixels[index] = p.infinity + 1.0f;
+				}
+				else
+				{
+					const float y_span = (p.y_max - p.y_min);
+					const float curr_span = 1.0f - static_cast<float>(p.y_max - tempq.y) / y_span;
+					const size_t index = num_output_channels * (x * p.resolution + y);
+
+					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+					{
+						output_pixels[index] = p.infinity - 0.00001f;
+					}
 				}
 			}
 		}
