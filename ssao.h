@@ -1291,10 +1291,14 @@ void generate_cancel_button_func(int control)
 			stop = false;
 		}
 
-		if(gpu_acceleration_checkbox->get_int_val())
+		if (gpu_acceleration_checkbox->get_int_val())
+		{
 			gen_thread = new thread(thread_func_gpu, p);
+		}
 		else
+		{
 			gen_thread = new thread(thread_func_cpu, p);
+		}
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
