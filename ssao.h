@@ -155,8 +155,6 @@ public:
 
 void display_func2(void)
 {
-	cout << "display func 2" << endl;
-//	glutSwapBuffers();
 }
 
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
