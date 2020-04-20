@@ -1277,6 +1277,7 @@ void generate_cancel_button_func(int control)
 
 			return;
 		}
+
 		stop = false;
 		vertex_data_refreshed = false;
 
