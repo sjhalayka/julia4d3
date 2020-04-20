@@ -2702,7 +2702,7 @@ void setup_gui(void)
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
 
-	gpu_acceleration_checkbox = glui->add_checkbox("Use GPU acceleration");
+	gpu_acceleration_checkbox = glui->add_checkbox("Use compute shader");
 	gpu_acceleration_checkbox->set_int_val(1);
 
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
