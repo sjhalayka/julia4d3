@@ -1763,6 +1763,19 @@ bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vect
 
 bool init(void)
 {
+	if (GLEW_OK != glewInit())
+	{
+		cout << "GLEW initialization error" << endl;
+		return false;
+	}
+
+	if (!GLEW_VERSION_4_3)
+	{
+		cout << "GPU does not support OpenGL 4.3" << endl;
+		return false;
+	}
+
+
 	BMP font;
 
 	if (false == font.load("font.bmp"))
