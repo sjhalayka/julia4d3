@@ -1510,57 +1510,16 @@ void quaternion_julia_set_equation_parser::setup_function_map(void)
 {
 	function_map.push_back(function_mapping("sin", &quaternion_math::sin));
 	function_map.push_back(function_mapping("sinh", &quaternion_math::sinh));
-	function_map.push_back(function_mapping("exsin", &quaternion_math::exsin));
-	function_map.push_back(function_mapping("exsinh", &quaternion_math::exsinh));
-	function_map.push_back(function_mapping("coversin", &quaternion_math::coversin));
-	function_map.push_back(function_mapping("coversinh", &quaternion_math::coversinh));
 	function_map.push_back(function_mapping("cos", &quaternion_math::cos));
 	function_map.push_back(function_mapping("cosh", &quaternion_math::cosh));
-	function_map.push_back(function_mapping("excos", &quaternion_math::excos));
-	function_map.push_back(function_mapping("excosh", &quaternion_math::excosh));
-	function_map.push_back(function_mapping("versin", &quaternion_math::versin));
-	function_map.push_back(function_mapping("versinh", &quaternion_math::versinh));
+	function_map.push_back(function_mapping("tan", &quaternion_math::tan));
+	function_map.push_back(function_mapping("tanh", &quaternion_math::tanh));
+
 	function_map.push_back(function_mapping("ln", &quaternion_math::ln));
 	function_map.push_back(function_mapping("exp", &quaternion_math::exp));
 	function_map.push_back(function_mapping("sqrt", &quaternion_math::sqrt));
 	function_map.push_back(function_mapping("inverse", &quaternion_math::inverse));
 	function_map.push_back(function_mapping("conjugate", &quaternion_math::conjugate));
-	function_map.push_back(function_mapping("sinc", &quaternion_math::sinc));
-	function_map.push_back(function_mapping("sinhc", &quaternion_math::sinhc));
-	function_map.push_back(function_mapping("csc", &quaternion_math::csc));
-	function_map.push_back(function_mapping("csch", &quaternion_math::csch));
-	function_map.push_back(function_mapping("excsc", &quaternion_math::excsc));
-	function_map.push_back(function_mapping("excsch", &quaternion_math::excsch));
-	function_map.push_back(function_mapping("covercsc", &quaternion_math::covercsc));
-	function_map.push_back(function_mapping("covercsch", &quaternion_math::covercsch));
-	function_map.push_back(function_mapping("cscc", &quaternion_math::cscc));
-	function_map.push_back(function_mapping("cschc", &quaternion_math::cschc));
-	function_map.push_back(function_mapping("cosc", &quaternion_math::cosc));
-	function_map.push_back(function_mapping("coshc", &quaternion_math::coshc));
-	function_map.push_back(function_mapping("sec", &quaternion_math::sec));
-	function_map.push_back(function_mapping("sech", &quaternion_math::sech));
-	function_map.push_back(function_mapping("exsec", &quaternion_math::exsec));
-	function_map.push_back(function_mapping("exsech", &quaternion_math::exsech));
-	function_map.push_back(function_mapping("vercsc", &quaternion_math::vercsc));
-	function_map.push_back(function_mapping("vercsch", &quaternion_math::vercsch));
-	function_map.push_back(function_mapping("secc", &quaternion_math::secc));
-	function_map.push_back(function_mapping("sechc", &quaternion_math::sechc));
-	function_map.push_back(function_mapping("tan", &quaternion_math::tan));
-	function_map.push_back(function_mapping("tanh", &quaternion_math::tanh));
-	function_map.push_back(function_mapping("extan", &quaternion_math::extan));
-	function_map.push_back(function_mapping("extanh", &quaternion_math::extanh));
-	function_map.push_back(function_mapping("covertan", &quaternion_math::covertan));
-	function_map.push_back(function_mapping("covertanh", &quaternion_math::covertanh));
-	function_map.push_back(function_mapping("tanc", &quaternion_math::tanc));
-	function_map.push_back(function_mapping("tanhc", &quaternion_math::tanhc));
-	function_map.push_back(function_mapping("cot", &quaternion_math::cot));
-	function_map.push_back(function_mapping("coth", &quaternion_math::coth));
-	function_map.push_back(function_mapping("excot", &quaternion_math::excot));
-	function_map.push_back(function_mapping("excoth", &quaternion_math::excoth));
-	function_map.push_back(function_mapping("covercot", &quaternion_math::covercot));
-	function_map.push_back(function_mapping("covercoth", &quaternion_math::covercoth));
-	function_map.push_back(function_mapping("cotc", &quaternion_math::cotc));
-	function_map.push_back(function_mapping("cothc", &quaternion_math::cothc));
 }
 
 
@@ -2981,3 +2940,200 @@ bool quaternion_julia_set_equation_parser::compile_ordered_terms(const vector<te
 	return true;
 }
 
+string quaternion_julia_set_equation_parser::emit_compute_shader_code(void)
+{
+	string code;
+
+	code += "#version 430 core\n";
+	code += "layout(local_size_x = 1, local_size_y = 1) in;\n";
+	code += "layout(binding = 0, r32f) writeonly uniform image2D output_image;\n";
+	code += "layout(binding = 1, rgba32f) readonly uniform image2D input_image;\n";
+	code += "uniform vec4 c;\n";
+	code += "uniform int max_iterations;\n";
+	code += "uniform float threshold;\n";
+	code += "\n";
+	code += q_math.emit_function_definitions_fragment_shader_code();
+	code += "\n";
+	code += emit_execution_stack_fragment_shader_code();
+	code += "\n";
+	code += "float iterate(vec4 z)\n";
+	code += "{\n";
+	code += "    float threshold_sq = threshold*threshold;\n";
+	code += "\n";
+	code += "    float len_sq = dot(z, z);\n";
+	code += "\n";
+	code += "    for(int i = 0; i < max_iterations; i++)\n";
+	code += "    {\n";
+	code += "        z = iter_func(z);\n";
+	code += "\n";
+	code += "        if((len_sq = dot(z, z)) >= threshold_sq)\n";
+	code += "            break;\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    return sqrt(len_sq);\n";
+	code += "}\n";
+	code += "\n";
+	code += "void main()\n";
+	code += "{\n";
+	code += "const ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);\n";
+	code += "vec4 z = imageLoad(input_image, pixel_coords);\n";
+	code += "const float magnitude = iterate(z);\n";
+	code += "const vec4 output_pixel = vec4(magnitude, 0, 0, 0);\n";
+	code += "imageStore(output_image, pixel_coords, output_pixel);\n";
+	code += "}\n";
+
+
+	return code;
+}
+
+
+
+
+
+
+
+string quaternion_julia_set_equation_parser::emit_execution_stack_fragment_shader_code(void)
+{
+	string code;
+
+	code += "// A decent GLSL compiler should optimize out extraneous copy calls.\n";
+	code += "vec4 iter_func(vec4 z)\n";
+	code += "{\n";
+
+	ostringstream oss;
+
+	for(size_t i = 0; i < answers.size(); i++)
+	{
+		oss << "    vec4 A" << i << " = vec4(" << 
+			answers[i].x << ", " << 
+			answers[i].y << ", " << 
+			answers[i].z << ", " << 
+			answers[i].w << ");" << endl;
+	}
+
+	for(size_t i = 0; i < scratch_heap.size(); i++)
+	{
+		for(size_t j = 0; j < scratch_heap[i].size(); j++)
+		{
+			oss << "    vec4 S" << i << '_' << j << " = vec4(" << 
+				scratch_heap[i][j].x << ", " << 
+				scratch_heap[i][j].y << ", " << 
+				scratch_heap[i][j].z << ", " << 
+				scratch_heap[i][j].w << ");" << endl;
+		}
+	}
+
+	for(size_t i = 0; i < constant_scratch_heap.size(); i++)
+	{
+		oss << "    vec4 CS" << i << " = vec4(" << 
+			constant_scratch_heap[i].x << ", " << 
+			constant_scratch_heap[i].y << ", " << 
+			constant_scratch_heap[i].z << ", " << 
+			constant_scratch_heap[i].w << ");" << endl;
+	}
+
+	for(size_t i = 0; i < instructions.size(); i++)
+	{
+		for(size_t j = 0; j < instructions[i].size(); j++)
+		{
+			if(TOKENIZED_INSTRUCTION_DEST_ANSWER == instructions[i][j].out_type)
+				oss << "    A" << instructions[i][j].out_index << " = ";
+
+			if(TOKENIZED_INSTRUCTION_DEST_TERM_SCRATCH_HEAP == instructions[i][j].out_type)
+				oss << "    S" << i << '_' << instructions[i][j].out_index << " = ";
+
+			if(TOKENIZED_INSTRUCTION_DEST_CONSTANTS_SCRATCH_HEAP == instructions[i][j].out_type)
+				oss << "    CS" << instructions[i][j].out_index << " = ";
+
+			if(TOKENIZED_INSTRUCTION_DEST_Z == instructions[i][j].out_type)
+				oss << "    z = ";
+
+			if(TOKENIZED_INSTRUCTION_DEST_C == instructions[i][j].out_type)
+				oss << "    c = ";
+
+			if(instructions[i][j].f == &quaternion_math::add)
+				oss << "qadd(";
+			else if(instructions[i][j].f == &quaternion_math::sub)
+				oss << "qsub(";
+			else if(instructions[i][j].f == &quaternion_math::mul)
+				oss << "qmul(";
+			else if(instructions[i][j].f == &quaternion_math::div)
+				oss << "qdiv(";
+
+			else if(instructions[i][j].f == &quaternion_math::sin)
+				oss << "qsin(";
+			else if(instructions[i][j].f == &quaternion_math::sinh)
+				oss << "qsinh(";
+			else if(instructions[i][j].f == &quaternion_math::cos)
+				oss << "qcos(";
+			else if(instructions[i][j].f == &quaternion_math::cosh)
+				oss << "qcosh(";
+			else if(instructions[i][j].f == &quaternion_math::tan)
+				oss << "qtan(";
+			else if(instructions[i][j].f == &quaternion_math::tanh)
+				oss << "qtanh(";
+
+			else if(instructions[i][j].f == &quaternion_math::pow)
+				oss << "qpow(";
+			else if(instructions[i][j].f == &quaternion_math::ln)
+				oss << "qln(";
+			else if(instructions[i][j].f == &quaternion_math::exp)
+				oss << "qexp(";
+			else if(instructions[i][j].f == &quaternion_math::sqrt)
+				oss << "qsqrt(";
+			else if(instructions[i][j].f == &quaternion_math::inverse)
+				oss << "qinverse(";
+			else if(instructions[i][j].f == &quaternion_math::conjugate)
+				oss << "qconjugate(";
+
+			else if(instructions[i][j].f == &quaternion_math::copy)
+				oss << "qcopy(";
+			else if(instructions[i][j].f == &quaternion_math::copy_masked)
+				oss << "qcopy_masked(";
+			else if(instructions[i][j].f == &quaternion_math::swizzle)
+				oss << "qswizzle(";
+
+
+			if(TOKENIZED_INSTRUCTION_DEST_ANSWER == instructions[i][j].a_type)
+				oss << "A" << instructions[i][j].a_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_TERM_SCRATCH_HEAP == instructions[i][j].a_type)
+				oss << "S" << i << '_' << instructions[i][j].a_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_CONSTANTS_SCRATCH_HEAP == instructions[i][j].a_type)
+				oss << "CS" << instructions[i][j].a_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_Z == instructions[i][j].a_type)
+				oss << "z";
+
+			if(TOKENIZED_INSTRUCTION_DEST_C == instructions[i][j].a_type)
+				oss << "c";
+
+			if(TOKENIZED_INSTRUCTION_DEST_ANSWER == instructions[i][j].b_type)
+				oss << ", A" << instructions[i][j].b_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_TERM_SCRATCH_HEAP == instructions[i][j].b_type)
+				oss << ", S" << i << '_' << instructions[i][j].b_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_CONSTANTS_SCRATCH_HEAP == instructions[i][j].b_type)
+				oss << ", CS" << instructions[i][j].b_index;
+
+			if(TOKENIZED_INSTRUCTION_DEST_Z == instructions[i][j].b_type)
+				oss << ", z";
+
+			if(TOKENIZED_INSTRUCTION_DEST_C == instructions[i][j].b_type)
+				oss << ", c";
+
+			oss << ");" << endl;
+		}
+	}
+
+	oss << endl;
+
+	code += oss.str();
+
+	code += "    return z;\n";
+	code += "}\n";
+
+	return code;
+}

@@ -13,8 +13,6 @@ int main(int argc, char **argv)
 	log_system.add_string_to_contents("LMB + drag -- rotate camera");
 	log_system.add_string_to_contents("RMB + drag -- adjust camera distane");
 
-
-
     glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 
@@ -22,7 +20,6 @@ int main(int argc, char **argv)
 	glutInitWindowPosition(0, 0);
 
     win_id = glutCreateWindow("Julia 4D 3");
-	glewInit();
  
 	if(false == init())
 		return 3;
@@ -31,6 +28,8 @@ int main(int argc, char **argv)
 
     glui->set_main_gfx_window(win_id);
 	
+	glutDisplayFunc(display_func);
+
 	GLUI_Master.set_glutDisplayFunc(display_func);
 	GLUI_Master.set_glutKeyboardFunc(keyboard_func);
 	GLUI_Master.set_glutMouseFunc(mouse_func);

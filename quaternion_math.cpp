@@ -4,6 +4,72 @@
 
 #include "quaternion_math.h"
 
+void quaternion_math::add(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+{
+	qOut->x = qA->x + qB->x;
+	qOut->y = qA->y + qB->y;
+	qOut->z = qA->z + qB->z;
+	qOut->w = qA->w + qB->w;
+}
+
+void quaternion_math::sub(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+{
+	qOut->x = qA->x - qB->x;
+	qOut->y = qA->y - qB->y;
+	qOut->z = qA->z - qB->z;
+	qOut->w = qA->w - qB->w;
+}
+
+void quaternion_math::mul(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+{
+	// in case qA and qOut point to the same variable...
+	temp_a_x = qA->x;
+	temp_a_y = qA->y;
+	temp_a_z = qA->z;
+	temp_a_w = qA->w;
+
+	temp_b_x = qB->x;
+	temp_b_y = qB->y;
+	temp_b_z = qB->z;
+	temp_b_w = qB->w;
+
+	// perform multiply
+	qOut->x = temp_a_x*temp_b_x - temp_a_y*temp_b_y - temp_a_z*temp_b_z - temp_a_w*temp_b_w;
+	qOut->y = temp_a_x*temp_b_y + temp_a_y*temp_b_x + temp_a_z*temp_b_w - temp_a_w*temp_b_z;
+	qOut->z = temp_a_x*temp_b_z - temp_a_y*temp_b_w + temp_a_z*temp_b_x + temp_a_w*temp_b_y;
+	qOut->w = temp_a_x*temp_b_w + temp_a_y*temp_b_z - temp_a_z*temp_b_y + temp_a_w*temp_b_x;
+}
+
+void quaternion_math::div(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+{
+	// c = a/b
+
+	// c = inv(b) * a
+	// inv(b) = conjugate(b) / norm(b)
+	// c = (conjugate(b) / norm(b)) * a
+
+	float temp_b_norm = qB->x*qB->x + qB->y*qB->y + qB->z*qB->z + qB->w*qB->w;
+
+	temp_b_x =  qB->x;
+	temp_b_y = -qB->y;
+	temp_b_z = -qB->z;
+	temp_b_w = -qB->w;
+
+	temp_b_x /= temp_b_norm;
+	temp_b_y /= temp_b_norm;
+	temp_b_z /= temp_b_norm;
+	temp_b_w /= temp_b_norm;
+
+	temp_a_x = qA->x;
+	temp_a_y = qA->y;
+	temp_a_z = qA->z;
+	temp_a_w = qA->w;
+
+	qOut->x = temp_b_x*temp_a_x - temp_b_y*temp_a_y - temp_b_z*temp_a_z - temp_b_w*temp_a_w;
+	qOut->y = temp_b_x*temp_a_y + temp_b_y*temp_a_x + temp_b_z*temp_a_w - temp_b_w*temp_a_z;
+	qOut->z = temp_b_x*temp_a_z - temp_b_y*temp_a_w + temp_b_z*temp_a_x + temp_b_w*temp_a_y;
+	qOut->w = temp_b_x*temp_a_w + temp_b_y*temp_a_z - temp_b_z*temp_a_y + temp_b_w*temp_a_x;
+}
 
 void quaternion_math::sin(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
 {
@@ -33,42 +99,6 @@ void quaternion_math::sinh(const quaternion *const qA, const quaternion *const q
 	qOut->y = std::cosh(temp_a_x) * std::sin(mag_vector) * qA->y / mag_vector;
 	qOut->z = std::cosh(temp_a_x) * std::sin(mag_vector) * qA->z / mag_vector;
 	qOut->w = std::cosh(temp_a_x) * std::sin(mag_vector) * qA->w / mag_vector;
-}
-
-void quaternion_math::exsin(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sin_quat;
-
-	sin(qA, 0, &sin_quat);
-	sub(&sin_quat, &one_quat, qOut);
-}
-
-void quaternion_math::exsinh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sinh_quat;
-
-	sinh(qA, 0, &sinh_quat);
-	sub(&sinh_quat, &one_quat, qOut);
-}
-
-void quaternion_math::coversin(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sin_quat;
-
-	sin(qA, 0, &sin_quat);
-	sub(&one_quat, &sin_quat, qOut);
-}
-
-void quaternion_math::coversinh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sinh_quat;
-
-	sinh(qA, 0, &sinh_quat);
-	sub(&one_quat, &sinh_quat, qOut);
 }
 
 void quaternion_math::cos(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
@@ -101,92 +131,56 @@ void quaternion_math::cosh(const quaternion *const qA, const quaternion *const q
 	qOut->w = std::sinh(temp_a_x) * std::sin(mag_vector) * qA->w / mag_vector;
 }
 
-void quaternion_math::excos(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+void quaternion_math::tan(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
 {
-	static quaternion one_quat(1, 0, 0, 0);
+	quaternion sin_quat;
 	quaternion cos_quat;
 
+	sin(qA, 0, &sin_quat);
 	cos(qA, 0, &cos_quat);
-	sub(&cos_quat, &one_quat, qOut);
+
+	div(&sin_quat, &cos_quat, qOut);
 }
 
-void quaternion_math::excosh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+void quaternion_math::tanh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
 {
-	static quaternion one_quat(1, 0, 0, 0);
+	quaternion sinh_quat;
 	quaternion cosh_quat;
 
+	sinh(qA, 0, &sinh_quat);
 	cosh(qA, 0, &cosh_quat);
-	sub(&cosh_quat, &one_quat, qOut);
+
+	div(&sinh_quat, &cosh_quat, qOut);
 }
 
-void quaternion_math::versin(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+void quaternion_math::pow(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
 {
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cos_quat;
+	long unsigned int exp = static_cast<long unsigned int>(fabs(qB->x));
 
-	cos(qA, 0, &cos_quat);
-	sub(&one_quat, &cos_quat, qOut);
-}
+	if(0 == exp)
+	{
+		qOut->x = 1;
+		qOut->y = 0;
+		qOut->z = 0;
+		qOut->w = 0;
+	}
+	else if(1 == exp)
+	{
+		qOut->x = qA->x;
+		qOut->y = qA->y;
+		qOut->z = qA->z;
+		qOut->w = qA->w;
+	}
+	else
+	{
+		quaternion temp_quat;
+		temp_quat = *qOut = *qA;
 
-void quaternion_math::versinh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cosh_quat;
-
-	cosh(qA, 0, &cosh_quat);
-	sub(&one_quat, &cosh_quat, qOut);
-}
-
-void quaternion_math::add(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	// Don't need temp variables here, even if the out pointer is equal to the a or b pointer.
-	// (this op is too simple to mess up)
-
-	//temp_a_x = qA->x;
-	//temp_a_y = qA->y;
-	//temp_a_z = qA->z;
-	//temp_a_w = qA->w;
-
-	//temp_b_x = qB->x;
-	//temp_b_y = qB->y;
-	//temp_b_z = qB->z;
-	//temp_b_w = qB->w;
-
-	//qOut->x = temp_a_x + temp_b_x;
-	//qOut->y = temp_a_y + temp_b_y;
-	//qOut->z = temp_a_z + temp_b_z;
-	//qOut->w = temp_a_w + temp_b_w;
-
-	qOut->x = qA->x + qB->x;
-	qOut->y = qA->y + qB->y;
-	qOut->z = qA->z + qB->z;
-	qOut->w = qA->w + qB->w;
-}
-
-void quaternion_math::sub(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	// Don't need temp variables here, even if the out pointer is equal to the a or b pointer.
-	// (this op is too simple to mess up)
-
-	//temp_a_x = qA->x;
-	//temp_a_y = qA->y;
-	//temp_a_z = qA->z;
-	//temp_a_w = qA->w;
-
-	//temp_b_x = qB->x;
-	//temp_b_y = qB->y;
-	//temp_b_z = qB->z;
-	//temp_b_w = qB->w;
-
-	//qOut->x = temp_a_x - temp_b_x;
-	//qOut->y = temp_a_y - temp_b_y;
-	//qOut->z = temp_a_z - temp_b_z;
-	//qOut->w = temp_a_w - temp_b_w;
-
-	qOut->x = qA->x - qB->x;
-	qOut->y = qA->y - qB->y;
-	qOut->z = qA->z - qB->z;
-	qOut->w = qA->w - qB->w;
+		for(long unsigned int i = 1; i < exp; i++)
+		{
+			mul(qOut, &temp_quat, qOut);
+		}
+	}
 }
 
 void quaternion_math::ln(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
@@ -446,519 +440,355 @@ void quaternion_math::swizzle(const quaternion *const qA, const quaternion *cons
 		qOut->w = temp_a_w;
 }
 
-void quaternion_math::mul(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
+string quaternion_math::emit_function_definitions_fragment_shader_code(void)
 {
-	// in case qA and qOut point to the same variable...
-	temp_a_x = qA->x;
-	temp_a_y = qA->y;
-	temp_a_z = qA->z;
-	temp_a_w = qA->w;
-
-	temp_b_x = qB->x;
-	temp_b_y = qB->y;
-	temp_b_z = qB->z;
-	temp_b_w = qB->w;
-
-	// perform multiply
-	qOut->x = temp_a_x*temp_b_x - temp_a_y*temp_b_y - temp_a_z*temp_b_z - temp_a_w*temp_b_w;
-	qOut->y = temp_a_x*temp_b_y + temp_a_y*temp_b_x + temp_a_z*temp_b_w - temp_a_w*temp_b_z;
-	qOut->z = temp_a_x*temp_b_z - temp_a_y*temp_b_w + temp_a_z*temp_b_x + temp_a_w*temp_b_y;
-	qOut->w = temp_a_x*temp_b_w + temp_a_y*temp_b_z - temp_a_z*temp_b_y + temp_a_w*temp_b_x;
-}
-
-void quaternion_math::pow(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	long unsigned int exp = static_cast<long unsigned int>(fabs(qB->x));
-
-	if(0 == exp)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else if(1 == exp)
-	{
-		qOut->x = qA->x;
-		qOut->y = qA->y;
-		qOut->z = qA->z;
-		qOut->w = qA->w;
-	}
-	else
-	{
-		static quaternion temp_quat;
-		temp_quat = *qOut = *qA;
-
-		for(long unsigned int i = 1; i < exp; i++)
-		{
-			mul(qOut, &temp_quat, qOut);
-		}
-	}
-}
-
-void quaternion_math::div(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	// c = a/b
-
-	// c = inv(b) * a
-	// inv(b) = conjugate(b) / norm(b)
-	// c = (conjugate(b) / norm(b)) * a
-
-	float temp_b_norm = qB->x*qB->x + qB->y*qB->y + qB->z*qB->z + qB->w*qB->w;
-
-	temp_b_x =  qB->x;
-	temp_b_y = -qB->y;
-	temp_b_z = -qB->z;
-	temp_b_w = -qB->w;
-
-	temp_b_x /= temp_b_norm;
-	temp_b_y /= temp_b_norm;
-	temp_b_z /= temp_b_norm;
-	temp_b_w /= temp_b_norm;
-
-	temp_a_x = qA->x;
-	temp_a_y = qA->y;
-	temp_a_z = qA->z;
-	temp_a_w = qA->w;
-
-	qOut->x = temp_b_x*temp_a_x - temp_b_y*temp_a_y - temp_b_z*temp_a_z - temp_b_w*temp_a_w;
-	qOut->y = temp_b_x*temp_a_y + temp_b_y*temp_a_x + temp_b_z*temp_a_w - temp_b_w*temp_a_z;
-	qOut->z = temp_b_x*temp_a_z - temp_b_y*temp_a_w + temp_b_z*temp_a_x + temp_b_w*temp_a_y;
-	qOut->w = temp_b_x*temp_a_w + temp_b_y*temp_a_z - temp_b_z*temp_a_y + temp_b_w*temp_a_x;
-}
-
-void quaternion_math::sinc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion sin_quat;
-
-		sin(qA, 0, &sin_quat);
-		div(&sin_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::sinhc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion sinh_quat;
-
-		sinh(qA, 0, &sinh_quat);
-		div(&sinh_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::csc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sin_quat;
-
-	sin(qA, 0, &sin_quat);
-	div(&one_quat, &sin_quat, qOut);
-}
-
-void quaternion_math::csch(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sinh_quat;
-
-	sinh(qA, 0, &sinh_quat);
-	div(&one_quat, &sinh_quat, qOut);
-}
-
-void quaternion_math::excsc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion csc_quat;
-
-	csc(qA, 0, &csc_quat);
-	sub(&csc_quat, &one_quat, qOut);
-}
-
-void quaternion_math::excsch(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion csch_quat;
-
-	csch(qA, 0, &csch_quat);
-	sub(&csch_quat, &one_quat, qOut);
-}
-
-void quaternion_math::covercsc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion csc_quat;
-
-	csc(qA, 0, &csc_quat);
-	sub(&one_quat, &csc_quat, qOut);
-}
-
-void quaternion_math::covercsch(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion csch_quat;
-
-	csch(qA, 0, &csch_quat);
-	sub(&one_quat, &csch_quat, qOut);
-}
-
-void quaternion_math::cscc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion csc_quat;
-
-		csc(qA, 0, &csc_quat);
-		div(&csc_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::cschc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion csch_quat;
-
-		csch(qA, 0, &csch_quat);
-		div(&csch_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::cosc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion cos_quat;
-
-		cos(qA, 0, &cos_quat);
-		div(&cos_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::coshc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion cosh_quat;
-
-		cosh(qA, 0, &cosh_quat);
-		div(&cosh_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::sec(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cos_quat;
-
-	cos(qA, 0, &cos_quat);
-	div(&one_quat, &cos_quat, qOut);
-}
-
-void quaternion_math::sech(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cosh_quat;
-
-	cosh(qA, 0, &cosh_quat);
-	div(&one_quat, &cosh_quat, qOut);
-}
-
-void quaternion_math::exsec(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sec_quat;
-
-	sec(qA, 0, &sec_quat);
-	sub(&sec_quat, &one_quat, qOut);
-}
-
-void quaternion_math::exsech(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sech_quat;
-
-	sech(qA, 0, &sech_quat);
-	sub(&sech_quat, &one_quat, qOut);
-}
-
-void quaternion_math::vercsc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sec_quat;
-
-	sec(qA, 0, &sec_quat);
-	sub(&one_quat, &sec_quat, qOut);
-}
-
-void quaternion_math::vercsch(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion sech_quat;
-
-	sech(qA, 0, &sech_quat);
-	sub(&one_quat, &sech_quat, qOut);
-}
-
-void quaternion_math::secc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion sec_quat;
-
-		sec(qA, 0, &sec_quat);
-		div(&sec_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::sechc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion sech_quat;
-
-		sech(qA, 0, &sech_quat);
-		div(&sech_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::tan(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	quaternion sin_quat;
-	quaternion cos_quat;
-
-	sin(qA, 0, &sin_quat);
-	cos(qA, 0, &cos_quat);
-
-	div(&sin_quat, &cos_quat, qOut);
-}
-
-void quaternion_math::tanh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	quaternion sinh_quat;
-	quaternion cosh_quat;
-
-	sinh(qA, 0, &sinh_quat);
-	cosh(qA, 0, &cosh_quat);
-
-	div(&sinh_quat, &cosh_quat, qOut);
-}
-
-void quaternion_math::extan(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tan_quat;
-
-	tan(qA, 0, &tan_quat);
-	sub(&tan_quat, &one_quat, qOut);
-}
-
-void quaternion_math::extanh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tanh_quat;
-
-	tanh(qA, 0, &tanh_quat);
-	sub(&tanh_quat, &one_quat, qOut);
-}
-
-void quaternion_math::covertan(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tan_quat;
-
-	tan(qA, 0, &tan_quat);
-	sub(&one_quat, &tan_quat, qOut);
-}
-
-void quaternion_math::covertanh(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tanh_quat;
-
-	tanh(qA, 0, &tanh_quat);
-	sub(&one_quat, &tanh_quat, qOut);
-}
-
-void quaternion_math::tanc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion tan_quat;
-
-		tan(qA, 0, &tan_quat);
-		div(&tan_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::tanhc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion tanh_quat;
-
-		tanh(qA, 0, &tanh_quat);
-		div(&tanh_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::cot(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tan_quat;
-
-	tan(qA, 0, &tan_quat);
-	div(&one_quat, &tan_quat, qOut);
-}
-
-void quaternion_math::coth(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion tanh_quat;
-
-	tanh(qA, 0, &tanh_quat);
-	div(&one_quat, &tanh_quat, qOut);
-}
-
-void quaternion_math::excot(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cot_quat;
-
-	cot(qA, 0, &cot_quat);
-	sub(&cot_quat, &one_quat, qOut);
-}
-
-void quaternion_math::excoth(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion coth_quat;
-
-	coth(qA, 0, &coth_quat);
-	sub(&coth_quat, &one_quat, qOut);
-}
-
-void quaternion_math::covercot(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion cot_quat;
-
-	cot(qA, 0, &cot_quat);
-	sub(&one_quat, &cot_quat, qOut);
-}
-
-void quaternion_math::covercoth(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	static quaternion one_quat(1, 0, 0, 0);
-	quaternion coth_quat;
-
-	coth(qA, 0, &coth_quat);
-	sub(&one_quat, &coth_quat, qOut);
-}
-
-void quaternion_math::cotc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion cot_quat;
-
-		cot(qA, 0, &cot_quat);
-		div(&cot_quat, qA, qOut);
-	}
-}
-
-void quaternion_math::cothc(const quaternion *const qA, const quaternion *const qB, quaternion *const qOut)
-{
-	if(qA->x == 0)// && qA->y == 0 && qA->z == 0 && qA->w == 0)
-	{
-		qOut->x = 1;
-		qOut->y = 0;
-		qOut->z = 0;
-		qOut->w = 0;
-	}
-	else
-	{
-		quaternion coth_quat;
-
-		coth(qA, 0, &coth_quat);
-		div(&coth_quat, qA, qOut);
-	}
+	string code;
+
+	code += "float cosh_(float x)\n";
+	code += "{\n";
+	code += "    const float e = 2.7182817459106445;\n";
+	code += "    return 0.5*(pow(e, x) + pow(e, -x));\n";
+	code += "}\n";
+	code += "\n";
+	code += "float sinh_(float x)\n";
+	code += "{\n";
+	code += "    const float e = 2.7182817459106445;\n";
+	code += "    return 0.5*(pow(e, x) - pow(e, -x));\n";
+	code += "}\n";
+	code += "\n";
+	code += "// A decent GLSL compiler should optimize this out.\n";
+	code += "vec4 qadd(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    return qa + qb;\n";
+	code += "}\n";
+	code += "\n";
+	code += "// A decent GLSL compiler should optimize this out.\n";
+	code += "vec4 qsub(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    return qa - qb;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qmul(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "   vec4 qout;\n";
+	code += "   qout.x = qa.x*qb.x - dot(qa.yzw, qb.yzw);\n";
+	code += "   qout.yzw = qa.x*qb.yzw + qb.x*qa.yzw + cross(qa.yzw, qb.yzw);\n";
+	code += "\n";
+	code += "   return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qdiv(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    float d = dot(qb, qb);\n";
+	code += "\n";
+	code += "    vec4 temp_b = qb;\n";
+	code += "    temp_b.yzw = -temp_b.yzw;\n";
+	code += "\n";
+	code += "    return qmul(temp_b / d, qa);\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qsin(vec4 qa)\n";
+	code += "{\n";
+	code += "    float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "    qout.x = sin(qa.x) * cosh_(mag_vector);\n";
+	code += "    qout.yzw = cos(qa.x) * sinh_(mag_vector) * qa.yzw / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qsinh(vec4 qa)\n";
+	code += "{\n";
+	code += "    float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "    qout.x = sinh_(qa.x) * cos(mag_vector);\n";
+	code += "    qout.yzw = cosh_(qa.x) * sin(mag_vector) * qa.yzw / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qcos(vec4 qa)\n";
+	code += "{\n";
+	code += "    float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "    qout.x = cos(qa.x) * cosh_(mag_vector);\n";
+	code += "    qout.yzw = -sin(qa.x) * sinh_(mag_vector) * qa.yzw / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qcosh(vec4 qa)\n";
+	code += "{\n";
+	code += "    float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "    qout.x = cosh_(qa.x) * cos(mag_vector);\n";
+	code += "    qout.yzw = sinh_(qa.x) * sin(mag_vector) * qa.yzw / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qtan(vec4 qa)\n";
+	code += "{\n";
+	code += "    return qdiv(qsin(qa), qcos(qa));\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qtanh(vec4 qa)\n";
+	code += "{\n";
+	code += "    return qdiv(qsinh(qa), qcosh(qa));\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qpow(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    int pow_exponent = int(abs(qb.x));\n";
+	code += "    vec4 qout = qa;\n";
+	code += "\n";
+	code += "    if(pow_exponent == 0)\n";
+	code += "    {\n";
+	code += "        qout.x = 1.0;\n";
+	code += "        qout.y = 0.0;\n";
+	code += "        qout.z = 0.0;\n";
+	code += "        qout.w = 0.0;\n";
+	code += "    }\n";
+	code += "    else\n";
+	code += "    {\n";
+	code += "        for(int i = 1; i < pow_exponent; i++)\n";
+	code += "            qout = qmul(qout, qa);\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qln(vec4 qa)\n";
+	code += "{\n";
+	code += "    qa = normalize(qa);\n";
+	code += "\n";
+	code += "    float dot_vector = dot(qa.yzw, qa.yzw);\n";
+	code += "    float mag_vector = sqrt(dot_vector);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "\n";
+	code += "    qout.x = 0.5 * log(qa.x*qa.x + dot_vector);\n";
+	code += "    qout.yzw = (atan(mag_vector, qa.x) * qa.yzw) / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qexp(vec4 qa)\n";
+	code += "{\n";
+	code += "    float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "    vec4 qout;\n";
+	code += "    qout.x = exp(qa.x) * cos(mag_vector);\n";
+	code += "    qout.yzw = exp(qa.x) * sin(mag_vector) * qa.yzw / mag_vector;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qsqrt(vec4 qa)\n";
+	code += "{\n";
+	code += "    vec4 qout;\n";
+	code += "\n";
+	code += "    if(qa.y == 0.0 && qa.z == 0.0 && qa.w == 0.0)\n";
+	code += "    {\n";
+	code += "        if(qa.x >= 0.0)\n";
+	code += "        {\n";
+	code += "            qout.x = sqrt(qa.x);\n";
+	code += "            qout.y = 0.0;\n";
+	code += "            qout.z = 0.0;\n";
+	code += "            qout.w = 0.0;\n";
+	code += "        }\n";
+	code += "        else\n";
+	code += "        {\n";
+	code += "            qout.x = sqrt(-qa.x);\n";
+	code += "            qout.y = 0.0;\n";
+	code += "            qout.z = 0.0;\n";
+	code += "            qout.w = 0.0;\n";
+	code += "        }\n";
+	code += "    }\n";
+	code += "    else\n";
+	code += "    {\n";
+	code += "        float mag_vector = length(qa.yzw);\n";
+	code += "\n";
+	code += "        if(qa.x >= 0.0)\n";
+	code += "        {\n";
+	code += "            float m = sqrt(0.5 * (sqrt(qa.x*qa.x + mag_vector*mag_vector) + qa.x));\n";
+	code += "            float l = mag_vector / (2.0 * m);\n";
+	code += "            float t = l / mag_vector;\n";
+	code += "\n";
+	code += "            qout.x = m;\n";
+	code += "            qout.y = qa.y * t;\n";
+	code += "            qout.z = qa.z * t;\n";
+	code += "            qout.w = qa.w * t;\n";
+	code += "        }\n";
+	code += "        else\n";
+	code += "        {\n";
+	code += "            float l = sqrt(0.5 * (sqrt(qa.x*qa.x + mag_vector*mag_vector) - qa.x));\n";
+	code += "            float m = mag_vector / (2.0 * l);\n";
+	code += "            float t = l / mag_vector;\n";
+	code += "\n";
+	code += "            qout.x = m;\n";
+	code += "            qout.y = qa.y * t;\n";
+	code += "            qout.z = qa.z * t;\n";
+	code += "            qout.w = qa.w * t;\n";
+	code += "        }\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qinverse(vec4 qa)\n";
+	code += "{\n";
+	code += "    vec4 qout = qa;\n";
+	code += "    qout.yzw = -qout.yzw;\n";
+	code += "\n";
+	code += "    return qout / dot(qa, qa);\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qconjugate(vec4 qa)\n";
+	code += "{\n";
+	code += "    qa.yzw = -qa.yzw;\n";
+	code += "    return qa;\n";
+	code += "}\n";
+	code += "\n";
+	code += "// A decent GLSL compiler should optimize this out.\n";
+	code += "vec4 qcopy(vec4 qa)\n";
+	code += "{\n";
+	code += "    return qa;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qcopy_masked(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    vec4 qout;\n";
+	code += "\n";
+	code += "    if(qb.x != 0.0)\n";
+	code += "    {\n";
+	code += "        if(qb.x == 1.0)\n";
+	code += "            qout.x = qa.x;\n";
+	code += "        else if(qb.x == -1.0)\n";
+	code += "            qout.x = -qa.x;\n";
+	code += "        else if(qb.x == 2.0)\n";
+	code += "            qout.x = qa.y;\n";
+	code += "        else if(qb.x == -2.0)\n";
+	code += "            qout.x = -qa.y;\n";
+	code += "        else if(qb.x == 3.0)\n";
+	code += "            qout.x = qa.z;\n";
+	code += "        else if(qb.x == -3.0)\n";
+	code += "            qout.x = -qa.z;\n";
+	code += "        else if(qb.x == 4.0)\n";
+	code += "            qout.x = qa.w;\n";
+	code += "        else if(qb.x == -4.0)\n";
+	code += "            qout.x = -qa.w;\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    if(qb.y != 0.0)\n";
+	code += "    {\n";
+	code += "        if(qb.y == 1.0)\n";
+	code += "            qout.y = qa.x;\n";
+	code += "        else if(qb.y == -1.0)\n";
+	code += "            qout.y = -qa.x;\n";
+	code += "        else if(qb.y == 2.0)\n";
+	code += "            qout.y = qa.y;\n";
+	code += "        else if(qb.y == -2.0)\n";
+	code += "            qout.y = -qa.y;\n";
+	code += "        else if(qb.y == 3.0)\n";
+	code += "            qout.y = qa.z;\n";
+	code += "        else if(qb.y == -3.0)\n";
+	code += "            qout.y = -qa.z;\n";
+	code += "        else if(qb.y == 4.0)\n";
+	code += "            qout.y = qa.w;\n";
+	code += "        else if(qb.y == -4.0)\n";
+	code += "            qout.y = -qa.w;\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    if(qb.z != 0.0)\n";
+	code += "    {\n";
+	code += "        if(qb.z == 1.0)\n";
+	code += "            qout.z = qa.x;\n";
+	code += "        else if(qb.z == -1.0)\n";
+	code += "            qout.z = -qa.x;\n";
+	code += "        else if(qb.z == 2.0)\n";
+	code += "            qout.z = qa.y;\n";
+	code += "        else if(qb.z == -2.0)\n";
+	code += "            qout.z = -qa.y;\n";
+	code += "        else if(qb.z == 3.0)\n";
+	code += "            qout.z = qa.z;\n";
+	code += "        else if(qb.z == -3.0)\n";
+	code += "            qout.z = -qa.z;\n";
+	code += "        else if(qb.z == 4.0)\n";
+	code += "            qout.z = qa.w;\n";
+	code += "        else if(qb.z == -4.0)\n";
+	code += "            qout.z = -qa.w;\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    if(qb.w != 0.0)\n";
+	code += "    {\n";
+	code += "        if(qb.w == 1.0)\n";
+	code += "            qout.w = qa.x;\n";
+	code += "        else if(qb.w == -1.0)\n";
+	code += "            qout.w = -qa.x;\n";
+	code += "        else if(qb.w == 2.0)\n";
+	code += "            qout.w = qa.y;\n";
+	code += "        else if(qb.w == -2.0)\n";
+	code += "            qout.w = -qa.y;\n";
+	code += "        else if(qb.w == 3.0)\n";
+	code += "            qout.w = qa.z;\n";
+	code += "        else if(qb.w == -3.0)\n";
+	code += "            qout.w = -qa.z;\n";
+	code += "        else if(qb.w == 4.0)\n";
+	code += "            qout.w = qa.w;\n";
+	code += "        else if(qb.w == -4.0)\n";
+	code += "            qout.w = -qa.w;\n";
+	code += "    }\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+	code += "\n";
+	code += "vec4 qswizzle(vec4 qa, vec4 qb)\n";
+	code += "{\n";
+	code += "    vec4 qout;\n";
+	code += "\n";
+	code += "    if(qb.x == 1.0)\n";
+	code += "        qout.x = qa.x;\n";
+	code += "    else if(qb.x == 2.0)\n";
+	code += "        qout.x = qa.y;\n";
+	code += "    else if(qb.x == 3.0)\n";
+	code += "        qout.x = qa.z;\n";
+	code += "    else\n";
+	code += "        qout.x = qa.w;\n";
+	code += "\n";
+	code += "    if(qb.y == 1.0)\n";
+	code += "        qout.y = qa.x;\n";
+	code += "    else if(qb.y == 2.0)\n";
+	code += "        qout.y = qa.y;\n";
+	code += "    else if(qb.y == 3.0)\n";
+	code += "        qout.y = qa.z;\n";
+	code += "    else\n";
+	code += "        qout.y = qa.w;\n";
+	code += "\n";
+	code += "    if(qb.z == 1.0)\n";
+	code += "        qout.z = qa.x;\n";
+	code += "    else if(qb.z == 2.0)\n";
+	code += "        qout.z = qa.y;\n";
+	code += "    else if(qb.z == 3.0)\n";
+	code += "        qout.z = qa.z;\n";
+	code += "    else\n";
+	code += "        qout.z = qa.w;\n";
+	code += "\n";
+	code += "    if(qb.w == 1.0)\n";
+	code += "        qout.w = qa.x;\n";
+	code += "    else if(qb.w == 2.0)\n";
+	code += "        qout.w = qa.y;\n";
+	code += "    else if(qb.w == 3.0)\n";
+	code += "        qout.w = qa.z;\n";
+	code += "    else\n";
+	code += "        qout.w = qa.w;\n";
+	code += "\n";
+	code += "    return qout;\n";
+	code += "}\n";
+
+	return code;
 }

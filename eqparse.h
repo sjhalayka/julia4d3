@@ -1,11 +1,10 @@
 // Source code by Shawn Halayka
 // Source code is in the public domain
 
-
 #ifndef EQPARSE_H
 #define EQPARSE_H
 
-
+#include "primitives.h"
 #include "quaternion_math.h"
 #include "string_utilities.h"
 using string_utilities::lower_string;
@@ -22,11 +21,8 @@ using std::string;
 using std::istringstream;
 using std::ostringstream;
 
-// for console debug purposes
 #include <iostream>
-using std::cout;
 using std::endl;
-
 
 typedef void (quaternion_math::*qmath_func_ptr)(const quaternion *const, const quaternion *const, quaternion *const);
 
@@ -92,8 +88,10 @@ public:
 	bool setup(const string &src_formula, string &error_output, const quaternion &src_C);
 	float iterate(const quaternion &src_Z, const short unsigned int &max_iterations, const float &threshold);
 	string get_unique_formula_string(void);
+	string emit_compute_shader_code(void);
 
 protected:
+	string emit_execution_stack_fragment_shader_code(void);
 	void setup_function_map(void);
 	void cleanup(void);
 	qmath_func_ptr get_function_instruction(const string &src_token);

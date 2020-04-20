@@ -68,6 +68,8 @@ using namespace marching_cubes;
 
 logging_system log_system;
 
+
+
 vector<GLfloat> vertex_data;
 vector<GLfloat> flat_data;
 
@@ -123,8 +125,7 @@ GLUI_EditText* infinity_edittext;
 
 GLUI_StaticText* status;
 
-vector<triangle> triangles;
-vector<vertex_3_with_normal> vertices_with_face_normals;
+
 
 
 GLuint      render_fbo = 0;
@@ -151,9 +152,123 @@ public:
 	unsigned char r, g, b;
 };
 
-
-bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name)
+void display_func2(void)
 {
+	glutSwapBuffers();
+}
+
+bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
+{
+	// Read in compute shader contents
+	ifstream infile(file_name);
+
+	if (infile.fail())
+	{
+		cout << "Could not open " << file_name << endl;
+		return false;
+	}
+	else
+	{
+		cout << "opened file " << file_name << endl;
+	}
+
+	string shader_code;
+	string line;
+
+	while (getline(infile, line))
+	{
+		shader_code += line;
+		shader_code += "\n";
+	}
+
+	cout << "read file" << endl;
+
+	// Compile compute shader
+	const char* cch = 0;
+	GLint status = GL_FALSE;
+
+	cout << "creating shader" << endl;
+
+	GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
+
+	cout << "shader source" << endl;
+
+	glShaderSource(shader, 1, &(cch = shader_code.c_str()), NULL);
+
+	cout << "compile shader" << endl;
+
+	glCompileShader(shader);
+
+
+	cout << "glgetshader" << endl;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
+	if (GL_FALSE == status)
+	{
+		cout << "shader compile error" << endl;
+
+		string status_string = "Compute shader compile error.\n";
+		vector<GLchar> buf(4096, '\0');
+		glGetShaderInfoLog(shader, 4095, 0, &buf[0]);
+
+		for (size_t i = 0; i < buf.size(); i++)
+			if ('\0' != buf[i])
+				status_string += buf[i];
+
+		status_string += '\n';
+
+		cout << status_string << endl;
+
+		glDeleteShader(shader);
+
+		return false;
+	}
+	else {
+		cout << "compiled ok" << endl;
+	}
+
+
+	// Link compute shader
+	program = glCreateProgram();
+	glAttachShader(program, shader);
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
+
+	if (GL_FALSE == status)
+	{
+		string status_string = "Program link error.\n";
+		vector<GLchar> buf(4096, '\0');
+		glGetShaderInfoLog(program, 4095, 0, &buf[0]);
+
+		for (size_t i = 0; i < buf.size(); i++)
+			if ('\0' != buf[i])
+				status_string += buf[i];
+
+		status_string += '\n';
+
+		cout << status_string << endl;
+
+		glDetachShader(program, shader);
+		glDeleteShader(shader);
+		glDeleteProgram(program);
+
+		return false;
+	}
+
+	// The shader is no longer needed now that the program
+	// has been linked
+	glDetachShader(program, shader);
+	glDeleteShader(shader);
+
+	cout << "Done initing compute shader" << endl;
+
+	return true;
+}
+
+bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name, vector<triangle> &triangles)
+{
+	cout << "tri size " << triangles.size() << endl;
+
 	ostringstream oss;
 
 	oss.clear();
@@ -165,6 +280,9 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 
 	if (0 == triangles.size())
 		return false;
+
+
+	cout << "Writing to file" << endl;
 
 	// Write to file.
 	ofstream out(file_name, ios_base::binary);
@@ -253,7 +371,7 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	thread_mutex.lock();
 	log_system.add_string_to_contents(oss.str());
 	thread_mutex.unlock();
-
+		
 	out.close();
 
 	return true;
@@ -261,8 +379,10 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 
 
 
-void get_vertices_with_face_normals_from_triangles(void)
+void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> &vertices_with_face_normals, vector<triangle> &triangles)
 {
+	cout << "get vertices w face normals triangle count " << triangles.size() << endl;
+
 	vector<vertex_3_with_index> v;
 
 	vertices_with_face_normals.clear();
@@ -423,7 +543,10 @@ void get_vertices_with_face_normals_from_triangles(void)
 	thread_mutex.unlock();
 }
 
-void thread_func_cpu(fractal_set_parameters p)
+
+
+
+void thread_func_cpu(fractal_set_parameters p, vector<triangle> &triangles, vector<vertex_3_with_normal> &vertices_with_face_normals)
 {
 	thread_is_running = true;
 
@@ -582,119 +705,93 @@ void thread_func_cpu(fractal_set_parameters p)
 
 	if (false == stop)
 	{
-		get_vertices_with_face_normals_from_triangles();
-		write_triangles_to_binary_stereo_lithography_file("out.stl");
+		get_vertices_with_face_normals_from_triangles(vertices_with_face_normals, triangles);
+		write_triangles_to_binary_stereo_lithography_file("out.stl", triangles);
 	}
 
 	thread_is_running = false;
 	return;
 }
 
+int win_id2;
 
-
-
-void thread_func_gpu(fractal_set_parameters p)
+void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_parser eqparser, quaternion C, vector<triangle>& triangles, vector<vertex_3_with_normal>& vertices_with_face_normals)
 {
+	cout << "Entering GPU thread" << endl;
+
 	thread_is_running = true;
 
 	triangles.clear();
 	vertices_with_face_normals.clear();
+	
+	int argc = 0;
+	char** argv = 0;
 
-	bool make_border = true;
+	glutInitWindowSize(1, 1);
+	glutInitWindowPosition(0, 0);
+	win_id2 = glutCreateWindow("test");
+	glutDisplayFunc(display_func2);
 
-	quaternion C;
-	C.x = p.C_x;
-	C.y = p.C_y;
-	C.z = p.C_z;
-	C.w = p.C_w;
+	GLuint compute_shader_program = 0;
+	GLuint tex_output = 0;
+	GLuint tex_input = 0;
 
-	ostringstream oss;
+	cout << "compiling compute shader" << endl;
+	compile_and_link_compute_shader("julia.cs.glsl", compute_shader_program);
+	cout << "Done compiling compute shader" << endl;
 
-	string error_string;
-	quaternion_julia_set_equation_parser eqparser;
+	cout << "init textures" << endl;
+	glGenTextures(1, &tex_output);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, tex_output);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, p.resolution, p.resolution, 0, GL_RED, GL_FLOAT, NULL);
+	glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-	if (false == eqparser.setup(p.equation_text, error_string, C))
-	{
-		oss.clear();
-		oss.str("");
-		oss << "Equation error: " << error_string;
-		thread_mutex.lock();
-		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
-		thread_is_running = false;
-		return;
-	}
+	// Generate input texture
+	glGenTextures(1, &tex_input);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, tex_input);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	// When adding a border, use a value that is "much" greater than the threshold.
-	const float border_value = 1.0f + p.infinity;
 
-	size_t num_voxels = p.resolution * p.resolution;
-	vector<float> xyplane0(num_voxels, 0);
-	vector<float> xyplane1(num_voxels, 0);
+	// Set up quaternion Julia set parameters
 
+	// Set up grid parameters
 	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
 	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
 	const float step_size_z = (p.z_max - p.z_min) / (p.resolution - 1);
 
-	size_t z = 0;
+	// Set up input quaternion
+	quaternion Z(p.x_min, p.y_min, p.z_min, 0.0);
 
-	quaternion Z(p.x_min, p.y_min, p.z_min, p.Z_w);
+	// Set up output/input data
+	const size_t num_output_channels = 1;
+	vector<float> output_pixels(p.resolution * p.resolution * num_output_channels, 0.0f);
+	const size_t num_input_channels = 4;
+	vector<float> input_pixels(p.resolution * p.resolution * num_input_channels, 0.0f);
 
-	// Calculate 0th xy plane.
-	for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
+	// We must keep track of both the current and the previous slices, 
+	// so that they can be used as input for the Marching Cubes algorithm
+	vector<float> previous_slice;
+
+	// The result of the Marching Cubes algorithm is triangles
+
+	// For each z slice
+	for (size_t z = 0; z < p.resolution; z++, Z.z += step_size_z)
 	{
-		Z.y = p.y_min;
+		if(z % 10 == 0)
+		cout << "Z slice " << z + 1 << " of " << p.resolution << endl;
 
-		for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
-		{
-			if (stop)
-			{
-				thread_is_running = false;
-				return;
-			}
+		Z.x = p.x_min;
 
-			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-			{
-				xyplane0[x * p.resolution + y] = border_value;
-			}
-			else
-			{
-				const float y_span = (p.y_max - p.y_min);
-				const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
-
-				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
-				{
-					xyplane0[x * p.resolution + y] = p.infinity - 0.00001f;
-				}
-				else
-				{
-					xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-				}
-			}
-		}
-	}
-
-	// Prepare for 1st xy plane.
-	z++;
-	Z.z += step_size_z;
-
-
-
-	size_t box_count = 0;
-
-
-	// Calculate 1st and subsequent xy planes.
-	for (; z < p.resolution; z++, Z.z += step_size_z)
-	{
-		Z.x = p.z_min;
-
-		oss.clear();
-		oss.str("");
-		oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
-		thread_mutex.lock();
-		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
-
+		// Create pixel array to be used as input for the compute shader
 		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
 		{
 			Z.y = p.y_min;
@@ -704,59 +801,117 @@ void thread_func_gpu(fractal_set_parameters p)
 				if (stop)
 				{
 					thread_is_running = false;
+					glDeleteTextures(1, &tex_output);
+					glDeleteTextures(1, &tex_input);
+					glDeleteProgram(compute_shader_program);
 					return;
 				}
 
-				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-				{
-					xyplane1[x * p.resolution + y] = border_value;
-				}
-				else
-				{
-					const float y_span = (p.y_max - p.y_min);
-					const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
+				const size_t index = num_input_channels * (x * p.resolution + y);
 
-					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
+				input_pixels[index + 0] = Z.x;
+				input_pixels[index + 1] = Z.y;
+				input_pixels[index + 2] = Z.z;
+				input_pixels[index + 3] = Z.w;
+			}
+		}
+		
+
+
+		// Run the compute shader
+		glActiveTexture(GL_TEXTURE1);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, p.resolution, p.resolution, 0, GL_RGBA, GL_FLOAT, &input_pixels[0]);
+		glBindImageTexture(1, tex_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+
+		glUseProgram(compute_shader_program);
+
+		// Pass in the input image and quaternion Julia set parameters as uniforms
+		glUniform1i(glGetUniformLocation(compute_shader_program, "input_image"), 1); // use GL_TEXTURE1
+		glUniform4f(glGetUniformLocation(compute_shader_program, "c"), C.x, C.y, C.z, C.w);
+		glUniform1i(glGetUniformLocation(compute_shader_program, "max_iterations"), p.max_iterations);
+		glUniform1f(glGetUniformLocation(compute_shader_program, "threshold"), p.infinity);
+
+		// Run compute shader
+		glDispatchCompute(p.resolution, p.resolution, 1);
+
+		// Wait for compute shader to finish
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		// Copy output pixel array to CPU as texture 0
+		glActiveTexture(GL_TEXTURE0);
+		glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_pixels[0]);
+
+		// Make a border, so that the mesh is closed around the edges
+		for (size_t x = 0; x < p.resolution; x++)
+		{
+			for (size_t y = 0; y < p.resolution; y++)
+			{
+				if (z == 0 || z == p.resolution - 1 ||
+					x == 0 || x == p.resolution - 1 ||
+					y == 0 || y == p.resolution - 1)
+				{
+					if (stop)
 					{
-						xyplane1[x * p.resolution + y] = p.infinity - 0.00001f;
+						thread_is_running = false;
+						glDeleteTextures(1, &tex_output);
+						glDeleteTextures(1, &tex_input);
+						glDeleteProgram(compute_shader_program);
+						return;
 					}
-					else
-					{
-						xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-					}
+
+					const size_t index = num_output_channels * (y * p.resolution + x);
+					output_pixels[index] = p.infinity + 1.0f;
 				}
 			}
 		}
 
-		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-		tesselate_adjacent_xy_plane_pair(stop,
-			box_count,
-			xyplane0, xyplane1,
-			z - 1,
-			triangles,
-			p.infinity, // Use threshold as isovalue.
-			p.x_min, p.x_max, p.resolution,
-			p.y_min, p.y_max, p.resolution,
-			p.z_min, p.z_max, p.resolution);
-
-
-		if (stop)
+		// Use the Marching Cubes algorithm to convert the output data
+		// into triangles, that is, if this isn't the first loop iteration
+		if (z > 0)
 		{
-			thread_is_running = false;
-			return;
+			size_t box_count = 0;
+
+			// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
+			tesselate_adjacent_xy_plane_pair(stop,
+				box_count,
+				previous_slice, output_pixels,
+				z - 1,
+				triangles,
+				p.infinity, // Use threshold as isovalue.
+				p.x_min, p.x_max, p.resolution,
+				p.y_min, p.y_max, p.resolution,
+				p.z_min, p.z_max, p.resolution);
+
+			if (stop)
+			{
+				thread_is_running = false;
+				glDeleteTextures(1, &tex_output);
+				glDeleteTextures(1, &tex_input);
+				glDeleteProgram(compute_shader_program);
+				return;
+			}
 		}
 
-		// Swap memory pointers (fast) instead of performing a memory copy (slow).
-		xyplane1.swap(xyplane0);
+		previous_slice = output_pixels;
 	}
+
+	cout << "Triangles: " << triangles.size() << endl;
 
 	if (false == stop)
 	{
-		get_vertices_with_face_normals_from_triangles();
-		write_triangles_to_binary_stereo_lithography_file("out.stl");
+		get_vertices_with_face_normals_from_triangles(vertices_with_face_normals, triangles);
+		write_triangles_to_binary_stereo_lithography_file("out.stl", triangles);
 	}
 
+
+	
+	cout << "thread done" << endl;
+
 	thread_is_running = false;
+	glDeleteTextures(1, &tex_output);
+	glDeleteTextures(1, &tex_input);
+	glDeleteProgram(compute_shader_program);
 	return;
 }
 
@@ -1230,6 +1385,10 @@ bool obtain_control_contents(fractal_set_parameters &p)
 	return true;
 }
 
+
+vector<triangle> triangles;
+vector<vertex_3_with_normal> vertices_with_face_normals;
+
 void generate_cancel_button_func(int control)
 {
 	if (generate_button == false)
@@ -1293,32 +1452,49 @@ void generate_cancel_button_func(int control)
 
 		if (gpu_acceleration_checkbox->get_int_val())
 		{
-			// just testing...
-			ostringstream oss;
-			oss.clear();
-			oss.str("");
-			oss << "Compute shader initialization failure";
-			thread_mutex.lock();
-			log_system.add_string_to_contents(oss.str());
-			thread_mutex.unlock();
-			oss.clear();
-			oss.str("");
-			oss << "Aborting";
-			thread_mutex.lock();
-			log_system.add_string_to_contents(oss.str());
-			thread_mutex.unlock();
+			GLint global_workgroup_count[2];
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &global_workgroup_count[0]);
+			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &global_workgroup_count[1]);
 
-			// (re-) init comp shader
-			// 
-			return;
+			cout << global_workgroup_count[0] << " x " << global_workgroup_count[1] << endl;
 
+			if (p.resolution > global_workgroup_count[0])
+			{
+				cout << "Texture width " << p.resolution << " is larger than max " << global_workgroup_count[0] << endl;
+				return;
+			}
 
+			if (p.resolution > global_workgroup_count[1])
+			{
+				cout << "Texture height " << p.resolution << " is larger than max " << global_workgroup_count[1] << endl;
+				return;
+			}
 
-			gen_thread = new thread(thread_func_gpu, p);
+			string error_string;
+			quaternion_julia_set_equation_parser eqparser;
+			quaternion C(p.C_x, p.C_y, p.C_z, p.C_w);
+
+			if (false == eqparser.setup(p.equation_text, error_string, C))
+			{
+				cout << "Equation error" << endl;
+				return;
+			}
+			else
+			{
+				cout << "Equation ok" << endl;
+			}
+
+			string code = eqparser.emit_compute_shader_code();
+
+			ofstream of("julia.cs.glsl");
+			of << code;
+			of.close();
+
+			gen_thread = new thread(thread_func_gpu, p, eqparser, C, ref(triangles), ref(vertices_with_face_normals));
 		}
 		else
 		{
-			gen_thread = new thread(thread_func_cpu, p);
+			gen_thread = new thread(thread_func_cpu, p, ref(triangles), ref(vertices_with_face_normals));
 		}
 
 		generate_button = false;
@@ -1726,6 +1902,10 @@ void myGlutIdle(void)
 
 	if (false == thread_is_running && false == generate_button)
 	{
+		cout << "caught thread finish" << endl;
+		cout << "tri size " << triangles.size() << endl;
+		cout << "vfn size " << vertices_with_face_normals.size() << endl;
+
 		if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
 		{
 			refresh_vertex_data();
@@ -2177,6 +2357,9 @@ bool init(void)
 	return true;
 }
 
+
+
+
 void display_func(void)
 {
 	glClearColor(1, 0.5f, 0, 1);
@@ -2503,8 +2686,8 @@ void setup_gui(void)
 
 	glui->add_separator();
 
-	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
-	equation_edittext->set_text("Z = Z*Z + C");
+	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = sin(Z) + C*sin(Z)"), 3, control_cb);
+	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
 	equation_edittext->set_w(150);
 
 	glui->add_separator();
@@ -2581,6 +2764,9 @@ void setup_gui(void)
 	y_max_edittext->set_text("1.5");
 	z_max_edittext->set_text("1.5");
 }
+
+
+
 
 
 #endif
