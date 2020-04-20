@@ -2208,6 +2208,8 @@ void display_func(void)
 	
 	if (draw_axis_checkbox->get_int_val())
 	{
+		glLineWidth(2.0);
+
 		glUseProgram(flat.get_program());
 
 		main_camera.calculate_camera_matrices(win_x, win_y);
