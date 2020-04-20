@@ -1484,7 +1484,7 @@ void generate_cancel_button_func(int control)
 				cout << "Equation ok" << endl;
 			}
 
-			string code = eqparser.emit_compute_shader_code();
+			string code = eqparser.emit_compute_shader_code(p.resolution, p.resolution);
 
 			ofstream of("julia.cs.glsl");
 			of << code;

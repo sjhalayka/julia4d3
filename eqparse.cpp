@@ -2940,7 +2940,7 @@ bool quaternion_julia_set_equation_parser::compile_ordered_terms(const vector<te
 	return true;
 }
 
-string quaternion_julia_set_equation_parser::emit_compute_shader_code(void)
+string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsigned int x_res, short unsigned int y_res)
 {
 	string code;
 

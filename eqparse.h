@@ -88,7 +88,7 @@ public:
 	bool setup(const string &src_formula, string &error_output, const quaternion &src_C);
 	float iterate(const quaternion &src_Z, const short unsigned int &max_iterations, const float &threshold);
 	string get_unique_formula_string(void);
-	string emit_compute_shader_code(void);
+	string emit_compute_shader_code(short unsigned int x_res, short unsigned int y_res);
 
 protected:
 	string emit_execution_stack_fragment_shader_code(void);
