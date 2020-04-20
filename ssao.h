@@ -776,6 +776,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 					glDeleteTextures(1, &tex_output);
 					glDeleteTextures(1, &tex_input);
 					glDeleteProgram(compute_shader_program);
+					glutDestroyWindow(win_id2);
 					return;
 				}
 
@@ -827,6 +828,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 						glDeleteTextures(1, &tex_output);
 						glDeleteTextures(1, &tex_input);
 						glDeleteProgram(compute_shader_program);
+						glutDestroyWindow(win_id2);
 						return;
 					}
 
@@ -868,6 +870,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 				glDeleteTextures(1, &tex_output);
 				glDeleteTextures(1, &tex_input);
 				glDeleteProgram(compute_shader_program);
+				glutDestroyWindow(win_id2);
 				return;
 			}
 		}
@@ -885,6 +888,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 	glDeleteTextures(1, &tex_output);
 	glDeleteTextures(1, &tex_input);
 	glDeleteProgram(compute_shader_program);
+	glutDestroyWindow(win_id2);
 	return;
 }
 
