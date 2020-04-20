@@ -155,7 +155,8 @@ public:
 
 void display_func2(void)
 {
-	glutSwapBuffers();
+	cout << "display func 2" << endl;
+//	glutSwapBuffers();
 }
 
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
@@ -707,7 +708,6 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 	glutInitWindowSize(500, 1);
 	glutInitWindowPosition(0, 0);
 	win_id2 = glutCreateWindow("GPU acceleration window");
-
 	glutDisplayFunc(display_func2);
 
 	GLuint compute_shader_program = 0;
