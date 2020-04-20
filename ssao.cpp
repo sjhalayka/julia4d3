@@ -10,8 +10,8 @@ int main(int argc, char **argv)
 	log_system.add_string_to_contents("Welcome to Julia 4D 3");
 	log_system.add_string_to_contents("Press the Generate mesh button to begin!");
 	log_system.add_string_to_contents(" ");
-	log_system.add_string_to_contents("LMB + drag -- rotate camera");
-	log_system.add_string_to_contents("RMB + drag -- adjust camera distane");
+	log_system.add_string_to_contents("LMB + drag -- rotate camera view");
+	log_system.add_string_to_contents("RMB + drag -- adjust camera distance");
 
     glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);

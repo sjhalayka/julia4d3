@@ -157,6 +157,7 @@ void display_func2(void)
 {
 }
 
+
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
 {
 	// Read in compute shader contents
