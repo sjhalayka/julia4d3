@@ -76,6 +76,7 @@ vector<GLfloat> flat_data;
 std::chrono::high_resolution_clock::time_point start_time, end_time;
 
 GLint win_id = 0;
+int win_id2 = 0;
 GLuint win_x = 800;
 GLuint win_y = 600;
 bool lmb_down = false;
@@ -162,14 +163,18 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 	// Read in compute shader contents
 	ifstream infile(file_name);
 
+	ostringstream oss;
+
 	if (infile.fail())
 	{
-		cout << "Could not open " << file_name << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Could not open compute shader source file " << file_name;
+		thread_mutex.lock();
+		log_system.add_string_to_contents(oss.str());
+		thread_mutex.unlock();
+
 		return false;
-	}
-	else
-	{
-		cout << "opened file " << file_name << endl;
 	}
 
 	string shader_code;
@@ -181,32 +186,21 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 		shader_code += "\n";
 	}
 
-	cout << "read file" << endl;
-
 	// Compile compute shader
 	const char* cch = 0;
 	GLint status = GL_FALSE;
 
-	cout << "creating shader" << endl;
-
 	GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-
-	cout << "shader source" << endl;
 
 	glShaderSource(shader, 1, &(cch = shader_code.c_str()), NULL);
 
-	cout << "compile shader" << endl;
 
 	glCompileShader(shader);
 
-
-	cout << "glgetshader" << endl;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
 
 	if (GL_FALSE == status)
 	{
-		cout << "shader compile error" << endl;
-
 		string status_string = "Compute shader compile error.\n";
 		vector<GLchar> buf(4096, '\0');
 		glGetShaderInfoLog(shader, 4095, 0, &buf[0]);
@@ -223,10 +217,6 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 
 		return false;
 	}
-	else {
-		cout << "compiled ok" << endl;
-	}
-
 
 	// Link compute shader
 	program = glCreateProgram();
@@ -260,15 +250,11 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 	glDetachShader(program, shader);
 	glDeleteShader(shader);
 
-	cout << "Done initing compute shader" << endl;
-
 	return true;
 }
 
 bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name, vector<triangle> &triangles)
 {
-	cout << "tri size " << triangles.size() << endl;
-
 	ostringstream oss;
 
 	oss.clear();
@@ -281,8 +267,6 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	if (0 == triangles.size())
 		return false;
 
-
-	cout << "Writing to file" << endl;
 
 	// Write to file.
 	ofstream out(file_name, ios_base::binary);
@@ -381,8 +365,6 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 
 void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> &vertices_with_face_normals, vector<triangle> &triangles)
 {
-	cout << "get vertices w face normals triangle count " << triangles.size() << endl;
-
 	vector<vertex_3_with_index> v;
 
 	vertices_with_face_normals.clear();
@@ -713,34 +695,27 @@ void thread_func_cpu(fractal_set_parameters p, vector<triangle> &triangles, vect
 	return;
 }
 
-int win_id2;
+
 
 void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_parser eqparser, quaternion C, vector<triangle>& triangles, vector<vertex_3_with_normal>& vertices_with_face_normals)
 {
-	cout << "Entering GPU thread" << endl;
-
 	thread_is_running = true;
 
 	triangles.clear();
 	vertices_with_face_normals.clear();
-	
-	int argc = 0;
-	char** argv = 0;
 
-	glutInitWindowSize(1, 1);
+	glutInitWindowSize(500, 1);
 	glutInitWindowPosition(0, 0);
-	win_id2 = glutCreateWindow("test");
+	win_id2 = glutCreateWindow("GPU acceleration window");
+
 	glutDisplayFunc(display_func2);
 
 	GLuint compute_shader_program = 0;
 	GLuint tex_output = 0;
 	GLuint tex_input = 0;
 
-	cout << "compiling compute shader" << endl;
 	compile_and_link_compute_shader("julia.cs.glsl", compute_shader_program);
-	cout << "Done compiling compute shader" << endl;
 
-	cout << "init textures" << endl;
 	glGenTextures(1, &tex_output);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, tex_output);
@@ -786,9 +761,6 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 	// For each z slice
 	for (size_t z = 0; z < p.resolution; z++, Z.z += step_size_z)
 	{
-		if(z % 10 == 0)
-		cout << "Z slice " << z + 1 << " of " << p.resolution << endl;
-
 		Z.x = p.x_min;
 
 		// Create pixel array to be used as input for the compute shader
@@ -816,8 +788,6 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 			}
 		}
 		
-
-
 		// Run the compute shader
 		glActiveTexture(GL_TEXTURE1);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, p.resolution, p.resolution, 0, GL_RGBA, GL_FLOAT, &input_pixels[0]);
@@ -872,6 +842,15 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 		{
 			size_t box_count = 0;
 
+			ostringstream oss;
+
+			oss.clear();
+			oss.str("");
+			oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
+			thread_mutex.lock();
+			log_system.add_string_to_contents(oss.str());
+			thread_mutex.unlock();
+
 			// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
 			tesselate_adjacent_xy_plane_pair(stop,
 				box_count,
@@ -896,17 +875,11 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 		previous_slice.swap(output_pixels);
 	}
 
-	cout << "Triangles: " << triangles.size() << endl;
-
 	if (false == stop)
 	{
 		get_vertices_with_face_normals_from_triangles(vertices_with_face_normals, triangles);
 		write_triangles_to_binary_stereo_lithography_file("out.stl", triangles);
 	}
-
-
-	
-	cout << "thread done" << endl;
 
 	thread_is_running = false;
 	glDeleteTextures(1, &tex_output);
@@ -1455,18 +1428,30 @@ void generate_cancel_button_func(int control)
 			GLint global_workgroup_count[2];
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &global_workgroup_count[0]);
 			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &global_workgroup_count[1]);
-
-			cout << global_workgroup_count[0] << " x " << global_workgroup_count[1] << endl;
+			
+			ostringstream oss;
 
 			if (p.resolution > global_workgroup_count[0])
 			{
-				cout << "Texture width " << p.resolution << " is larger than max " << global_workgroup_count[0] << endl;
+				oss.clear();
+				oss.str("");
+				oss << "Texture width " << p.resolution << " is larger than max " << global_workgroup_count[0];
+				thread_mutex.lock();
+				log_system.add_string_to_contents(oss.str());
+				thread_mutex.unlock();
+
 				return;
 			}
 
 			if (p.resolution > global_workgroup_count[1])
 			{
-				cout << "Texture height " << p.resolution << " is larger than max " << global_workgroup_count[1] << endl;
+				oss.clear();
+				oss.str("");
+				oss << "Texture height " << p.resolution << " is larger than max " << global_workgroup_count[1];
+				thread_mutex.lock();
+				log_system.add_string_to_contents(oss.str());
+				thread_mutex.unlock();
+
 				return;
 			}
 
@@ -1476,12 +1461,14 @@ void generate_cancel_button_func(int control)
 
 			if (false == eqparser.setup(p.equation_text, error_string, C))
 			{
-				cout << "Equation error" << endl;
+				oss.clear();
+				oss.str("");
+				oss << "Equation error: " << error_string;
+				thread_mutex.lock();
+				log_system.add_string_to_contents(oss.str());
+				thread_mutex.unlock();
+
 				return;
-			}
-			else
-			{
-				cout << "Equation ok" << endl;
 			}
 
 			string code = eqparser.emit_compute_shader_code(p.resolution, p.resolution);
@@ -1902,10 +1889,6 @@ void myGlutIdle(void)
 
 	if (false == thread_is_running && false == generate_button)
 	{
-		cout << "caught thread finish" << endl;
-		cout << "tri size " << triangles.size() << endl;
-		cout << "vfn size " << vertices_with_face_normals.size() << endl;
-
 		if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
 		{
 			refresh_vertex_data();
