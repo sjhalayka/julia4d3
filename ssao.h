@@ -1293,6 +1293,7 @@ void generate_cancel_button_func(int control)
 
 		if (gpu_acceleration_checkbox->get_int_val())
 		{
+			// just testing...
 			ostringstream oss;
 			oss.clear();
 			oss.str("");
