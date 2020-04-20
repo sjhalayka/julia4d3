@@ -779,7 +779,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 
 	// We must keep track of both the current and the previous slices, 
 	// so that they can be used as input for the Marching Cubes algorithm
-	vector<float> previous_slice;
+	vector<float> previous_slice = output_pixels;
 
 	// The result of the Marching Cubes algorithm is triangles
 
@@ -893,7 +893,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 			}
 		}
 
-		previous_slice = output_pixels;
+		previous_slice.swap(output_pixels);
 	}
 
 	cout << "Triangles: " << triangles.size() << endl;
