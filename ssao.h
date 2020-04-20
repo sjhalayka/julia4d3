@@ -1296,7 +1296,13 @@ void generate_cancel_button_func(int control)
 			ostringstream oss;
 			oss.clear();
 			oss.str("");
-			oss << "GPU compute shader initialization failure. Aborting";
+			oss << "Compute shader initialization failure";
+			thread_mutex.lock();
+			log_system.add_string_to_contents(oss.str());
+			thread_mutex.unlock();
+			oss.clear();
+			oss.str("");
+			oss << "Aborting";
 			thread_mutex.lock();
 			log_system.add_string_to_contents(oss.str());
 			thread_mutex.unlock();
