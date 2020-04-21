@@ -2741,7 +2741,11 @@ void setup_gui(void)
 	draw_axis_checkbox->set_int_val(1);
 
 	gpu_acceleration_checkbox = glui->add_checkbox("Use compute shader");
-	gpu_acceleration_checkbox->set_int_val(1);
+
+	if(is_amd_gpu)
+		gpu_acceleration_checkbox->set_int_val(0);
+	else
+		gpu_acceleration_checkbox->set_int_val(1);
 
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
