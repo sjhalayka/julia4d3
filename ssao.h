@@ -141,6 +141,8 @@ atomic_bool vertex_data_refreshed = false;
 vector<string> string_log;
 mutex thread_mutex;
 
+bool is_amd_gpu = false;
+
 bool generate_button = true;
 unsigned int triangle_buffer = 0;
 unsigned int axis_buffer = 0;
@@ -2173,6 +2175,24 @@ bool init(void)
 
 	int GL_minor_version = 0;
 	glGetIntegerv(GL_MINOR_VERSION, &GL_minor_version);
+
+	string vendor_string = reinterpret_cast<char const*>(glGetString(GL_VENDOR));
+
+	cout << vendor_string << endl;
+
+	vector<string> vendor_substrings = stl_str_tok(" ", vendor_string);
+
+	for (size_t i = 0; i < vendor_substrings.size(); i++)
+	{
+		string lower_substring = lower_string(vendor_substrings[i]);
+		
+		if (lower_substring == "ati" || lower_substring == "amd")
+		{
+			is_amd_gpu = true;
+			break;
+		}
+	}
+
 
 	if (GL_major_version < 4)
 	{

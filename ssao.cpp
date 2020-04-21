@@ -12,9 +12,7 @@ int main(int argc, char **argv)
 	log_system.add_string_to_contents(" ");
 	log_system.add_string_to_contents("LMB + drag -- rotate camera view");
 	log_system.add_string_to_contents("RMB + drag -- adjust camera distance");
-	log_system.add_string_to_contents(" ");
-	log_system.add_string_to_contents("Warning: Multithreaded compute shader support");
-	log_system.add_string_to_contents("is intermittent on AMD Vega 3!");
+
 
     glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
@@ -27,6 +25,13 @@ int main(int argc, char **argv)
 	if(false == init())
 		return 3;
 	
+	if (is_amd_gpu)
+	{
+		log_system.add_string_to_contents(" ");
+		log_system.add_string_to_contents("Warning: Multithreaded compute shader support");
+		log_system.add_string_to_contents("is intermittent on AMD Vega 3!");
+	}
+
 	setup_gui();
 
     glui->set_main_gfx_window(win_id);
