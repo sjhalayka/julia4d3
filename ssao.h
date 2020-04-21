@@ -705,7 +705,7 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 	vertices_with_face_normals.clear();
 
 	glutInitDisplayMode(GLUT_RGB);
-	glutInitWindowSize(500, 1);
+	glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), 1);
 	glutInitWindowPosition(0, 0);
 	win_id2 = glutCreateWindow("Julia 4D 3 GPU acceleration window");
 	glutDisplayFunc(display_func2);
@@ -2168,11 +2168,27 @@ bool init(void)
 		return false;
 	}
 
-	if (!GLEW_VERSION_4_3)
+	int GL_major_version = 0;
+	glGetIntegerv(GL_MAJOR_VERSION, &GL_major_version);
+
+	int GL_minor_version = 0;
+	glGetIntegerv(GL_MINOR_VERSION, &GL_minor_version);
+
+	if (GL_major_version < 4)
 	{
-		cout << "GPU does not support OpenGL 4.3" << endl;
+		cout << "GPU does not support OpenGL 4.x or higher" << endl;
 		return false;
 	}
+	else if (GL_major_version == 4)
+	{
+		if (GL_minor_version < 3)
+		{
+			cout << "GPU does not support OpenGL 4.3 or higher" << endl;
+			return false;
+		}
+	}
+
+	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
 
 
 	BMP font;
