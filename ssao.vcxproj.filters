@@ -72,6 +72,24 @@
     <ClInclude Include="glui\viewmodel.h">
       <Filter>Header Files\GLUI</Filter>
     </ClInclude>
+    <ClInclude Include="logging_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fractal_set_parameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="string_utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="marching_cubes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="eqparse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="matrix_utils.cpp">
