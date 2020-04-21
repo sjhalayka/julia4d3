@@ -154,6 +154,7 @@ public:
 
 void display_func2(void)
 {
+//	glutSetWindow(win_id2);
 }
 
 
@@ -702,6 +703,12 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 
 	triangles.clear();
 	vertices_with_face_normals.clear();
+
+	int argc = 0;
+	char** argv = 0;
+
+
+	glutInitDisplayMode(GLUT_RGB);
 
 	glutInitWindowSize(500, 1);
 	glutInitWindowPosition(0, 0);
