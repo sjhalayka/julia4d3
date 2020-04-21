@@ -704,15 +704,10 @@ void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_par
 	triangles.clear();
 	vertices_with_face_normals.clear();
 
-	int argc = 0;
-	char** argv = 0;
-
-
 	glutInitDisplayMode(GLUT_RGB);
-
 	glutInitWindowSize(500, 1);
 	glutInitWindowPosition(0, 0);
-	win_id2 = glutCreateWindow("GPU acceleration window");
+	win_id2 = glutCreateWindow("Julia 4D 3 GPU acceleration window");
 	glutDisplayFunc(display_func2);
 
 	GLuint compute_shader_program = 0;
