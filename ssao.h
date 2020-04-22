@@ -134,12 +134,12 @@ GLuint      fbo_textures[3] = { 0, 0, 0 };
 GLuint      quad_vao = 0;
 GLuint      points_buffer = 0;
 
-thread* gen_thread = 0;
+//thread* gen_thread = 0;
 atomic_bool stop = false;
-atomic_bool thread_is_running = false;
-atomic_bool vertex_data_refreshed = false;
-vector<string> string_log;
-mutex thread_mutex;
+//atomic_bool thread_is_running = false;
+//atomic_bool vertex_data_refreshed = false;/
+//vector<string> string_log;
+//mutex thread_mutex;
 
 bool is_amd_gpu = false;
 
@@ -172,9 +172,9 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 		oss.clear();
 		oss.str("");
 		oss << "Could not open compute shader source file " << file_name;
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -262,9 +262,9 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	oss.clear();
 	oss.str("");
 	oss << "Triangle count: " << triangles.size();
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	if (0 == triangles.size())
 		return false;
@@ -292,9 +292,9 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	oss.clear();
 	oss.str("");
 	oss << "Generating normal/vertex/attribute buffer";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
 	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
@@ -344,9 +344,9 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	oss.clear();
 	oss.str("");
 	oss << "Writing " << data_size / 1048576.0 << " MB of data to STL file: " << file_name;
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	if(false == stop)
 		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
@@ -354,9 +354,9 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 	oss.clear();
 	oss.str("");
 	oss << "Done writing out.stl";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 		
 	out.close();
 
@@ -377,9 +377,9 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Welding vertices";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	// Insert unique vertices into set.
 	set<vertex_3_with_index> vertex_set;
@@ -397,17 +397,17 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Vertices: " << vertex_set.size();
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 
 	oss.clear();
 	oss.str("");
 	oss << "Generating vertex indices";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	vector<vertex_3_with_index> v;
 
@@ -436,9 +436,9 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Assigning vertex indices to triangles";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 
 	// Find the three vertices for each triangle, by index.
@@ -464,9 +464,9 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Calculating normals";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	vertices_with_face_normals.resize(v.size());
 
@@ -495,9 +495,9 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Generating final index/vertex data";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	for (size_t i = 0; i < v.size(); i++)
 	{
@@ -521,397 +521,12 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	oss.clear();
 	oss.str("");
 	oss << "Done";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 }
 
 
-
-
-void thread_func_cpu(fractal_set_parameters p, vector<triangle> &triangles, vector<vertex_3_with_normal> &vertices_with_face_normals)
-{
-	thread_is_running = true;
-
-	triangles.clear();
-	vertices_with_face_normals.clear();
-
-	bool make_border = true;
-
-	quaternion C;
-	C.x = p.C_x;
-	C.y = p.C_y;
-	C.z = p.C_z;
-	C.w = p.C_w;
-
-	ostringstream oss;
-
-	string error_string;
-	quaternion_julia_set_equation_parser eqparser;
-
-	if (false == eqparser.setup(p.equation_text, error_string, C))
-	{
-		oss.clear();
-		oss.str("");
-		oss << "Equation error: " << error_string;
-		thread_mutex.lock();
-		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
-		thread_is_running = false;
-		return;
-	}
-
-	// When adding a border, use a value that is "much" greater than the threshold.
-	const float border_value = 1.0f + p.infinity;
-
-	size_t num_voxels = p.resolution * p.resolution;
-	vector<float> xyplane0(num_voxels, 0);
-	vector<float> xyplane1(num_voxels, 0);
-
-	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
-	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
-	const float step_size_z = (p.z_max - p.z_min) / (p.resolution - 1);
-
-	size_t z = 0;
-
-	quaternion Z(p.x_min, p.y_min, p.z_min, p.Z_w);
-
-	// Calculate 0th xy plane.
-	for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
-	{
-		Z.y = p.y_min;
-
-		for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
-		{
-			if (stop)
-			{
-				thread_is_running = false;
-				return;
-			}
-
-			if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-			{
-				xyplane0[x * p.resolution + y] = border_value;
-			}
-			else
-			{
-				const float y_span = (p.y_max - p.y_min);
-				const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
-
-				if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
-				{
-					xyplane0[x * p.resolution + y] = p.infinity - 0.00001f;
-				}
-				else
-				{
-					xyplane0[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-				}
-			}
-		}
-	}
-
-	// Prepare for 1st xy plane.
-	z++;
-	Z.z += step_size_z;
-
-
-
-	size_t box_count = 0;
-
-
-	// Calculate 1st and subsequent xy planes.
-	for (; z < p.resolution; z++, Z.z += step_size_z)
-	{
-		Z.x = p.z_min;
-
-		oss.clear();
-		oss.str("");
-		oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
-		thread_mutex.lock();
-		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
-
-		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
-		{
-			Z.y = p.y_min;
-
-			for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
-			{
-				if (stop)
-				{
-					thread_is_running = false;
-					return;
-				}
-
-				if (true == make_border && (x == 0 || y == 0 || z == 0 || x == p.resolution - 1 || y == p.resolution - 1 || z == p.resolution - 1))
-				{
-					xyplane1[x * p.resolution + y] = border_value;
-				}
-				else
-				{
-					const float y_span = (p.y_max - p.y_min);
-					const float curr_span = 1.0f - static_cast<float>(p.y_max - Z.y) / y_span;
-
-					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
-					{
-						xyplane1[x * p.resolution + y] = p.infinity - 0.00001f;
-					}
-					else
-					{
-						xyplane1[x * p.resolution + y] = eqparser.iterate(Z, p.max_iterations, p.infinity);
-					}
-				}
-			}
-		}
-
-		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-		tesselate_adjacent_xy_plane_pair(stop,
-			box_count,
-			xyplane0, xyplane1,
-			z - 1,
-			triangles,
-			p.infinity, // Use threshold as isovalue.
-			p.x_min, p.x_max, p.resolution,
-			p.y_min, p.y_max, p.resolution,
-			p.z_min, p.z_max, p.resolution);
-
-
-		if (stop)
-		{
-			thread_is_running = false;
-			return;
-		}
-
-		// Swap memory pointers (fast) instead of performing a memory copy (slow).
-		xyplane1.swap(xyplane0);
-	}
-
-	if (false == stop)
-	{
-		get_vertices_with_face_normals_from_triangles(vertices_with_face_normals, triangles);
-		write_triangles_to_binary_stereo_lithography_file("out.stl", triangles);
-	}
-
-	thread_is_running = false;
-	return;
-}
-
-
-
-void thread_func_gpu(fractal_set_parameters p, quaternion_julia_set_equation_parser eqparser, quaternion C, vector<triangle>& triangles, vector<vertex_3_with_normal>& vertices_with_face_normals)
-{
-	thread_is_running = true;
-
-	triangles.clear();
-	vertices_with_face_normals.clear();
-
-	glutInitDisplayMode(GLUT_RGB);
-	glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), 1);
-	glutInitWindowPosition(0, 0);
-	win_id2 = glutCreateWindow("Julia 4D 3 GPU acceleration window");
-	glutDisplayFunc(display_func2);
-
-	GLuint compute_shader_program = 0;
-	GLuint tex_output = 0;
-	GLuint tex_input = 0;
-
-	compile_and_link_compute_shader("julia.cs.glsl", compute_shader_program);
-
-	glGenTextures(1, &tex_output);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, tex_output);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, p.resolution, p.resolution, 0, GL_RED, GL_FLOAT, NULL);
-	glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-	// Generate input texture
-	glGenTextures(1, &tex_input);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, tex_input);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-
-	// Set up quaternion Julia set parameters
-
-	// Set up grid parameters
-	const float step_size_x = (p.x_max - p.x_min) / (p.resolution - 1);
-	const float step_size_y = (p.y_max - p.y_min) / (p.resolution - 1);
-	const float step_size_z = (p.z_max - p.z_min) / (p.resolution - 1);
-
-	// Set up input quaternion
-	quaternion Z(p.x_min, p.y_min, p.z_min, 0.0);
-
-	// Set up output/input data
-	const size_t num_output_channels = 1;
-	vector<float> output_pixels(p.resolution * p.resolution * num_output_channels, 0.0f);
-	const size_t num_input_channels = 4;
-	vector<float> input_pixels(p.resolution * p.resolution * num_input_channels, 0.0f);
-
-	// We must keep track of both the current and the previous slices, 
-	// so that they can be used as input for the Marching Cubes algorithm
-	vector<float> previous_slice = output_pixels;
-
-	// The result of the Marching Cubes algorithm is triangles
-
-	// For each z slice
-	for (size_t z = 0; z < p.resolution; z++, Z.z += step_size_z)
-	{
-		Z.x = p.x_min;
-
-		// Create pixel array to be used as input for the compute shader
-		for (size_t x = 0; x < p.resolution; x++, Z.x += step_size_x)
-		{
-			Z.y = p.y_min;
-
-			for (size_t y = 0; y < p.resolution; y++, Z.y += step_size_y)
-			{
-				if (stop)
-				{
-					thread_is_running = false;
-					glDeleteTextures(1, &tex_output);
-					glDeleteTextures(1, &tex_input);
-					glDeleteProgram(compute_shader_program);
-					glutDestroyWindow(win_id2);
-					return;
-				}
-
-				const size_t index = num_input_channels * (x * p.resolution + y);
-
-				input_pixels[index + 0] = Z.x;
-				input_pixels[index + 1] = Z.y;
-				input_pixels[index + 2] = Z.z;
-				input_pixels[index + 3] = Z.w;
-			}
-		}
-		
-		// Run the compute shader
-		glActiveTexture(GL_TEXTURE1);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, p.resolution, p.resolution, 0, GL_RGBA, GL_FLOAT, &input_pixels[0]);
-		glBindImageTexture(1, tex_input, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-		glUseProgram(compute_shader_program);
-
-		// Pass in the input image and quaternion Julia set parameters as uniforms
-		glUniform1i(glGetUniformLocation(compute_shader_program, "input_image"), 1); // use GL_TEXTURE1
-		glUniform4f(glGetUniformLocation(compute_shader_program, "c"), C.x, C.y, C.z, C.w);
-		glUniform1i(glGetUniformLocation(compute_shader_program, "max_iterations"), p.max_iterations);
-		glUniform1f(glGetUniformLocation(compute_shader_program, "threshold"), p.infinity);
-
-		// Run compute shader
-		glDispatchCompute(p.resolution, p.resolution, 1);
-
-		// Wait for compute shader to finish
-		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-		// Copy output pixel array to CPU as texture 0
-		glActiveTexture(GL_TEXTURE0);
-		glBindImageTexture(0, tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_pixels[0]);
-
-		quaternion tempq;
-		tempq.x = p.x_min;
-		tempq.y = p.y_min;
-		tempq.z = Z.z;
-		tempq.w = 1.0f;
-
-
-		// Make a border, so that the mesh is closed around the edges
-		for (size_t x = 0; x < p.resolution; x++, tempq.x += step_size_x)
-		{
-			tempq.y = p.y_min;
-
-			for (size_t y = 0; y < p.resolution; y++, tempq.y += step_size_y)
-			{
-				if (stop)
-				{
-					thread_is_running = false;
-					glDeleteTextures(1, &tex_output);
-					glDeleteTextures(1, &tex_input);
-					glDeleteProgram(compute_shader_program);
-					glutDestroyWindow(win_id2);
-					return;
-				}
-
-				if (z == 0 || z == p.resolution - 1 ||
-					x == 0 || x == p.resolution - 1 ||
-					y == 0 || y == p.resolution - 1)
-				{
-					const size_t index = num_output_channels * (y * p.resolution + x);
-					output_pixels[index] = p.infinity + 1.0f;
-				}
-				else
-				{
-					const float y_span = (p.y_max - p.y_min);
-					const float curr_span = 1.0f - static_cast<float>(p.y_max - tempq.y) / y_span;
-					const size_t index = num_output_channels * (x * p.resolution + y);
-
-					if (p.use_pedestal == true && curr_span >= p.pedestal_y_start && curr_span <= p.pedestal_y_end)
-					{
-						output_pixels[index] = p.infinity - 0.00001f;
-					}
-				}
-			}
-		}
-
-		// Use the Marching Cubes algorithm to convert the output data
-		// into triangles, that is, if this isn't the first loop iteration
-		if (z > 0)
-		{
-			size_t box_count = 0;
-
-			ostringstream oss;
-
-			oss.clear();
-			oss.str("");
-			oss << "Calculating triangles from xy-plane pair " << z << " of " << p.resolution - 1;
-			thread_mutex.lock();
-			log_system.add_string_to_contents(oss.str());
-			thread_mutex.unlock();
-
-			// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-			tesselate_adjacent_xy_plane_pair(stop,
-				box_count,
-				previous_slice, output_pixels,
-				z - 1,
-				triangles,
-				p.infinity, // Use threshold as isovalue.
-				p.x_min, p.x_max, p.resolution,
-				p.y_min, p.y_max, p.resolution,
-				p.z_min, p.z_max, p.resolution);
-
-			if (stop)
-			{
-				thread_is_running = false;
-				glDeleteTextures(1, &tex_output);
-				glDeleteTextures(1, &tex_input);
-				glDeleteProgram(compute_shader_program);
-				glutDestroyWindow(win_id2);
-				return;
-			}
-		}
-
-		previous_slice.swap(output_pixels);
-	}
-
-	if (false == stop)
-	{
-		get_vertices_with_face_normals_from_triangles(vertices_with_face_normals, triangles);
-		write_triangles_to_binary_stereo_lithography_file("out.stl", triangles);
-	}
-
-	thread_is_running = false;
-	glDeleteTextures(1, &tex_output);
-	glDeleteTextures(1, &tex_input);
-	glDeleteProgram(compute_shader_program);
-	glutDestroyWindow(win_id2);
-	return;
-}
 
 
 
@@ -972,9 +587,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "blank equation text";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -991,9 +606,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y start is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1010,9 +625,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y end is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1027,9 +642,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y start must be between 0 and 1";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1039,9 +654,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y end must be between 0 and 1";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1051,9 +666,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "Y start must be smaller than y_end";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1068,9 +683,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "c.x  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1087,9 +702,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "c.y  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1106,9 +721,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "c.z  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1125,9 +740,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "c.w  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1144,9 +759,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "x min  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1163,9 +778,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "y min  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1182,9 +797,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "z min  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1204,9 +819,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "x max  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1223,9 +838,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "y max  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1242,9 +857,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "z max  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1259,9 +874,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "x min must be less than x max";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1271,9 +886,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "y min must be less than y max";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1283,9 +898,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "z min must be less than z max";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1297,9 +912,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "z.w  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1317,9 +932,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "infinity  is not a real number";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1337,9 +952,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "max iterations is not an unsigned int";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1356,9 +971,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 		oss.clear();
 		oss.str("");
 		oss << "resolution is not an unsigned int";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 
 		return false;
 	}
@@ -1372,9 +987,9 @@ bool obtain_control_contents(fractal_set_parameters &p)
 			oss.clear();
 			oss.str("");
 			oss << "resolution must be greater than or equal to 3";
-			thread_mutex.lock();
+			
 			log_system.add_string_to_contents(oss.str());
-			thread_mutex.unlock();
+			
 
 			return false;
 		}
@@ -1396,23 +1011,10 @@ void generate_cancel_button_func(int control)
 		oss.clear();
 		oss.str("");
 		oss << "Aborting";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
-
+		
 		stop = true;
-		vertex_data_refreshed = false;
-
-		if (gen_thread != 0)
-		{
-			stop = true;
-
-			gen_thread->join();
-
-			delete gen_thread;
-			gen_thread = 0;
-			stop = true;
-		}
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
@@ -1428,87 +1030,14 @@ void generate_cancel_button_func(int control)
 			oss.clear();
 			oss.str("");
 			oss << "Aborting";
-			thread_mutex.lock();
-			log_system.add_string_to_contents(oss.str());
-			thread_mutex.unlock();
+			
+			log_system.add_string_to_contents(oss.str());			
 
 			return;
 		}
 
 		stop = false;
-		vertex_data_refreshed = false;
-
-		if (gen_thread != 0)
-		{
-			stop = true;
-			gen_thread->join();
-
-			delete gen_thread;
-			gen_thread = 0;
-			stop = false;
-		}
-
-		if (gpu_acceleration_checkbox->get_int_val())
-		{
-			GLint global_workgroup_count[2];
-			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &global_workgroup_count[0]);
-			glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &global_workgroup_count[1]);
-			
-			ostringstream oss;
-
-			if (p.resolution > global_workgroup_count[0])
-			{
-				oss.clear();
-				oss.str("");
-				oss << "Texture width " << p.resolution << " is larger than max " << global_workgroup_count[0];
-				thread_mutex.lock();
-				log_system.add_string_to_contents(oss.str());
-				thread_mutex.unlock();
-
-				return;
-			}
-
-			if (p.resolution > global_workgroup_count[1])
-			{
-				oss.clear();
-				oss.str("");
-				oss << "Texture height " << p.resolution << " is larger than max " << global_workgroup_count[1];
-				thread_mutex.lock();
-				log_system.add_string_to_contents(oss.str());
-				thread_mutex.unlock();
-
-				return;
-			}
-
-			string error_string;
-			quaternion_julia_set_equation_parser eqparser;
-			quaternion C(p.C_x, p.C_y, p.C_z, p.C_w);
-
-			if (false == eqparser.setup(p.equation_text, error_string, C))
-			{
-				oss.clear();
-				oss.str("");
-				oss << "Equation error: " << error_string;
-				thread_mutex.lock();
-				log_system.add_string_to_contents(oss.str());
-				thread_mutex.unlock();
-
-				return;
-			}
-
-			string code = eqparser.emit_compute_shader_code(p.resolution, p.resolution);
-
-			ofstream of("julia.cs.glsl");
-			of << code;
-			of.close();
-
-			gen_thread = new thread(thread_func_gpu, p, eqparser, C, ref(triangles), ref(vertices_with_face_normals));
-		}
-		else
-		{
-			gen_thread = new thread(thread_func_cpu, p, ref(triangles), ref(vertices_with_face_normals));
-		}
-
+	
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 
@@ -1876,9 +1405,9 @@ void refresh_vertex_data(void)
 	oss.clear();
 	oss.str("");
 	oss << "Refreshing vertex data";
-	thread_mutex.lock();
+	
 	log_system.add_string_to_contents(oss.str());
-	thread_mutex.unlock();
+	
 
 	int do_rainbow = rainbow_colouring_checkbox->get_int_val();
 
@@ -1892,18 +1421,18 @@ void refresh_vertex_data(void)
 		oss.clear();
 		oss.str("");
 		oss << "Cancelled refreshing vertex data";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 	}
 	else
 	{
 		oss.clear();
 		oss.str("");
 		oss << "Done refreshing vertex data";
-		thread_mutex.lock();
+		
 		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		
 	}
 }
 
@@ -1912,28 +1441,28 @@ void myGlutIdle(void)
 {
 	glutSetWindow(win_id);
 
-	if (false == thread_is_running && false == generate_button)
+	if (1)//false == thread_is_running && false == generate_button)
 	{
-		if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
-		{
-			refresh_vertex_data();
-			vertex_data_refreshed = true;
-		}
+		//if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
+		//{
+		//	refresh_vertex_data();
+		//	vertex_data_refreshed = true;
+		//}
 
-		generate_button = true;
-		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+		//generate_button = true;
+		//generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
 
-		end_time = std::chrono::high_resolution_clock::now();
+		//end_time = std::chrono::high_resolution_clock::now();
 
-		std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+		//std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
 
-		ostringstream oss;
-		oss.clear();
-		oss.str("");
-		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
-		thread_mutex.lock();
-		log_system.add_string_to_contents(oss.str());
-		thread_mutex.unlock();
+		//ostringstream oss;
+		//oss.clear();
+		//oss.str("");
+		//oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
+		//
+		//log_system.add_string_to_contents(oss.str());
+		
 	}
 
 	glutPostRedisplay();
@@ -2533,50 +2062,50 @@ void display_func(void)
 	}
 
 
-	if (vertex_data_refreshed && vertex_data.size() > 0)
-	{
-		glUseProgram(render.get_program());
+	//if (vertex_data_refreshed && vertex_data.size() > 0)
+	//{
+	//	glUseProgram(render.get_program());
 
-		const GLuint components_per_vertex = 9;
-		const GLuint components_per_normal = 3;
-		const GLuint components_per_position = 3;
-		const GLuint components_per_colour = 3;
+	//	const GLuint components_per_vertex = 9;
+	//	const GLuint components_per_normal = 3;
+	//	const GLuint components_per_position = 3;
+	//	const GLuint components_per_colour = 3;
 
-		glDeleteBuffers(1, &triangle_buffer);
-		glGenBuffers(1, &triangle_buffer);
+	//	glDeleteBuffers(1, &triangle_buffer);
+	//	glGenBuffers(1, &triangle_buffer);
 
-		const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
+	//	const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
 
-		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
-		glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_DYNAMIC_DRAW);
+	//	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+	//	glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_DYNAMIC_DRAW);
 
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-			components_per_position,
-			GL_FLOAT,
-			GL_FALSE,
-			components_per_vertex * sizeof(GLfloat),
-			NULL);
+	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+	//		components_per_position,
+	//		GL_FLOAT,
+	//		GL_FALSE,
+	//		components_per_vertex * sizeof(GLfloat),
+	//		NULL);
 
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
-			components_per_normal,
-			GL_FLOAT,
-			GL_TRUE,
-			components_per_vertex * sizeof(GLfloat),
-			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
+	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
+	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
+	//		components_per_normal,
+	//		GL_FLOAT,
+	//		GL_TRUE,
+	//		components_per_vertex * sizeof(GLfloat),
+	//		(const GLvoid*)(components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
-			components_per_colour,
-			GL_FLOAT,
-			GL_TRUE,
-			components_per_vertex * sizeof(GLfloat),
-			(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
+	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
+	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
+	//		components_per_colour,
+	//		GL_FLOAT,
+	//		GL_TRUE,
+	//		components_per_vertex * sizeof(GLfloat),
+	//		(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
 
-		// Draw 12 vertices per card
-		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
-	}
+	//	// Draw 12 vertices per card
+	//	glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+	//}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -2614,7 +2143,7 @@ void display_func(void)
 
 		// Do anything you like here... for instance, use OpenCV for convolution
 
-		thread_mutex.lock();
+		
 		for (size_t i = 0; i < log_system.get_contents_size(); i++)
 		{
 			string s;
@@ -2622,7 +2151,7 @@ void display_func(void)
 			print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
 			char_y_pos += 20;
 		}
-		thread_mutex.unlock();
+		
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
