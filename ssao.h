@@ -367,8 +367,6 @@ bool write_triangles_to_binary_stereo_lithography_file(const char* const file_na
 
 void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> &vertices_with_face_normals, vector<triangle> &triangles)
 {
-	vector<vertex_3_with_index> v;
-
 	vertices_with_face_normals.clear();
 
 	if (0 == triangles.size())
@@ -411,6 +409,7 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	log_system.add_string_to_contents(oss.str());
 	thread_mutex.unlock();
 
+	vector<vertex_3_with_index> v;
 
 	// Add indices to the vertices.
 	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
@@ -472,25 +471,25 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 	vertices_with_face_normals.resize(v.size());
 
 	// Assign per-triangle face normals
-	for (size_t i = 0; i < triangles.size(); i++)
+	for(vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
 	{
 		if (stop)
 			return;
 
-		vertex_3 v0 = triangles[i].vertex[1] - triangles[i].vertex[0];
-		vertex_3 v1 = triangles[i].vertex[2] - triangles[i].vertex[0];
+		vertex_3 v0 = i->vertex[1] - i->vertex[0];
+		vertex_3 v1 = i->vertex[2] - i->vertex[0];
 		vertex_3 fn = v0.cross(v1);
 		fn.normalize();
 
-		vertices_with_face_normals[triangles[i].vertex[0].index].nx += fn.x;
-		vertices_with_face_normals[triangles[i].vertex[0].index].ny += fn.y;
-		vertices_with_face_normals[triangles[i].vertex[0].index].nz += fn.z;
-		vertices_with_face_normals[triangles[i].vertex[1].index].nx += fn.x;
-		vertices_with_face_normals[triangles[i].vertex[1].index].ny += fn.y;
-		vertices_with_face_normals[triangles[i].vertex[1].index].nz += fn.z;
-		vertices_with_face_normals[triangles[i].vertex[2].index].nx += fn.x;
-		vertices_with_face_normals[triangles[i].vertex[2].index].ny += fn.y;
-		vertices_with_face_normals[triangles[i].vertex[2].index].nz += fn.z;
+		vertices_with_face_normals[i->vertex[0].index].nx += fn.x;
+		vertices_with_face_normals[i->vertex[0].index].ny += fn.y;
+		vertices_with_face_normals[i->vertex[0].index].nz += fn.z;
+		vertices_with_face_normals[i->vertex[1].index].nx += fn.x;
+		vertices_with_face_normals[i->vertex[1].index].ny += fn.y;
+		vertices_with_face_normals[i->vertex[1].index].nz += fn.z;
+		vertices_with_face_normals[i->vertex[2].index].nx += fn.x;
+		vertices_with_face_normals[i->vertex[2].index].ny += fn.y;
+		vertices_with_face_normals[i->vertex[2].index].nz += fn.z;
 	}
 
 	oss.clear();
