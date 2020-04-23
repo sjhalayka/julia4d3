@@ -1,5 +1,5 @@
 #ifndef FRACTAL_SET_PARAMETERS_H
-#define F
+#define FRACTAL_SET_PARAMETERS_H
 
 #include <string>
 using std::string;

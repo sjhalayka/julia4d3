@@ -60,14 +60,17 @@ using namespace string_utilities;
 #include "eqparse.h"
 #include "marching_cubes.h"
 using namespace marching_cubes;
+#include "js_state_machine.h"
+
 
 #include "logging_system.h"
 #include "bmp.h"
 #include "fractal_set_parameters.h"
 
+fractal_set_parameters p;
 
 logging_system log_system;
-
+js_state_machine jsm;
 
 
 vector<GLfloat> vertex_data;
@@ -135,6 +138,8 @@ GLuint      points_buffer = 0;
 
 //thread* gen_thread = 0;
 atomic_bool stop = false;
+bool jsm_init = false;
+
 //atomic_bool thread_is_running = false;
 //atomic_bool vertex_data_refreshed = false;/
 //vector<string> string_log;
@@ -153,92 +158,6 @@ public:
 };
 
 
-
-bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
-{
-	// Read in compute shader contents
-	ifstream infile(file_name);
-
-	if (infile.fail())
-	{
-		cout << "Could not open compute shader source file " << file_name << endl;
-		return false;
-	}
-
-	string shader_code;
-	string line;
-
-	while (getline(infile, line))
-	{
-		shader_code += line;
-		shader_code += "\n";
-	}
-
-	// Compile compute shader
-	const char* cch = 0;
-	GLint status = GL_FALSE;
-
-	GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-
-	glShaderSource(shader, 1, &(cch = shader_code.c_str()), NULL);
-
-	glCompileShader(shader);
-
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-
-	if (GL_FALSE == status)
-	{
-		string status_string = "Compute shader compile error.\n";
-		vector<GLchar> buf(4096, '\0');
-		glGetShaderInfoLog(shader, 4095, 0, &buf[0]);
-
-		for (size_t i = 0; i < buf.size(); i++)
-			if ('\0' != buf[i])
-				status_string += buf[i];
-
-		status_string += '\n';
-
-		cout << status_string << endl;
-
-		glDeleteShader(shader);
-
-		return false;
-	}
-
-	// Link compute shader
-	program = glCreateProgram();
-	glAttachShader(program, shader);
-	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &status);
-
-	if (GL_FALSE == status)
-	{
-		string status_string = "Program link error.\n";
-		vector<GLchar> buf(4096, '\0');
-		glGetShaderInfoLog(program, 4095, 0, &buf[0]);
-
-		for (size_t i = 0; i < buf.size(); i++)
-			if ('\0' != buf[i])
-				status_string += buf[i];
-
-		status_string += '\n';
-
-		cout << status_string << endl;
-
-		glDetachShader(program, shader);
-		glDeleteShader(shader);
-		glDeleteProgram(program);
-
-		return false;
-	}
-
-	// The shader is no longer needed now that the program
-	// has been linked
-	glDetachShader(program, shader);
-	glDeleteShader(shader);
-
-	return true;
-}
 
 bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name, vector<triangle> &triangles)
 {
@@ -519,8 +438,11 @@ void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> 
 
 
 
+vector<triangle> triangles;
+vector<vertex_3_with_normal> vertices_with_face_normals;
 
-bool obtain_control_contents(fractal_set_parameters &p)
+
+bool obtain_control_contents(fractal_set_parameters& p)
 {
 	ostringstream oss;
 
@@ -984,8 +906,6 @@ bool obtain_control_contents(fractal_set_parameters &p)
 }
 
 
-vector<triangle> triangles;
-vector<vertex_3_with_normal> vertices_with_face_normals;
 
 void generate_cancel_button_func(int control)
 {
@@ -1006,8 +926,6 @@ void generate_cancel_button_func(int control)
 	}
 	else
 	{
-		fractal_set_parameters p;
-
 		if (false == obtain_control_contents(p))
 		{
 			ostringstream oss;
@@ -1021,12 +939,25 @@ void generate_cancel_button_func(int control)
 			return;
 		}
 
+		if (false == jsm.init(p))
+		{
+			cout << "jsm init failure" << endl;
+			jsm_init = false;
+			return;
+		}
+		else
+		{
+			cout << "jsm init ok" << endl;
+			jsm_init = true; 
+		}
+
 		stop = false;
 	
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 
 		start_time = std::chrono::high_resolution_clock::now();
+
 	}
 }
 
@@ -1426,30 +1357,25 @@ void myGlutIdle(void)
 {
 	glutSetWindow(win_id);
 
-	if (1)//false == thread_is_running && false == generate_button)
+	if (jsm_init)
 	{
-		//if (false == vertex_data_refreshed && false == stop && triangles.size() > 0)
-		//{
-		//	refresh_vertex_data();
-		//	vertex_data_refreshed = true;
-		//}
-
-		//generate_button = true;
-		//generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-
-		//end_time = std::chrono::high_resolution_clock::now();
-
-		//std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
-
-		//ostringstream oss;
-		//oss.clear();
-		//oss.str("");
-		//oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
-		//
-		//log_system.add_string_to_contents(oss.str());
-		
+		if (STATE_FINISHED == jsm.get_state())
+		{
+			write_triangles_to_binary_stereo_lithography_file("out.stl", jsm.triangles);
+			cout << "Triangles " << jsm.triangles.size();
+			exit(0);
+		}
+		else
+		{
+			static int count = 0;
+			cout << "proceed " << count << endl;
+			jsm.proceed();
+			jsm.proceed();
+			jsm.proceed();
+			count++;
+		}
 	}
-
+	
 	glutPostRedisplay();
 }
 
@@ -1900,6 +1826,8 @@ bool init(void)
 
 void display_func(void)
 {
+	
+
 	glClearColor(1, 0.5f, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -2125,6 +2053,7 @@ void display_func(void)
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
 
+
 	glutSwapBuffers();
 }
 
@@ -2213,7 +2142,7 @@ void motion_func(int x, int y)
 			main_camera.w = 1.1f;
 		else if (main_camera.w > 20.0f)
 			main_camera.w = 20.0f;
-	}
+	}	
 }
 
 
@@ -2226,8 +2155,8 @@ void setup_gui(void)
 
 	glui->add_separator();
 
-	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = sin(Z) + C*sin(Z)"), 3, control_cb);
-	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
+	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
+	equation_edittext->set_text("Z = Z*Z + C");
 	equation_edittext->set_w(150);
 
 	glui->add_separator();
