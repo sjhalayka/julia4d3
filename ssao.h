@@ -71,7 +71,7 @@ logging_system log_system;
 
 
 vector<GLfloat> vertex_data;
-vector<GLfloat> flat_data;
+
 
 std::chrono::high_resolution_clock::time_point start_time, end_time;
 
@@ -98,7 +98,6 @@ GLUI_Button* generate_mesh_button, * export_to_stl_button;
 GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
-GLUI_Checkbox* gpu_acceleration_checkbox;
 
 
 GLUI_EditText* pedestal_y_start_edittext;
@@ -141,7 +140,6 @@ atomic_bool stop = false;
 //vector<string> string_log;
 //mutex thread_mutex;
 
-bool is_amd_gpu = false;
 
 bool generate_button = true;
 unsigned int triangle_buffer = 0;
@@ -154,10 +152,6 @@ public:
 	unsigned char r, g, b;
 };
 
-void display_func2(void)
-{
-//	glutSetWindow(win_id2);
-}
 
 
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
@@ -165,17 +159,9 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 	// Read in compute shader contents
 	ifstream infile(file_name);
 
-	ostringstream oss;
-
 	if (infile.fail())
 	{
-		oss.clear();
-		oss.str("");
-		oss << "Could not open compute shader source file " << file_name;
-		
-		log_system.add_string_to_contents(oss.str());
-		
-
+		cout << "Could not open compute shader source file " << file_name << endl;
 		return false;
 	}
 
@@ -195,7 +181,6 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 	GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
 
 	glShaderSource(shader, 1, &(cch = shader_code.c_str()), NULL);
-
 
 	glCompileShader(shader);
 
@@ -1704,24 +1689,6 @@ bool init(void)
 	int GL_minor_version = 0;
 	glGetIntegerv(GL_MINOR_VERSION, &GL_minor_version);
 
-	string vendor_string = reinterpret_cast<char const*>(glGetString(GL_VENDOR));
-
-	cout << vendor_string << endl;
-
-	vector<string> vendor_substrings = stl_str_tok(" ", vendor_string);
-
-	for (size_t i = 0; i < vendor_substrings.size(); i++)
-	{
-		string lower_substring = lower_string(vendor_substrings[i]);
-		
-		if (lower_substring == "ati" || lower_substring == "amd")
-		{
-			is_amd_gpu = true;
-			break;
-		}
-	}
-
-
 	if (GL_major_version < 4)
 	{
 		cout << "GPU does not support OpenGL 4.x or higher" << endl;
@@ -1973,7 +1940,9 @@ void display_func(void)
 		const GLuint components_per_vertex = 3;
 		const GLuint components_per_position = 3;
 
-		flat_data.clear();
+		vector<GLfloat> flat_data;
+
+		//flat_data.clear();
 
 		flat_data.push_back(0);
 		flat_data.push_back(0);
@@ -2267,13 +2236,6 @@ void setup_gui(void)
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
-
-	gpu_acceleration_checkbox = glui->add_checkbox("Use compute shader");
-
-	if(is_amd_gpu)
-		gpu_acceleration_checkbox->set_int_val(0);
-	else
-		gpu_acceleration_checkbox->set_int_val(1);
 
 	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
