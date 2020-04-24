@@ -68,17 +68,11 @@ using namespace marching_cubes;
 #include "fractal_set_parameters.h"
 
 fractal_set_parameters p;
-
-
 js_state_machine jsm;
-
-
-
 
 std::chrono::high_resolution_clock::time_point start_time, end_time;
 
 GLint win_id = 0;
-int win_id2 = 0;
 GLuint win_x = 800;
 GLuint win_y = 600;
 bool lmb_down = false;
@@ -135,14 +129,7 @@ GLuint      fbo_textures[3] = { 0, 0, 0 };
 GLuint      quad_vao = 0;
 GLuint      points_buffer = 0;
 
-//thread* gen_thread = 0;
-atomic_bool stop = false;
-bool jsm_init = false;
 
-//atomic_bool thread_is_running = false;
-//atomic_bool vertex_data_refreshed = false;/
-//vector<string> string_log;
-//mutex thread_mutex;
 
 
 bool generate_button = true;
@@ -158,287 +145,10 @@ public:
 
 
 
-bool write_triangles_to_binary_stereo_lithography_file(const char* const file_name, vector<triangle> &triangles)
-{
-	ostringstream oss;
 
-	oss.clear();
-	oss.str("");
-	oss << "Triangle count: " << triangles.size();
-	
-	log_system.add_string_to_contents(oss.str());
-	
 
-	if (0 == triangles.size())
-		return false;
 
 
-	// Write to file.
-	ofstream out(file_name, ios_base::binary);
-
-	if (out.fail())
-		return false;
-
-	const size_t header_size = 80;
-	vector<char> buffer(header_size, 0);
-	unsigned int num_triangles = static_cast<unsigned int>(triangles.size()); // Must be 4-byte unsigned int.
-	vertex_3 normal;
-
-
-	// Copy everything to a single buffer.
-	// We do this here because calling ofstream::write() only once PER MESH is going to 
-	// send the data to disk faster than if we were to instead call ofstream::write()
-	// thirteen times PER TRIANGLE.
-	// Of course, the trade-off is that we are using 2x the RAM than what's absolutely required,
-	// but the trade-off is often very much worth it (especially so for meshes with millions of triangles).
-
-	oss.clear();
-	oss.str("");
-	oss << "Generating normal/vertex/attribute buffer";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	// Enough bytes for twelve 4-byte floats plus one 2-byte integer, per triangle.
-	const size_t data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * num_triangles;
-	buffer.resize(data_size, 0);
-
-	// Use a pointer to assist with the copying.
-	// Should probably use std::copy() instead, but memcpy() does the trick, so whatever...
-	char* cp = &buffer[0];
-
-	for (vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
-	{
-		if (stop)
-			break;
-
-		// Get face normal.
-		vertex_3 v0 = i->vertex[1] - i->vertex[0];
-		vertex_3 v1 = i->vertex[2] - i->vertex[0];
-		normal = v0.cross(v1);
-		normal.normalize();
-
-		memcpy(cp, &normal.x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &normal.y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &normal.z, sizeof(float)); cp += sizeof(float);
-
-		memcpy(cp, &i->vertex[0].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[0].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[0].z, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[1].z, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].x, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].y, sizeof(float)); cp += sizeof(float);
-		memcpy(cp, &i->vertex[2].z, sizeof(float)); cp += sizeof(float);
-
-		cp += sizeof(short unsigned int);
-	}
-
-	// Write blank header.
-	out.write(reinterpret_cast<const char*>(&(buffer[0])), header_size);
-
-	if (stop)
-		num_triangles = 0;
-
-	// Write number of triangles.
-	out.write(reinterpret_cast<const char*>(&num_triangles), sizeof(unsigned int));
-
-	oss.clear();
-	oss.str("");
-	oss << "Writing " << data_size / 1048576.0 << " MB of data to STL file: " << file_name;
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	if(false == stop)
-		out.write(reinterpret_cast<const char*>(&buffer[0]), data_size);
-
-	oss.clear();
-	oss.str("");
-	oss << "Done writing out.stl";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-		
-	out.close();
-
-	return true;
-}
-
-
-
-void get_vertices_with_face_normals_from_triangles(vector<vertex_3_with_normal> &vertices_with_face_normals, vector<triangle> &triangles)
-{
-	vertices_with_face_normals.clear();
-
-	if (0 == triangles.size())
-		return;
-
-	ostringstream oss;
-
-	oss.clear();
-	oss.str("");
-	oss << "Welding vertices";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	// Insert unique vertices into set.
-	set<vertex_3_with_index> vertex_set;
-
-	for (vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
-	{
-		if (stop)
-			return;
-
-		vertex_set.insert(i->vertex[0]);
-		vertex_set.insert(i->vertex[1]);
-		vertex_set.insert(i->vertex[2]);
-	}
-
-	oss.clear();
-	oss.str("");
-	oss << "Vertices: " << vertex_set.size();
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-
-	oss.clear();
-	oss.str("");
-	oss << "Generating vertex indices";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	vector<vertex_3_with_index> v;
-
-	// Add indices to the vertices.
-	for (set<vertex_3_with_index>::const_iterator i = vertex_set.begin(); i != vertex_set.end(); i++)
-	{
-		if (stop)
-			return;
-
-		size_t index = v.size();
-		v.push_back(*i);
-		v[index].index = static_cast<GLuint>(index);
-	}
-
-	vertex_set.clear();
-
-	// Re-insert modified vertices into set.
-	for (vector<vertex_3_with_index>::const_iterator i = v.begin(); i != v.end(); i++)
-	{
-		if (stop)
-			return;
-
-		vertex_set.insert(*i);
-	}
-
-	oss.clear();
-	oss.str("");
-	oss << "Assigning vertex indices to triangles";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-
-	// Find the three vertices for each triangle, by index.
-	set<vertex_3_with_index>::iterator find_iter;
-
-	for (vector<triangle>::iterator i = triangles.begin(); i != triangles.end(); i++)
-	{
-		if (stop)
-			return;
-
-		find_iter = vertex_set.find(i->vertex[0]);
-		i->vertex[0].index = find_iter->index;
-
-		find_iter = vertex_set.find(i->vertex[1]);
-		i->vertex[1].index = find_iter->index;
-
-		find_iter = vertex_set.find(i->vertex[2]);
-		i->vertex[2].index = find_iter->index;
-	}
-
-	vertex_set.clear();
-
-	oss.clear();
-	oss.str("");
-	oss << "Calculating normals";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	vertices_with_face_normals.resize(v.size());
-
-	// Assign per-triangle face normals
-	for(vector<triangle>::const_iterator i = triangles.begin(); i != triangles.end(); i++)
-	{
-		if (stop)
-			return;
-
-		vertex_3 v0 = i->vertex[1] - i->vertex[0];
-		vertex_3 v1 = i->vertex[2] - i->vertex[0];
-		vertex_3 fn = v0.cross(v1);
-		fn.normalize();
-
-		vertices_with_face_normals[i->vertex[0].index].nx += fn.x;
-		vertices_with_face_normals[i->vertex[0].index].ny += fn.y;
-		vertices_with_face_normals[i->vertex[0].index].nz += fn.z;
-		vertices_with_face_normals[i->vertex[1].index].nx += fn.x;
-		vertices_with_face_normals[i->vertex[1].index].ny += fn.y;
-		vertices_with_face_normals[i->vertex[1].index].nz += fn.z;
-		vertices_with_face_normals[i->vertex[2].index].nx += fn.x;
-		vertices_with_face_normals[i->vertex[2].index].ny += fn.y;
-		vertices_with_face_normals[i->vertex[2].index].nz += fn.z;
-	}
-
-	oss.clear();
-	oss.str("");
-	oss << "Generating final index/vertex data";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	for (size_t i = 0; i < v.size(); i++)
-	{
-		if (stop)
-			return;
-
-		// Assign vertex spatial comoponents
-		vertices_with_face_normals[i].x = v[i].x;
-		vertices_with_face_normals[i].y = v[i].y;
-		vertices_with_face_normals[i].z = v[i].z;
-
-		// Normalize face normal
-		vertex_3 temp_face_normal(vertices_with_face_normals[i].nx, vertices_with_face_normals[i].ny, vertices_with_face_normals[i].nz);
-		temp_face_normal.normalize();
-
-		vertices_with_face_normals[i].nx = temp_face_normal.x;
-		vertices_with_face_normals[i].ny = temp_face_normal.y;
-		vertices_with_face_normals[i].nz = temp_face_normal.z;
-	}
-
-	oss.clear();
-	oss.str("");
-	oss << "Done";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-}
-
-
-
-
-
-
-
-
-
-vector<triangle> triangles;
-vector<vertex_3_with_normal> vertices_with_face_normals;
 
 
 bool obtain_control_contents(fractal_set_parameters& p)
@@ -493,9 +203,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "blank equation text";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -512,9 +222,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y start is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -531,9 +241,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y end is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -548,9 +258,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y start must be between 0 and 1";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -560,9 +270,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "pedestal y end must be between 0 and 1";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -572,9 +282,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "Y start must be smaller than y_end";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -589,9 +299,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "c.x  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -608,9 +318,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "c.y  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -627,9 +337,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "c.z  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -646,9 +356,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "c.w  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -665,9 +375,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "x min  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -684,9 +394,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "y min  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -703,9 +413,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "z min  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -725,9 +435,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "x max  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -744,9 +454,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "y max  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -763,9 +473,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "z max  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -780,9 +490,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "x min must be less than x max";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -792,9 +502,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "y min must be less than y max";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -804,9 +514,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "z min must be less than z max";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -818,9 +528,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "z.w  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -838,9 +548,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "infinity  is not a real number";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -858,9 +568,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "max iterations is not an unsigned int";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -877,9 +587,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		oss.clear();
 		oss.str("");
 		oss << "resolution is not an unsigned int";
-		
+
 		log_system.add_string_to_contents(oss.str());
-		
+
 
 		return false;
 	}
@@ -893,9 +603,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 			oss.clear();
 			oss.str("");
 			oss << "resolution must be greater than or equal to 3";
-			
+
 			log_system.add_string_to_contents(oss.str());
-			
+
 
 			return false;
 		}
@@ -915,12 +625,10 @@ void generate_cancel_button_func(int control)
 		oss.clear();
 		oss.str("");
 		oss << "Aborting";
-		
+
 		log_system.add_string_to_contents(oss.str());
 
 		jsm.cancel();
-
-		stop = true;
 
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
@@ -934,26 +642,15 @@ void generate_cancel_button_func(int control)
 			oss.clear();
 			oss.str("");
 			oss << "Aborting";
-			
-			log_system.add_string_to_contents(oss.str());			
+
+			log_system.add_string_to_contents(oss.str());
 
 			return;
 		}
 
 		if (false == jsm.init(p))
-		{
-			cout << "jsm init failure" << endl;
-			jsm_init = false;
 			return;
-		}
-		else
-		{
-			cout << "jsm init ok" << endl;
-			jsm_init = true; 
-		}
 
-		stop = false;
-	
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 
@@ -965,7 +662,7 @@ void generate_cancel_button_func(int control)
 
 void control_cb(int control)
 {
-	//printf("                 text: %s\n", edittext->get_text());
+
 }
 
 void myGlutReshape(int x, int y)
@@ -986,377 +683,12 @@ void myGlutReshape(int x, int y)
 	glutPostRedisplay();
 }
 
-
-RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned char bri_percent)
-{
-	float R = 0.0f;
-	float G = 0.0f;
-	float B = 0.0f;
-
-	if (hue_degree > 359)
-		hue_degree = 359;
-
-	if (sat_percent > 100)
-		sat_percent = 100;
-
-	if (bri_percent > 100)
-		bri_percent = 100;
-
-	float hue_pos = 6.0f - ((static_cast<float>(hue_degree) / 359.0f) * 6.0f);
-
-	if (hue_pos >= 0.0f && hue_pos < 1.0f)
-	{
-		R = 255.0f;
-		G = 0.0f;
-		B = 255.0f * hue_pos;
-	}
-	else if (hue_pos >= 1.0f && hue_pos < 2.0f)
-	{
-		hue_pos -= 1.0f;
-
-		R = 255.0f - (255.0f * hue_pos);
-		G = 0.0f;
-		B = 255.0f;
-	}
-	else if (hue_pos >= 2.0f && hue_pos < 3.0f)
-	{
-		hue_pos -= 2.0f;
-
-		R = 0.0f;
-		G = 255.0f * hue_pos;
-		B = 255.0f;
-	}
-	else if (hue_pos >= 3.0f && hue_pos < 4.0f)
-	{
-		hue_pos -= 3.0f;
-
-		R = 0.0f;
-		G = 255.0f;
-		B = 255.0f - (255.0f * hue_pos);
-	}
-	else if (hue_pos >= 4.0f && hue_pos < 5.0f)
-	{
-		hue_pos -= 4.0f;
-
-		R = 255.0f * hue_pos;
-		G = 255.0f;
-		B = 0.0f;
-	}
-	else
-	{
-		hue_pos -= 5.0f;
-
-		R = 255.0f;
-		G = 255.0f - (255.0f * hue_pos);
-		B = 0.0f;
-	}
-
-	if (100 != sat_percent)
-	{
-		if (0 == sat_percent)
-		{
-			R = 255.0f;
-			G = 255.0f;
-			B = 255.0f;
-		}
-		else
-		{
-			if (255.0f != R)
-				R += ((255.0f - R) / 100.0f) * (100.0f - sat_percent);
-			if (255.0f != G)
-				G += ((255.0f - G) / 100.0f) * (100.0f - sat_percent);
-			if (255.0f != B)
-				B += ((255.0f - B) / 100.0f) * (100.0f - sat_percent);
-		}
-	}
-
-	if (100 != bri_percent)
-	{
-		if (0 == bri_percent)
-		{
-			R = 0.0f;
-			G = 0.0f;
-			B = 0.0f;
-		}
-		else
-		{
-			if (0.0f != R)
-				R *= static_cast<float>(bri_percent) / 100.0f;
-			if (0.0f != G)
-				G *= static_cast<float>(bri_percent) / 100.0f;
-			if (0.0f != B)
-				B *= static_cast<float>(bri_percent) / 100.0f;
-		}
-	}
-
-	if (R < 0.0f)
-		R = 0.0f;
-	else if (R > 255.0f)
-		R = 255.0f;
-
-	if (G < 0.0f)
-		G = 0.0f;
-	else if (G > 255.0f)
-		G = 255.0f;
-
-	if (B < 0.0f)
-		B = 0.0f;
-	else if (B > 255.0f)
-		B = 255.0f;
-
-	RGB rgb;
-
-	rgb.r = static_cast<unsigned char>(R);
-	rgb.g = static_cast<unsigned char>(G);
-	rgb.b = static_cast<unsigned char>(B);
-
-	return rgb;
-}
-
-void refresh_vertex_data_blue(void)
-{
-	//vertex_data.clear();
-
-	//for (size_t i = 0; i < triangles.size(); i++)
-	//{
-	//	if (stop)
-	//	{
-	//		vertex_data.clear();
-	//		return;
-	//	}
-
-	//	vertex_3 colour(0.0f, 0.8f, 1.0f);
-
-	//	size_t v0_index = triangles[i].vertex[0].index;
-	//	size_t v1_index = triangles[i].vertex[1].index;
-	//	size_t v2_index = triangles[i].vertex[2].index;
-
-	//	vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
-	//	vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
-	//	vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
-
-	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-
-	//	vertex_data.push_back(v0.x);
-	//	vertex_data.push_back(v0.y);
-	//	vertex_data.push_back(v0.z);
-	//	vertex_data.push_back(v0_fn.x);
-	//	vertex_data.push_back(v0_fn.y);
-	//	vertex_data.push_back(v0_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-
-	//	vertex_data.push_back(v1.x);
-	//	vertex_data.push_back(v1.y);
-	//	vertex_data.push_back(v1.z);
-	//	vertex_data.push_back(v1_fn.x);
-	//	vertex_data.push_back(v1_fn.y);
-	//	vertex_data.push_back(v1_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-
-	//	vertex_data.push_back(v2.x);
-	//	vertex_data.push_back(v2.y);
-	//	vertex_data.push_back(v2.z);
-	//	vertex_data.push_back(v2_fn.x);
-	//	vertex_data.push_back(v2_fn.y);
-	//	vertex_data.push_back(v2_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-	//}
-
-}
-
-
-
-void refresh_vertex_data_rainbow(void)
-{
-	//vertex_data.clear();
-
-	//float min_3d_length = FLT_MAX;
-	//float max_3d_length = FLT_MIN;
-
-	//for (size_t i = 0; i < triangles.size(); i++)
-	//{
-	//	if (stop)
-	//		return;
-
-	//	size_t v0_index = triangles[i].vertex[0].index;
-	//	size_t v1_index = triangles[i].vertex[1].index;
-	//	size_t v2_index = triangles[i].vertex[2].index;
-
-	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-
-	//	float vertex_length = v0.length();
-
-	//	if (vertex_length > max_3d_length)
-	//		max_3d_length = vertex_length;
-
-	//	if (vertex_length < min_3d_length)
-	//		min_3d_length = vertex_length;
-
-	//	vertex_length = v1.length();
-
-	//	if (vertex_length > max_3d_length)
-	//		max_3d_length = vertex_length;
-
-	//	if (vertex_length < min_3d_length)
-	//		min_3d_length = vertex_length;
-
-	//	vertex_length = v2.length();
-
-	//	if (vertex_length > max_3d_length)
-	//		max_3d_length = vertex_length;
-
-	//	if (vertex_length < min_3d_length)
-	//		min_3d_length = vertex_length;
-	//}
-
-	//double max_rainbow = 360.0;
-	//double min_rainbow = 360.0;
-
-
-
-
-
-	//for (size_t i = 0; i < triangles.size(); i++)
-	//{
-	//	if (stop)
-	//	{
-	//		vertex_data.clear();
-	//		return;
-	//	}
-
-	//	vertex_3 colour(1.0f, 0.5f, 0.0);
-
-	//	size_t v0_index = triangles[i].vertex[0].index;
-	//	size_t v1_index = triangles[i].vertex[1].index;
-	//	size_t v2_index = triangles[i].vertex[2].index;
-
-	//	vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
-	//	vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
-	//	vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
-
-	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-
-	//	float vertex_length = v0.length() - min_3d_length;
-
-	//	RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
-	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-	//		static_cast<unsigned char>(50),
-	//		static_cast<unsigned char>(100));
-
-	//	colour.x = rgb.r / 255.0f;
-	//	colour.y = rgb.g / 255.0f;
-	//	colour.z = rgb.b / 255.0f;
-
-	//	vertex_data.push_back(v0.x);
-	//	vertex_data.push_back(v0.y);
-	//	vertex_data.push_back(v0.z);
-	//	vertex_data.push_back(v0_fn.x);
-	//	vertex_data.push_back(v0_fn.y);
-	//	vertex_data.push_back(v0_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-
-	//	vertex_length = v1.length() - min_3d_length;
-
-	//	rgb = HSBtoRGB(static_cast<unsigned short int>(
-	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-	//		static_cast<unsigned char>(50),
-	//		static_cast<unsigned char>(100));
-
-	//	colour.x = rgb.r / 255.0f;
-	//	colour.y = rgb.g / 255.0f;
-	//	colour.z = rgb.b / 255.0f;
-
-	//	vertex_data.push_back(v1.x);
-	//	vertex_data.push_back(v1.y);
-	//	vertex_data.push_back(v1.z);
-	//	vertex_data.push_back(v1_fn.x);
-	//	vertex_data.push_back(v1_fn.y);
-	//	vertex_data.push_back(v1_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-
-
-	//	vertex_length = v2.length() - min_3d_length;
-
-	//	rgb = HSBtoRGB(static_cast<unsigned short int>(
-	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-	//		static_cast<unsigned char>(50),
-	//		static_cast<unsigned char>(100));
-
-	//	colour.x = rgb.r / 255.0f;
-	//	colour.y = rgb.g / 255.0f;
-	//	colour.z = rgb.b / 255.0f;
-
-	//	vertex_data.push_back(v2.x);
-	//	vertex_data.push_back(v2.y);
-	//	vertex_data.push_back(v2.z);
-	//	vertex_data.push_back(v2_fn.x);
-	//	vertex_data.push_back(v2_fn.y);
-	//	vertex_data.push_back(v2_fn.z);
-	//	vertex_data.push_back(colour.x);
-	//	vertex_data.push_back(colour.y);
-	//	vertex_data.push_back(colour.z);
-	//}
-
-}
-
-void refresh_vertex_data(void)
-{
-	ostringstream oss;
-
-	oss.clear();
-	oss.str("");
-	oss << "Refreshing vertex data";
-	
-	log_system.add_string_to_contents(oss.str());
-	
-
-	refresh_vertex_data_blue();
-
-	if (stop)
-	{
-		oss.clear();
-		oss.str("");
-		oss << "Cancelled refreshing vertex data";
-		
-		log_system.add_string_to_contents(oss.str());
-		
-	}
-	else
-	{
-		oss.clear();
-		oss.str("");
-		oss << "Done refreshing vertex data";
-		
-		log_system.add_string_to_contents(oss.str());
-		
-	}
-}
-
-
 void myGlutIdle(void)
 {
 	glutSetWindow(win_id);
 
-
-
-
-	if (STATE_FINISHED == jsm.get_state() && false == generate_button)
+	if ((STATE_FINISHED == jsm.get_state() || STATE_UNINITIALIZED == jsm.get_state())
+		&& false == generate_button)
 	{
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
@@ -1371,32 +703,27 @@ void myGlutIdle(void)
 		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
 
 		log_system.add_string_to_contents(oss.str());
-
 	}
 
 
+	size_t state = jsm.get_state();
 
-	if (jsm_init)
+	if (STATE_FINISHED != state &&
+		STATE_CANCELLED != state &&
+		STATE_UNINITIALIZED != state)
 	{
-		size_t state = jsm.get_state();
+		std::chrono::high_resolution_clock::time_point compute_start_time = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<float, std::milli> elapsed;
 
-		if (STATE_FINISHED != state && 
-			STATE_CANCELLED != state &&
-			STATE_UNINITIALIZED != state)
+		do
 		{
-			std::chrono::high_resolution_clock::time_point compute_start_time = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<float, std::milli> elapsed;
+			jsm.proceed();
 
-			do			
-			{
-				jsm.proceed();
-
-				std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
-				elapsed = compute_end_time - compute_start_time;
-			} while (elapsed.count() < 1000);
-		}
+			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
+			elapsed = compute_end_time - compute_start_time;
+		} while (elapsed.count() < 100);
 	}
-	
+
 	glutPostRedisplay();
 }
 
@@ -1481,7 +808,7 @@ void load_shaders()
 		cout << "Could not load render shader" << endl;
 		return;
 	}
-	
+
 	if (false == flat.init("flat.vs.glsl", "flat.fs.glsl"))
 	{
 		cout << "Could not load flat shader" << endl;
@@ -1875,7 +1202,7 @@ void display_func(void)
 	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
 	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
 	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
-	
+
 	if (draw_axis_checkbox->get_int_val())
 	{
 		glLineWidth(2.0);
@@ -2061,7 +1388,7 @@ void display_func(void)
 
 		// Do anything you like here... for instance, use OpenCV for convolution
 
-		
+
 		for (size_t i = 0; i < log_system.get_contents_size(); i++)
 		{
 			string s;
@@ -2069,7 +1396,7 @@ void display_func(void)
 			print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
 			char_y_pos += 20;
 		}
-		
+
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
@@ -2163,7 +1490,7 @@ void motion_func(int x, int y)
 			main_camera.w = 1.1f;
 		else if (main_camera.w > 20.0f)
 			main_camera.w = 20.0f;
-	}	
+	}
 }
 
 
@@ -2181,7 +1508,7 @@ void setup_gui(void)
 	equation_edittext->set_w(150);
 
 	glui->add_separator();
-	
+
 	draw_console_checkbox = glui->add_checkbox("Draw console text");
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
