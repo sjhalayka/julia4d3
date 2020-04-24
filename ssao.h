@@ -917,7 +917,9 @@ void generate_cancel_button_func(int control)
 		oss << "Aborting";
 		
 		log_system.add_string_to_contents(oss.str());
-		
+
+		jsm.cancel();
+
 		stop = true;
 
 		generate_button = true;
@@ -1353,9 +1355,11 @@ void myGlutIdle(void)
 
 	if (jsm_init)
 	{
-		if (STATE_FINISHED != jsm.get_state() && 
-			STATE_CANCELLED != jsm.get_state() &&
-			STATE_UNINITIALIZED != jsm.get_state())
+		size_t state = jsm.get_state();
+
+		if (STATE_FINISHED != state && 
+			STATE_CANCELLED != state &&
+			STATE_UNINITIALIZED != state)
 		{
 			std::chrono::high_resolution_clock::time_point compute_start_time = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<float, std::milli> elapsed;
@@ -1366,7 +1370,7 @@ void myGlutIdle(void)
 
 				std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 				elapsed = compute_end_time - compute_start_time;
-			} while (elapsed.count() < 1000.0f);
+			} while (elapsed.count() < 1000);
 		}
 	}
 	
