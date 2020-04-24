@@ -1353,9 +1353,20 @@ void myGlutIdle(void)
 
 	if (jsm_init)
 	{
-		if (STATE_FINISHED != jsm.get_state())
+		if (STATE_FINISHED != jsm.get_state() && 
+			STATE_CANCELLED != jsm.get_state() &&
+			STATE_UNINITIALIZED != jsm.get_state())
 		{
-			jsm.proceed();
+			std::chrono::high_resolution_clock::time_point compute_start_time = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<float, std::milli> elapsed;
+
+			do			
+			{
+				jsm.proceed();
+
+				std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
+				elapsed = compute_end_time - compute_start_time;
+			} while (elapsed.count() < 1000.0f);
 		}
 	}
 	
