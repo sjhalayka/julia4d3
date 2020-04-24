@@ -142,6 +142,7 @@ public:
 
 	vector<triangle> triangles;
 	vector<vertex_3_with_normal> vertices_with_face_normals;
+	vector<float> vertex_data;
 
 	size_t get_state(void)
 	{
@@ -154,14 +155,13 @@ public:
 		state = STATE_UNINITIALIZED;
 	}
 
-	bool init(fractal_set_parameters fsp_in)
+	bool init(fractal_set_parameters &fsp_in)
 	{
-		cout << "Entering jsm init" << endl;
 		triangles.clear();
+		vertices_with_face_normals.clear();
+		vertex_data.clear();
 
 		fsp = fsp_in;
-
-		cout << "fsp resolution " << fsp.resolution << endl;
 
 		string error_string;
 		quaternion C;
@@ -245,17 +245,11 @@ public:
 		ptr = &js_state_machine::g0_stage_0;
 		state = STATE_G0_STAGE_0;
 
-		cout << "jsm init exit" << endl;
-		// init stage 0 variables
-		// set func ptr to g0_stage_0
-		// set state to STATE_G0_STAGE_0
 		return true;
 	}
 
 	void proceed(void)
 	{
-		cout << ptr << endl;
-
 		if (ptr != 0)
 			(this->*(this->ptr))();
 	}
@@ -309,15 +303,11 @@ public:
 		glUniform1i(glGetUniformLocation(g0_compute_shader_program, "max_iterations"), fsp.max_iterations);
 		glUniform1f(glGetUniformLocation(g0_compute_shader_program, "threshold"), fsp.infinity);
 
-		cout << "dispatch compute" << endl;
-
 		// Run compute shader
 		glDispatchCompute(fsp.resolution, fsp.resolution, 1);
 
 		// Wait for compute shader to finish
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-		cout << "copy to texture" << endl;
 
 		// Copy output pixel array to CPU as texture 0
 		glActiveTexture(GL_TEXTURE0);
@@ -338,7 +328,6 @@ public:
 
 			for (size_t y = 0; y < fsp.resolution; y++, tempq.y += g0_step_size_y)
 			{
-
 				if (g0_z == 0 || g0_z == fsp.resolution - 1 ||
 					x == 0 || x == fsp.resolution - 1 ||
 					y == 0 || y == fsp.resolution - 1)
@@ -364,8 +353,6 @@ public:
 protected:
 	int g0_stage_0(void)
 	{
-		cout << "Enter g0_stage_0" << endl;
-
 		g0_draw();
 
 		g0_previous_slice = g0_output_pixels;
@@ -376,15 +363,11 @@ protected:
 		ptr = &js_state_machine::g0_stage_1;
 		state = STATE_G0_STAGE_1;
 
-		cout << "exit g0_stage_0" << endl;
-
 		return 1;
 	}
 
 	int g0_stage_1(void)
 	{
-		cout << "Enter g0_stage_1" << endl;
-
 		g0_draw();
 
 		size_t box_count = 0;
@@ -413,17 +396,13 @@ protected:
 			ptr = &js_state_machine::g1_stage_0;
 			state = STATE_G1_STAGE_0;
 			g1_i0 = triangles.begin();
-			cout << "done stage g0_stage1" << endl;
 		}
 		else
 		{
-			cout << "continuing stage g0_stage1" << endl;
 			g0_z++;
 			g0_Z.z += g0_step_size_z;
 			g0_previous_slice = g0_output_pixels;
 		}
-
-		cout << "exit g0_stage_1" << endl;
 
 		return 1;
 	}
@@ -436,6 +415,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			g1_vertex_set.insert(g1_i0->vertex[0]);
 			g1_vertex_set.insert(g1_i0->vertex[1]);
@@ -457,6 +438,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			size_t index = g1_v.size();
 			g1_v.push_back(*g1_i1);
@@ -480,6 +463,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			g1_vertex_set.insert(*g1_i2);
 		}
@@ -499,6 +484,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			g1_find_iter = g1_vertex_set.find(g1_i3->vertex[0]);
 			g1_i3->vertex[0].index = g1_find_iter->index;
@@ -528,6 +515,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			vertex_3 v0 = g1_i4->vertex[1] - g1_i4->vertex[0];
 			vertex_3 v1 = g1_i4->vertex[2] - g1_i4->vertex[0];
@@ -560,6 +549,8 @@ protected:
 		{
 			if (count == g1_batch_size)
 				return 0;
+			else
+				count++;
 
 			// Assign vertex spatial comoponents
 			vertices_with_face_normals[g1_i5].x = g1_v[g1_i5].x;

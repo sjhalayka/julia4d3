@@ -73,7 +73,6 @@ logging_system log_system;
 js_state_machine jsm;
 
 
-vector<GLfloat> vertex_data;
 
 
 std::chrono::high_resolution_clock::time_point start_time, end_time;
@@ -98,7 +97,7 @@ GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
 GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
-GLUI_Checkbox* rainbow_colouring_checkbox, * randomize_c_checkbox, * use_pedestal_checkbox;
+GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
 
@@ -1114,60 +1113,60 @@ RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned 
 
 void refresh_vertex_data_blue(void)
 {
-	vertex_data.clear();
+	//vertex_data.clear();
 
-	for (size_t i = 0; i < triangles.size(); i++)
-	{
-		if (stop)
-		{
-			vertex_data.clear();
-			return;
-		}
+	//for (size_t i = 0; i < triangles.size(); i++)
+	//{
+	//	if (stop)
+	//	{
+	//		vertex_data.clear();
+	//		return;
+	//	}
 
-		vertex_3 colour(0.0f, 0.8f, 1.0f);
+	//	vertex_3 colour(0.0f, 0.8f, 1.0f);
 
-		size_t v0_index = triangles[i].vertex[0].index;
-		size_t v1_index = triangles[i].vertex[1].index;
-		size_t v2_index = triangles[i].vertex[2].index;
+	//	size_t v0_index = triangles[i].vertex[0].index;
+	//	size_t v1_index = triangles[i].vertex[1].index;
+	//	size_t v2_index = triangles[i].vertex[2].index;
 
-		vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
-		vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
-		vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+	//	vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+	//	vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+	//	vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
 
-		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
 
-		vertex_data.push_back(v0.x);
-		vertex_data.push_back(v0.y);
-		vertex_data.push_back(v0.z);
-		vertex_data.push_back(v0_fn.x);
-		vertex_data.push_back(v0_fn.y);
-		vertex_data.push_back(v0_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
+	//	vertex_data.push_back(v0.x);
+	//	vertex_data.push_back(v0.y);
+	//	vertex_data.push_back(v0.z);
+	//	vertex_data.push_back(v0_fn.x);
+	//	vertex_data.push_back(v0_fn.y);
+	//	vertex_data.push_back(v0_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
 
-		vertex_data.push_back(v1.x);
-		vertex_data.push_back(v1.y);
-		vertex_data.push_back(v1.z);
-		vertex_data.push_back(v1_fn.x);
-		vertex_data.push_back(v1_fn.y);
-		vertex_data.push_back(v1_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
+	//	vertex_data.push_back(v1.x);
+	//	vertex_data.push_back(v1.y);
+	//	vertex_data.push_back(v1.z);
+	//	vertex_data.push_back(v1_fn.x);
+	//	vertex_data.push_back(v1_fn.y);
+	//	vertex_data.push_back(v1_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
 
-		vertex_data.push_back(v2.x);
-		vertex_data.push_back(v2.y);
-		vertex_data.push_back(v2.z);
-		vertex_data.push_back(v2_fn.x);
-		vertex_data.push_back(v2_fn.y);
-		vertex_data.push_back(v2_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
-	}
+	//	vertex_data.push_back(v2.x);
+	//	vertex_data.push_back(v2.y);
+	//	vertex_data.push_back(v2.z);
+	//	vertex_data.push_back(v2_fn.x);
+	//	vertex_data.push_back(v2_fn.y);
+	//	vertex_data.push_back(v2_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
+	//}
 
 }
 
@@ -1175,142 +1174,142 @@ void refresh_vertex_data_blue(void)
 
 void refresh_vertex_data_rainbow(void)
 {
-	vertex_data.clear();
+	//vertex_data.clear();
 
-	float min_3d_length = FLT_MAX;
-	float max_3d_length = FLT_MIN;
+	//float min_3d_length = FLT_MAX;
+	//float max_3d_length = FLT_MIN;
 
-	for (size_t i = 0; i < triangles.size(); i++)
-	{
-		if (stop)
-			return;
+	//for (size_t i = 0; i < triangles.size(); i++)
+	//{
+	//	if (stop)
+	//		return;
 
-		size_t v0_index = triangles[i].vertex[0].index;
-		size_t v1_index = triangles[i].vertex[1].index;
-		size_t v2_index = triangles[i].vertex[2].index;
+	//	size_t v0_index = triangles[i].vertex[0].index;
+	//	size_t v1_index = triangles[i].vertex[1].index;
+	//	size_t v2_index = triangles[i].vertex[2].index;
 
-		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
 
-		float vertex_length = v0.length();
+	//	float vertex_length = v0.length();
 
-		if (vertex_length > max_3d_length)
-			max_3d_length = vertex_length;
+	//	if (vertex_length > max_3d_length)
+	//		max_3d_length = vertex_length;
 
-		if (vertex_length < min_3d_length)
-			min_3d_length = vertex_length;
+	//	if (vertex_length < min_3d_length)
+	//		min_3d_length = vertex_length;
 
-		vertex_length = v1.length();
+	//	vertex_length = v1.length();
 
-		if (vertex_length > max_3d_length)
-			max_3d_length = vertex_length;
+	//	if (vertex_length > max_3d_length)
+	//		max_3d_length = vertex_length;
 
-		if (vertex_length < min_3d_length)
-			min_3d_length = vertex_length;
+	//	if (vertex_length < min_3d_length)
+	//		min_3d_length = vertex_length;
 
-		vertex_length = v2.length();
+	//	vertex_length = v2.length();
 
-		if (vertex_length > max_3d_length)
-			max_3d_length = vertex_length;
+	//	if (vertex_length > max_3d_length)
+	//		max_3d_length = vertex_length;
 
-		if (vertex_length < min_3d_length)
-			min_3d_length = vertex_length;
-	}
+	//	if (vertex_length < min_3d_length)
+	//		min_3d_length = vertex_length;
+	//}
 
-	double max_rainbow = 360.0;
-	double min_rainbow = 360.0;
-
-
+	//double max_rainbow = 360.0;
+	//double min_rainbow = 360.0;
 
 
 
-	for (size_t i = 0; i < triangles.size(); i++)
-	{
-		if (stop)
-		{
-			vertex_data.clear();
-			return;
-		}
-
-		vertex_3 colour(1.0f, 0.5f, 0.0);
-
-		size_t v0_index = triangles[i].vertex[0].index;
-		size_t v1_index = triangles[i].vertex[1].index;
-		size_t v2_index = triangles[i].vertex[2].index;
-
-		vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
-		vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
-		vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
-
-		vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
-		vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
-		vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
-
-		float vertex_length = v0.length() - min_3d_length;
-
-		RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
-			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
-			static_cast<unsigned char>(100));
-
-		colour.x = rgb.r / 255.0f;
-		colour.y = rgb.g / 255.0f;
-		colour.z = rgb.b / 255.0f;
-
-		vertex_data.push_back(v0.x);
-		vertex_data.push_back(v0.y);
-		vertex_data.push_back(v0.z);
-		vertex_data.push_back(v0_fn.x);
-		vertex_data.push_back(v0_fn.y);
-		vertex_data.push_back(v0_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
-
-		vertex_length = v1.length() - min_3d_length;
-
-		rgb = HSBtoRGB(static_cast<unsigned short int>(
-			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
-			static_cast<unsigned char>(100));
-
-		colour.x = rgb.r / 255.0f;
-		colour.y = rgb.g / 255.0f;
-		colour.z = rgb.b / 255.0f;
-
-		vertex_data.push_back(v1.x);
-		vertex_data.push_back(v1.y);
-		vertex_data.push_back(v1.z);
-		vertex_data.push_back(v1_fn.x);
-		vertex_data.push_back(v1_fn.y);
-		vertex_data.push_back(v1_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
 
 
-		vertex_length = v2.length() - min_3d_length;
+	//for (size_t i = 0; i < triangles.size(); i++)
+	//{
+	//	if (stop)
+	//	{
+	//		vertex_data.clear();
+	//		return;
+	//	}
 
-		rgb = HSBtoRGB(static_cast<unsigned short int>(
-			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
-			static_cast<unsigned char>(100));
+	//	vertex_3 colour(1.0f, 0.5f, 0.0);
 
-		colour.x = rgb.r / 255.0f;
-		colour.y = rgb.g / 255.0f;
-		colour.z = rgb.b / 255.0f;
+	//	size_t v0_index = triangles[i].vertex[0].index;
+	//	size_t v1_index = triangles[i].vertex[1].index;
+	//	size_t v2_index = triangles[i].vertex[2].index;
 
-		vertex_data.push_back(v2.x);
-		vertex_data.push_back(v2.y);
-		vertex_data.push_back(v2.z);
-		vertex_data.push_back(v2_fn.x);
-		vertex_data.push_back(v2_fn.y);
-		vertex_data.push_back(v2_fn.z);
-		vertex_data.push_back(colour.x);
-		vertex_data.push_back(colour.y);
-		vertex_data.push_back(colour.z);
-	}
+	//	vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+	//	vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+	//	vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+
+	//	vertex_3 v0(triangles[i].vertex[0].x, triangles[i].vertex[0].y, triangles[i].vertex[0].z);
+	//	vertex_3 v1(triangles[i].vertex[1].x, triangles[i].vertex[1].y, triangles[i].vertex[1].z);
+	//	vertex_3 v2(triangles[i].vertex[2].x, triangles[i].vertex[2].y, triangles[i].vertex[2].z);
+
+	//	float vertex_length = v0.length() - min_3d_length;
+
+	//	RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
+	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+	//		static_cast<unsigned char>(50),
+	//		static_cast<unsigned char>(100));
+
+	//	colour.x = rgb.r / 255.0f;
+	//	colour.y = rgb.g / 255.0f;
+	//	colour.z = rgb.b / 255.0f;
+
+	//	vertex_data.push_back(v0.x);
+	//	vertex_data.push_back(v0.y);
+	//	vertex_data.push_back(v0.z);
+	//	vertex_data.push_back(v0_fn.x);
+	//	vertex_data.push_back(v0_fn.y);
+	//	vertex_data.push_back(v0_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
+
+	//	vertex_length = v1.length() - min_3d_length;
+
+	//	rgb = HSBtoRGB(static_cast<unsigned short int>(
+	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+	//		static_cast<unsigned char>(50),
+	//		static_cast<unsigned char>(100));
+
+	//	colour.x = rgb.r / 255.0f;
+	//	colour.y = rgb.g / 255.0f;
+	//	colour.z = rgb.b / 255.0f;
+
+	//	vertex_data.push_back(v1.x);
+	//	vertex_data.push_back(v1.y);
+	//	vertex_data.push_back(v1.z);
+	//	vertex_data.push_back(v1_fn.x);
+	//	vertex_data.push_back(v1_fn.y);
+	//	vertex_data.push_back(v1_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
+
+
+	//	vertex_length = v2.length() - min_3d_length;
+
+	//	rgb = HSBtoRGB(static_cast<unsigned short int>(
+	//		max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
+	//		static_cast<unsigned char>(50),
+	//		static_cast<unsigned char>(100));
+
+	//	colour.x = rgb.r / 255.0f;
+	//	colour.y = rgb.g / 255.0f;
+	//	colour.z = rgb.b / 255.0f;
+
+	//	vertex_data.push_back(v2.x);
+	//	vertex_data.push_back(v2.y);
+	//	vertex_data.push_back(v2.z);
+	//	vertex_data.push_back(v2_fn.x);
+	//	vertex_data.push_back(v2_fn.y);
+	//	vertex_data.push_back(v2_fn.z);
+	//	vertex_data.push_back(colour.x);
+	//	vertex_data.push_back(colour.y);
+	//	vertex_data.push_back(colour.z);
+	//}
 
 }
 
@@ -1325,12 +1324,7 @@ void refresh_vertex_data(void)
 	log_system.add_string_to_contents(oss.str());
 	
 
-	int do_rainbow = rainbow_colouring_checkbox->get_int_val();
-
-	if (do_rainbow)
-		refresh_vertex_data_rainbow();
-	else
-		refresh_vertex_data_blue();
+	refresh_vertex_data_blue();
 
 	if (stop)
 	{
@@ -1369,12 +1363,7 @@ void myGlutIdle(void)
 		}
 		else
 		{
-			static int count = 0;
-			cout << "proceed " << count << endl;
 			jsm.proceed();
-			jsm.proceed();
-			jsm.proceed();
-			count++;
 		}
 	}
 	
@@ -2168,7 +2157,6 @@ void setup_gui(void)
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
 
-	rainbow_colouring_checkbox = glui->add_checkbox("Rainbow colouring");
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
 	use_pedestal_checkbox->set_int_val(1);
