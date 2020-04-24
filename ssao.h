@@ -1362,7 +1362,9 @@ void myGlutIdle(void)
 		if (STATE_FINISHED == jsm.get_state())
 		{
 			write_triangles_to_binary_stereo_lithography_file("out.stl", jsm.triangles);
-			cout << "Triangles " << jsm.triangles.size();
+			cout << "Triangles size " << jsm.triangles.size() << endl;
+			cout << "vertices w face normals size " << jsm.vertices_with_face_normals.size() << endl;
+
 			exit(0);
 		}
 		else

@@ -123,6 +123,13 @@ typedef int (js_state_machine::* js_state_machine_member_function_pointer)(void)
 #define STATE_CANCELLED 2
 #define STATE_G0_STAGE_0 3
 #define STATE_G0_STAGE_1 4
+#define STATE_G1_STAGE_0 5
+#define STATE_G1_STAGE_1 5
+#define STATE_G1_STAGE_2 6
+#define STATE_G1_STAGE_3 7
+#define STATE_G1_STAGE_4 8
+#define STATE_G1_STAGE_5 9
+
 
 
 
@@ -134,6 +141,7 @@ class js_state_machine
 public:
 
 	vector<triangle> triangles;
+	vector<vertex_3_with_normal> vertices_with_face_normals;
 
 	size_t get_state(void)
 	{
@@ -272,8 +280,6 @@ public:
 			}
 		}
 
-
-//		glGenTextures(1, &g0_tex_output);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, g0_tex_output);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -283,8 +289,6 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, fsp.resolution, fsp.resolution, 0, GL_RED, GL_FLOAT, NULL);
 		glBindImageTexture(0, g0_tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-		// Generate input texture
-//		glGenTextures(1, &g0_tex_input);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, g0_tex_input);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -355,8 +359,6 @@ public:
 				}
 			}
 		}
-
-		
 	}
 
 protected:
@@ -408,8 +410,9 @@ protected:
 
 		if (g0_z >= fsp.resolution - 1)
 		{
-			ptr = 0;
-			state = STATE_FINISHED;
+			ptr = &js_state_machine::g1_stage_0;
+			state = STATE_G1_STAGE_0;
+			g1_i0 = triangles.begin();
 			cout << "done stage g0_stage1" << endl;
 		}
 		else
@@ -425,6 +428,161 @@ protected:
 		return 1;
 	}
 
+	int g1_stage_0(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i0 != triangles.end(); g1_i0++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			g1_vertex_set.insert(g1_i0->vertex[0]);
+			g1_vertex_set.insert(g1_i0->vertex[1]);
+			g1_vertex_set.insert(g1_i0->vertex[2]);
+		}
+
+		ptr = &js_state_machine::g1_stage_1;
+		state = STATE_G1_STAGE_1;
+		g1_i1 = g1_vertex_set.begin();
+
+		return 1;
+	}
+
+	int g1_stage_1(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i1 != g1_vertex_set.end(); g1_i1++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			size_t index = g1_v.size();
+			g1_v.push_back(*g1_i1);
+			g1_v[index].index = static_cast<GLuint>(index);
+		}
+
+		g1_vertex_set.clear();
+
+		ptr = &js_state_machine::g1_stage_2;
+		state = STATE_G1_STAGE_2;
+		g1_i2 = g1_v.begin();
+
+		return 1;
+	}
+
+	int g1_stage_2(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i2 != g1_v.end(); g1_i2++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			g1_vertex_set.insert(*g1_i2);
+		}
+
+		ptr = &js_state_machine::g1_stage_3;
+		state = STATE_G1_STAGE_3;
+		g1_i3 = triangles.begin();
+
+		return 1;
+	}
+
+	int g1_stage_3(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i3 != triangles.end(); g1_i3++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			g1_find_iter = g1_vertex_set.find(g1_i3->vertex[0]);
+			g1_i3->vertex[0].index = g1_find_iter->index;
+
+			g1_find_iter = g1_vertex_set.find(g1_i3->vertex[1]);
+			g1_i3->vertex[1].index = g1_find_iter->index;
+
+			g1_find_iter = g1_vertex_set.find(g1_i3->vertex[2]);
+			g1_i3->vertex[2].index = g1_find_iter->index;
+		}
+
+		g1_vertex_set.clear();
+		vertices_with_face_normals.resize(g1_v.size());
+
+		ptr = &js_state_machine::g1_stage_4;
+		state = STATE_G1_STAGE_4;
+		g1_i4 = triangles.begin();
+
+		return 1;
+	}
+
+	int g1_stage_4(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i4 != triangles.end(); g1_i4++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			vertex_3 v0 = g1_i4->vertex[1] - g1_i4->vertex[0];
+			vertex_3 v1 = g1_i4->vertex[2] - g1_i4->vertex[0];
+			vertex_3 fn = v0.cross(v1);
+			fn.normalize();
+
+			vertices_with_face_normals[g1_i4->vertex[0].index].nx += fn.x;
+			vertices_with_face_normals[g1_i4->vertex[0].index].ny += fn.y;
+			vertices_with_face_normals[g1_i4->vertex[0].index].nz += fn.z;
+			vertices_with_face_normals[g1_i4->vertex[1].index].nx += fn.x;
+			vertices_with_face_normals[g1_i4->vertex[1].index].ny += fn.y;
+			vertices_with_face_normals[g1_i4->vertex[1].index].nz += fn.z;
+			vertices_with_face_normals[g1_i4->vertex[2].index].nx += fn.x;
+			vertices_with_face_normals[g1_i4->vertex[2].index].ny += fn.y;
+			vertices_with_face_normals[g1_i4->vertex[2].index].nz += fn.z;
+		}
+
+		ptr = &js_state_machine::g1_stage_5;
+		state = STATE_G1_STAGE_5;
+		g1_i5 = 0;
+
+		return 1;
+	}
+
+	int g1_stage_5(void)
+	{
+		size_t count = 0;
+
+		for (; g1_i5 < g1_v.size(); g1_i5++)
+		{
+			if (count == g1_batch_size)
+				return 0;
+
+			// Assign vertex spatial comoponents
+			vertices_with_face_normals[g1_i5].x = g1_v[g1_i5].x;
+			vertices_with_face_normals[g1_i5].y = g1_v[g1_i5].y;
+			vertices_with_face_normals[g1_i5].z = g1_v[g1_i5].z;
+
+			// Normalize face normal
+			vertex_3 temp_face_normal(vertices_with_face_normals[g1_i5].nx, vertices_with_face_normals[g1_i5].ny, vertices_with_face_normals[g1_i5].nz);
+			temp_face_normal.normalize();
+
+			vertices_with_face_normals[g1_i5].nx = temp_face_normal.x;
+			vertices_with_face_normals[g1_i5].ny = temp_face_normal.y;
+			vertices_with_face_normals[g1_i5].nz = temp_face_normal.z;
+		}
+
+		ptr = 0;
+		state = STATE_FINISHED;
+
+		return 1;
+	}
+
+
+
 	float g0_step_size_x = 0, g0_step_size_y = 0, g0_step_size_z = 0;
 	quaternion g0_Z;
 	size_t g0_z;
@@ -438,9 +596,29 @@ protected:
 	size_t g0_num_output_channels = 1;
 	size_t g0_num_input_channels = 4;
 
+	set<vertex_3_with_index> g1_vertex_set;
+	vector<triangle>::const_iterator g1_i0;
+	vector<vertex_3_with_index> g1_v;
+	set<vertex_3_with_index>::const_iterator g1_i1;
+	vector<vertex_3_with_index>::const_iterator g1_i2;
+	set<vertex_3_with_index>::iterator g1_find_iter;
+	vector<triangle>::iterator g1_i3;
+	vector<triangle>::iterator g1_i4;
+	size_t g1_i5;
+
+	ofstream g2_out;
+	vector<char> g2_buffer;
+	size_t g2_buffer_size = 0, g2_bytes_written = 0;
+	char* g2_cp = 0;
+	vector<triangle>::const_iterator g2_i0;
+
+
+
+
 	fractal_set_parameters fsp;
-	js_state_machine_member_function_pointer ptr = 0;// &c::f;
-	size_t batch_size = 10;
+	js_state_machine_member_function_pointer ptr = 0;
+	size_t g1_batch_size = 10000;
+	size_t g2_batch_size = 10*1048576;
 	size_t state = 0;
 
 
