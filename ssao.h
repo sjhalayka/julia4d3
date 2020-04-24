@@ -69,7 +69,7 @@ using namespace marching_cubes;
 
 fractal_set_parameters p;
 
-logging_system log_system;
+
 js_state_machine jsm;
 
 
@@ -1352,6 +1352,29 @@ void refresh_vertex_data(void)
 void myGlutIdle(void)
 {
 	glutSetWindow(win_id);
+
+
+
+
+	if (STATE_FINISHED == jsm.get_state() && false == generate_button)
+	{
+		generate_button = true;
+		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
+
+		end_time = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+
+		ostringstream oss;
+		oss.clear();
+		oss.str("");
+		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
+
+		log_system.add_string_to_contents(oss.str());
+
+	}
+
+
 
 	if (jsm_init)
 	{

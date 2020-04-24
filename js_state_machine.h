@@ -5,6 +5,7 @@
 #include "fractal_set_parameters.h"
 #include "primitives.h"
 #include "eqparse.h"
+#include "logging_system.h"
 
 #include <vector>
 using std::vector;
@@ -23,6 +24,7 @@ using std::mutex;
 
 
 
+logging_system log_system;
 
 
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
@@ -384,12 +386,10 @@ protected:
 		size_t box_count = 0;
 
 		ostringstream oss;
-
 		oss.clear();
 		oss.str("");
 		oss << "Calculating triangles from xy-plane pair " << g0_z << " of " << fsp.resolution - 1;
-
-		cout << oss.str() << endl;
+		log_system.add_string_to_contents(oss.str());
 
 		// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
 		tesselate_adjacent_xy_plane_pair(
@@ -580,15 +580,22 @@ protected:
 		ptr = &js_state_machine::g2_stage_0;
 		state = STATE_G1_STAGE_0;
 
-		// init g2_stage_0
 		if (0 == triangles.size())
+		{
+			ptr = 0;
+			state = STATE_FINISHED;
 			return 0;
+		}
 
 		// Write to file.
 		g2_out.open("out.stl", ios_base::binary);
 
 		if (g2_out.fail())
+		{
+			ptr = 0;
+			state = STATE_UNINITIALIZED;
 			return 0;
+		}
 
 		const size_t header_size = 80;
 		g2_buffer.resize(header_size, 0);
