@@ -721,7 +721,7 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		} while (elapsed.count() < 100);
+		} while (elapsed.count() < 1000); // Lower this amount to get more responsiveness
 	}
 
 	glutPostRedisplay();
@@ -1503,8 +1503,8 @@ void setup_gui(void)
 
 	glui->add_separator();
 
-	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = Z*Z + C"), 3, control_cb);
-	equation_edittext->set_text("Z = Z*Z + C");
+	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = sin(Z) + C*sin(Z)"), 3, control_cb);
+	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
 	equation_edittext->set_w(150);
 
 	glui->add_separator();

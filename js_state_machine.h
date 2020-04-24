@@ -145,6 +145,7 @@ class js_state_machine
 {
 public:
 
+	ostringstream oss;
 	vector<triangle> triangles;
 	vector<vertex_3_with_normal> vertices_with_face_normals;
 	vector<float> vertex_data;
@@ -385,7 +386,6 @@ protected:
 
 		size_t box_count = 0;
 
-		ostringstream oss;
 		oss.clear();
 		oss.str("");
 		oss << "Calculating triangles from xy-plane pair " << g0_z << " of " << fsp.resolution - 1;
@@ -407,6 +407,11 @@ protected:
 			ptr = &js_state_machine::g1_stage_0;
 			state = STATE_G1_STAGE_0;
 			g1_i0 = triangles.begin();
+
+			oss.clear();
+			oss.str("");
+			oss << "Welding vertices";
+			log_system.add_string_to_contents(oss.str());
 		}
 		else
 		{
@@ -438,6 +443,11 @@ protected:
 		state = STATE_G1_STAGE_1;
 		g1_i1 = g1_vertex_set.begin();
 
+		oss.clear();
+		oss.str("");
+		oss << "Generating indices";
+		log_system.add_string_to_contents(oss.str());
+
 		return 1;
 	}
 
@@ -463,6 +473,11 @@ protected:
 		state = STATE_G1_STAGE_2;
 		g1_i2 = g1_v.begin();
 
+		oss.clear();
+		oss.str("");
+		oss << "Generagting vertex set";
+		log_system.add_string_to_contents(oss.str());
+
 		return 1;
 	}
 
@@ -479,6 +494,12 @@ protected:
 
 			g1_vertex_set.insert(*g1_i2);
 		}
+
+
+		oss.clear();
+		oss.str("");
+		oss << "Assigning vertex indices";
+		log_system.add_string_to_contents(oss.str());
 
 		ptr = &js_state_machine::g1_stage_3;
 		state = STATE_G1_STAGE_3;
@@ -515,6 +536,11 @@ protected:
 		state = STATE_G1_STAGE_4;
 		g1_i4 = triangles.begin();
 
+		oss.clear();
+		oss.str("");
+		oss << "Generating normal data";
+		log_system.add_string_to_contents(oss.str());
+
 		return 1;
 	}
 
@@ -548,6 +574,11 @@ protected:
 		ptr = &js_state_machine::g1_stage_5;
 		state = STATE_G1_STAGE_5;
 		g1_i5 = 0;
+
+		oss.clear();
+		oss.str("");
+		oss << "Assigning normals";
+		log_system.add_string_to_contents(oss.str());
 
 		return 1;
 	}
@@ -610,6 +641,11 @@ protected:
 		g2_cp = &g2_buffer[0];
 		g2_i0 = triangles.begin();
 
+		oss.clear();
+		oss.str("");
+		oss << "Building file buffer in memory";
+		log_system.add_string_to_contents(oss.str());
+
 		return 1;
 	}
 
@@ -653,6 +689,11 @@ protected:
 		// init g2_stage_1
 		g2_bytes_remaining = g2_data_size;
 
+		oss.clear();
+		oss.str("");
+		oss << "Writing buffer to file";
+		log_system.add_string_to_contents(oss.str());
+
 		return 1;
 	}
 
@@ -675,6 +716,11 @@ protected:
 			g3_i0 = 0;
 			ptr = &js_state_machine::g3_stage_0;
 			state = STATE_G3_STAGE_0;
+
+			oss.clear();
+			oss.str("");
+			oss << "Building OpenGL vertex buffer";
+			log_system.add_string_to_contents(oss.str());
 		}
 
 		return 1;
@@ -738,6 +784,7 @@ protected:
 
 		ptr = 0;
 		state = STATE_FINISHED;
+		return 0;
 	}
 
 
