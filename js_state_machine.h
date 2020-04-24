@@ -129,7 +129,8 @@ typedef int (js_state_machine::* js_state_machine_member_function_pointer)(void)
 #define STATE_G1_STAGE_3 7
 #define STATE_G1_STAGE_4 8
 #define STATE_G1_STAGE_5 9
-
+#define STATE_G2_STAGE_0 10
+#define STATE_G2_STAGE_1 11
 
 
 
@@ -247,6 +248,14 @@ public:
 
 		return true;
 	}
+
+
+	void cancel(void)
+	{
+		ptr = 0;
+		state = STATE_CANCELLED;
+	}
+
 
 	void proceed(void)
 	{
@@ -566,8 +575,96 @@ protected:
 			vertices_with_face_normals[g1_i5].nz = temp_face_normal.z;
 		}
 
-		ptr = 0;
-		state = STATE_FINISHED;
+		ptr = &js_state_machine::g2_stage_0;
+		state = STATE_G1_STAGE_0;
+
+		// init g2_stage_0
+		if (0 == triangles.size())
+			return 0;
+
+		// Write to file.
+		g2_out.open("out.stl", ios_base::binary);
+
+		if (g2_out.fail())
+			return 0;
+
+		const size_t header_size = 80;
+		g2_buffer.resize(header_size, 0);
+		g2_num_triangles = static_cast<unsigned int>(triangles.size()); // Must be 4-byte unsigned int.
+
+		g2_out.write(reinterpret_cast<const char*>(&(g2_buffer[0])), header_size);
+		g2_out.write(reinterpret_cast<const char*>(&g2_num_triangles), sizeof(unsigned int));
+
+		g2_data_size = (12 * sizeof(float) + sizeof(short unsigned int)) * g2_num_triangles;
+		g2_buffer.resize(g2_data_size, 0);
+
+		g2_cp = &g2_buffer[0];
+		g2_i0 = triangles.begin();
+
+		return 1;
+	}
+
+	int g2_stage_0(void)
+	{
+		size_t count = 0;
+
+		for (; g2_i0 != triangles.end(); g2_i0++)
+		{
+			if (count == g2_i0_batch_size)
+				return 0;
+			else
+				count++;
+
+			// Get face normal.
+			vertex_3 v0 = g2_i0->vertex[1] - g2_i0->vertex[0];
+			vertex_3 v1 = g2_i0->vertex[2] - g2_i0->vertex[0];
+			vertex_3 normal = v0.cross(v1);
+			normal.normalize();
+
+			memcpy(g2_cp, &normal.x, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &normal.y, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &normal.z, sizeof(float)); g2_cp += sizeof(float);
+
+			memcpy(g2_cp, &g2_i0->vertex[0].x, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[0].y, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[0].z, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[1].x, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[1].y, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[1].z, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[2].x, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[2].y, sizeof(float)); g2_cp += sizeof(float);
+			memcpy(g2_cp, &g2_i0->vertex[2].z, sizeof(float)); g2_cp += sizeof(float);
+
+			g2_cp += sizeof(short unsigned int);
+		}
+
+		ptr = &js_state_machine::g2_stage_1;
+		state = STATE_G2_STAGE_1;
+
+		// init g2_stage_1
+		g2_bytes_remaining = g2_data_size;
+
+		return 1;
+	}
+
+	int g2_stage_1(void)
+	{
+		size_t bytes_to_write = 0;
+
+		if (g2_i1_batch_size > g2_bytes_remaining)
+			bytes_to_write = g2_bytes_remaining;
+		else
+			bytes_to_write = g2_i1_batch_size;
+
+		g2_out.write(reinterpret_cast<const char*>(&g2_buffer[g2_bytes_written]), bytes_to_write);
+		g2_bytes_remaining -= bytes_to_write;
+
+		if (g2_bytes_remaining == 0)
+		{
+			g2_out.close();
+			ptr = 0;
+			state = STATE_FINISHED;
+		}
 
 		return 1;
 	}
@@ -599,7 +696,9 @@ protected:
 
 	ofstream g2_out;
 	vector<char> g2_buffer;
-	size_t g2_buffer_size = 0, g2_bytes_written = 0;
+	size_t g2_num_triangles = 0;
+	size_t g2_data_size = 0;
+	size_t g2_buffer_size = 0, g2_bytes_remaining = 0, g2_bytes_written = 0;
 	char* g2_cp = 0;
 	vector<triangle>::const_iterator g2_i0;
 
@@ -609,7 +708,8 @@ protected:
 	fractal_set_parameters fsp;
 	js_state_machine_member_function_pointer ptr = 0;
 	size_t g1_batch_size = 10000;
-	size_t g2_batch_size = 10*1048576;
+	size_t g2_i0_batch_size = 10000;
+	size_t g2_i1_batch_size = 10*1048576;
 	size_t state = 0;
 
 

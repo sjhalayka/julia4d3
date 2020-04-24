@@ -1353,15 +1353,7 @@ void myGlutIdle(void)
 
 	if (jsm_init)
 	{
-		if (STATE_FINISHED == jsm.get_state())
-		{
-			write_triangles_to_binary_stereo_lithography_file("out.stl", jsm.triangles);
-			cout << "Triangles size " << jsm.triangles.size() << endl;
-			cout << "vertices w face normals size " << jsm.vertices_with_face_normals.size() << endl;
-
-			exit(0);
-		}
-		else
+		if (STATE_FINISHED != jsm.get_state())
 		{
 			jsm.proceed();
 		}
@@ -1817,7 +1809,7 @@ bool init(void)
 
 void display_func(void)
 {
-	
+
 
 	glClearColor(1, 0.5f, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1950,50 +1942,50 @@ void display_func(void)
 	}
 
 
-	//if (vertex_data_refreshed && vertex_data.size() > 0)
-	//{
-	//	glUseProgram(render.get_program());
+	if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
+	{
+		glUseProgram(render.get_program());
 
-	//	const GLuint components_per_vertex = 9;
-	//	const GLuint components_per_normal = 3;
-	//	const GLuint components_per_position = 3;
-	//	const GLuint components_per_colour = 3;
+		const GLuint components_per_vertex = 9;
+		const GLuint components_per_normal = 3;
+		const GLuint components_per_position = 3;
+		const GLuint components_per_colour = 3;
 
-	//	glDeleteBuffers(1, &triangle_buffer);
-	//	glGenBuffers(1, &triangle_buffer);
+		glDeleteBuffers(1, &triangle_buffer);
+		glGenBuffers(1, &triangle_buffer);
 
-	//	const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
+		const GLuint num_vertices = static_cast<GLuint>(jsm.vertex_data.size()) / components_per_vertex;
 
-	//	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
-	//	glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+		glBufferData(GL_ARRAY_BUFFER, jsm.vertex_data.size() * sizeof(GLfloat), &jsm.vertex_data[0], GL_DYNAMIC_DRAW);
 
-	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-	//		components_per_position,
-	//		GL_FLOAT,
-	//		GL_FALSE,
-	//		components_per_vertex * sizeof(GLfloat),
-	//		NULL);
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+			components_per_position,
+			GL_FLOAT,
+			GL_FALSE,
+			components_per_vertex * sizeof(GLfloat),
+			NULL);
 
-	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
-	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
-	//		components_per_normal,
-	//		GL_FLOAT,
-	//		GL_TRUE,
-	//		components_per_vertex * sizeof(GLfloat),
-	//		(const GLvoid*)(components_per_position * sizeof(GLfloat)));
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
+			components_per_normal,
+			GL_FLOAT,
+			GL_TRUE,
+			components_per_vertex * sizeof(GLfloat),
+			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
 
-	//	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
-	//	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
-	//		components_per_colour,
-	//		GL_FLOAT,
-	//		GL_TRUE,
-	//		components_per_vertex * sizeof(GLfloat),
-	//		(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
+		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
+		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
+			components_per_colour,
+			GL_FLOAT,
+			GL_TRUE,
+			components_per_vertex * sizeof(GLfloat),
+			(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
 
-	//	// Draw 12 vertices per card
-	//	glDrawArrays(GL_TRIANGLES, 0, num_vertices);
-	//}
+		// Draw 12 vertices per card
+		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
