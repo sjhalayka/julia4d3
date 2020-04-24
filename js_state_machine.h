@@ -691,7 +691,7 @@ protected:
 
 		oss.clear();
 		oss.str("");
-		oss << "Writing buffer to file";
+		oss << "Writing buffer to file \"out.stl\"";
 		log_system.add_string_to_contents(oss.str());
 
 		return 1;
