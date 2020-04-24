@@ -161,10 +161,25 @@ public:
 		state = STATE_UNINITIALIZED;
 	}
 
-	bool init(fractal_set_parameters &fsp_in)
+	void reclaim_all_but_vertex_buffer(void)
 	{
+		g0_previous_slice.clear();
+		g0_output_pixels.clear();
+		g0_input_pixels.clear();
+		g0_xyplane0.clear();
+		g0_xyplane1.clear();
+		g2_buffer.clear();
+
+		g1_vertex_set.clear();
+		g1_v.clear();
+
 		triangles.clear();
 		vertices_with_face_normals.clear();
+	}
+
+	bool init(fractal_set_parameters &fsp_in)
+	{
+		reclaim_all_but_vertex_buffer();
 		vertex_data.clear();
 
 		fsp = fsp_in;
@@ -259,6 +274,7 @@ public:
 	{
 		ptr = 0;
 		state = STATE_CANCELLED;
+		reclaim_all_but_vertex_buffer();
 	}
 
 
@@ -615,6 +631,7 @@ protected:
 		{
 			ptr = 0;
 			state = STATE_FINISHED;
+			reclaim_all_but_vertex_buffer();
 			return 0;
 		}
 
@@ -625,6 +642,7 @@ protected:
 		{
 			ptr = 0;
 			state = STATE_UNINITIALIZED;
+			reclaim_all_but_vertex_buffer();
 			return 0;
 		}
 
@@ -784,6 +802,7 @@ protected:
 
 		ptr = 0;
 		state = STATE_FINISHED;
+		reclaim_all_but_vertex_buffer();
 		return 0;
 	}
 
