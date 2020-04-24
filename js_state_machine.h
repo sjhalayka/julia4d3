@@ -131,6 +131,8 @@ typedef int (js_state_machine::* js_state_machine_member_function_pointer)(void)
 #define STATE_G1_STAGE_5 9
 #define STATE_G2_STAGE_0 10
 #define STATE_G2_STAGE_1 11
+#define STATE_G3_STAGE_0 12
+#define STATE_G3_STAGE_1 13
 
 
 
@@ -662,13 +664,74 @@ protected:
 		if (g2_bytes_remaining == 0)
 		{
 			g2_out.close();
-			ptr = 0;
-			state = STATE_FINISHED;
+
+			g3_i0 = 0;
+			ptr = &js_state_machine::g3_stage_0;
+			state = STATE_G3_STAGE_0;
 		}
 
 		return 1;
 	}
 
+	int g3_stage_0(void)
+	{
+		size_t count = 0;
+
+		for (; g3_i0 != triangles.size(); g3_i0++)
+		{
+			if (count == g3_batch_size)
+				return 0;
+			else
+				count++;
+
+			vertex_3 colour(0.0f, 0.8f, 1.0f);
+
+			size_t v0_index = triangles[g3_i0].vertex[0].index;
+			size_t v1_index = triangles[g3_i0].vertex[1].index;
+			size_t v2_index = triangles[g3_i0].vertex[2].index;
+
+			vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+			vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+			vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+
+			vertex_3 v0(triangles[g3_i0].vertex[0].x, triangles[g3_i0].vertex[0].y, triangles[g3_i0].vertex[0].z);
+			vertex_3 v1(triangles[g3_i0].vertex[1].x, triangles[g3_i0].vertex[1].y, triangles[g3_i0].vertex[1].z);
+			vertex_3 v2(triangles[g3_i0].vertex[2].x, triangles[g3_i0].vertex[2].y, triangles[g3_i0].vertex[2].z);
+
+			vertex_data.push_back(v0.x);
+			vertex_data.push_back(v0.y);
+			vertex_data.push_back(v0.z);
+			vertex_data.push_back(v0_fn.x);
+			vertex_data.push_back(v0_fn.y);
+			vertex_data.push_back(v0_fn.z);
+			vertex_data.push_back(colour.x);
+			vertex_data.push_back(colour.y);
+			vertex_data.push_back(colour.z);
+
+			vertex_data.push_back(v1.x);
+			vertex_data.push_back(v1.y);
+			vertex_data.push_back(v1.z);
+			vertex_data.push_back(v1_fn.x);
+			vertex_data.push_back(v1_fn.y);
+			vertex_data.push_back(v1_fn.z);
+			vertex_data.push_back(colour.x);
+			vertex_data.push_back(colour.y);
+			vertex_data.push_back(colour.z);
+
+			vertex_data.push_back(v2.x);
+			vertex_data.push_back(v2.y);
+			vertex_data.push_back(v2.z);
+			vertex_data.push_back(v2_fn.x);
+			vertex_data.push_back(v2_fn.y);
+			vertex_data.push_back(v2_fn.z);
+			vertex_data.push_back(colour.x);
+			vertex_data.push_back(colour.y);
+			vertex_data.push_back(colour.z);
+		}
+
+		ptr = 0;
+		state = STATE_FINISHED;
+	}
 
 
 	float g0_step_size_x = 0, g0_step_size_y = 0, g0_step_size_z = 0;
@@ -702,7 +765,7 @@ protected:
 	char* g2_cp = 0;
 	vector<triangle>::const_iterator g2_i0;
 
-
+	size_t g3_i0;
 
 
 	fractal_set_parameters fsp;
@@ -710,6 +773,7 @@ protected:
 	size_t g1_batch_size = 10000;
 	size_t g2_i0_batch_size = 10000;
 	size_t g2_i1_batch_size = 1048576;
+	size_t g3_batch_size = 10000;
 	size_t state = 0;
 
 
