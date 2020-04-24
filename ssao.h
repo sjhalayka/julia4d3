@@ -721,7 +721,7 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		} while (elapsed.count() < 1000); // Lower this amount to get more responsiveness
+		} while (elapsed.count() < 333); // Lower this amount to get more responsiveness
 	}
 
 	glutPostRedisplay();
