@@ -826,7 +826,7 @@ protected:
 	js_state_machine_member_function_pointer ptr = 0;
 	size_t g1_batch_size = 10000;
 	size_t g2_i0_batch_size = 10000;
-	size_t g2_i1_batch_size = 1048576;
+	size_t g2_i1_batch_size = 10*1024*1024;
 	size_t g3_batch_size = 10000;
 	size_t state = 0;
 
