@@ -69,6 +69,7 @@ using namespace marching_cubes;
 
 fractal_set_parameters p;
 js_state_machine jsm;
+logging_system log_system;
 
 std::chrono::high_resolution_clock::time_point start_time, end_time;
 
@@ -648,7 +649,7 @@ void generate_cancel_button_func(int control)
 			return;
 		}
 
-		if (false == jsm.init(p))
+		if (false == jsm.init(p, &log_system))
 			return;
 
 		generate_button = false;
