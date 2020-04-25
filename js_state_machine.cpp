@@ -435,7 +435,7 @@ void js_state_machine::g0_draw(void)
 
 		oss.clear();
 		oss.str("");
-		oss << "Generagting vertex set";
+		oss << "Generating vertex set";
 		if (0 != log_system)
 			log_system->add_string_to_contents(oss.str());
 
