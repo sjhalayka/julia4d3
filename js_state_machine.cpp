@@ -142,7 +142,13 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 
 	if (false == eqparser.setup(fsp.equation_text, error_string, C))
 	{
-		cout << "eqparser setup error: " << error_string << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Equation parser setup error: " << error_string;
+
+		if (0 != log_system)
+			log_system->add_string_to_contents(oss.str());
+
 		return false;
 	}
 
@@ -154,7 +160,13 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 
 	if (false == compile_and_link_compute_shader("julia.cs.glsl", g0_compute_shader_program))
 	{
-		cout << "Compute shader compile error" << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Compute shader compile error";
+
+		if (0 != log_system)
+			log_system->add_string_to_contents(oss.str());
+
 		return false;
 	}
 
