@@ -2940,16 +2940,24 @@ bool quaternion_julia_set_equation_parser::compile_ordered_terms(const vector<te
 	return true;
 }
 
-string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsigned int x_res, short unsigned int y_res)
+string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsigned int x_res, short unsigned int y_res, short unsigned int max_iterations)
 {
 	string code;
+	ostringstream oss;
 
 	code += "#version 430 core\n";
-	code += "layout(local_size_x = 1, local_size_y = 1) in;\n";
+	oss << "layout(local_size_x = " << x_res << ", local_size_y = " << y_res << ") in;\n";
+	code += oss.str();
 	code += "layout(binding = 0, r32f) writeonly uniform image2D output_image;\n";
 	code += "layout(binding = 1, rgba32f) readonly uniform image2D input_image;\n";
 	code += "uniform vec4 c;\n";
-	code += "uniform int max_iterations;\n";
+	
+	oss.clear();
+	oss.str("");
+	oss << "#define max_iterations " << max_iterations << "\n";
+	code += oss.str();
+
+//	code += "uniform int max_iterations;\n";
 	code += "uniform float threshold;\n";
 	code += "\n";
 	code += q_math.emit_function_definitions_fragment_shader_code();

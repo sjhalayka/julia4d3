@@ -146,7 +146,7 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 		return false;
 	}
 
-	string code = eqparser.emit_compute_shader_code(fsp.resolution, fsp.resolution);
+	string code = eqparser.emit_compute_shader_code(1, 1, fsp.max_iterations);
 
 	ofstream of("julia.cs.glsl");
 	of << code;
@@ -269,7 +269,6 @@ void js_state_machine::g0_draw(void)
 	// Pass in the input image and quaternion Julia set parameters as uniforms
 	glUniform1i(glGetUniformLocation(g0_compute_shader_program, "input_image"), 1); // use GL_TEXTURE1
 	glUniform4f(glGetUniformLocation(g0_compute_shader_program, "c"), fsp.C_x, fsp.C_y, fsp.C_z, fsp.C_w);
-	glUniform1i(glGetUniformLocation(g0_compute_shader_program, "max_iterations"), fsp.max_iterations);
 	glUniform1f(glGetUniformLocation(g0_compute_shader_program, "threshold"), fsp.infinity);
 
 	// Run compute shader
