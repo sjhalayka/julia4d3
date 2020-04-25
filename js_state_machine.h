@@ -74,11 +74,12 @@ public:
 	bool init(fractal_set_parameters& fsp_in, logging_system *ls);
 	void cancel(void);
 	void proceed(void);
+
+protected:
 	ostringstream oss;
 	vector<triangle> triangles;
 	vector<vertex_3_with_normal> vertices_with_face_normals;
 
-protected:
 	void reclaim_all_but_vertex_buffer(void);
 	void g0_draw(void);
 	int g0_stage_0(void);

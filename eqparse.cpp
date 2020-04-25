@@ -2957,7 +2957,6 @@ string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsi
 	oss << "#define max_iterations " << max_iterations << "\n";
 	code += oss.str();
 
-//	code += "uniform int max_iterations;\n";
 	code += "uniform float threshold;\n";
 	code += "\n";
 	code += q_math.emit_function_definitions_fragment_shader_code();
