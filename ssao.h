@@ -222,7 +222,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "pedestal y start is not a real number";
+		oss << "Pedestal y start is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -241,7 +241,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "pedestal y end is not a real number";
+		oss << "Pedestal y end is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -258,7 +258,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "pedestal y start must be between 0 and 1";
+		oss << "Pedestal y start must be between 0 and 1";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -270,7 +270,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "pedestal y end must be between 0 and 1";
+		oss << "Pedestal y end must be between 0 and 1";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -282,7 +282,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "Y start must be smaller than y_end";
+		oss << "Pedestal y start must be smaller than pedestal y end";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -299,7 +299,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "c.x  is not a real number";
+		oss << "C.x is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -318,7 +318,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "c.y  is not a real number";
+		oss << "C.y is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -337,7 +337,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "c.z  is not a real number";
+		oss << "C.z is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -356,7 +356,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "c.w  is not a real number";
+		oss << "C.w is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -375,7 +375,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "x min  is not a real number";
+		oss << "x min is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -394,7 +394,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "y min  is not a real number";
+		oss << "y min is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -413,10 +413,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "z min  is not a real number";
+		oss << "z min is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
-
 
 		return false;
 	}
@@ -435,7 +434,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "x max  is not a real number";
+		oss << "x max is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -454,7 +453,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "y max  is not a real number";
+		oss << "y max is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -473,7 +472,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "z max  is not a real number";
+		oss << "z max is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -528,7 +527,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "z.w  is not a real number";
+		oss << "Z.w is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -548,7 +547,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "infinity  is not a real number";
+		oss << "Infinity is not a real number";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -568,7 +567,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "max iterations is not an unsigned int";
+		oss << "Max iterations is not an unsigned int";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -587,7 +586,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	{
 		oss.clear();
 		oss.str("");
-		oss << "resolution is not an unsigned int";
+		oss << "Resolution is not an unsigned int";
 
 		log_system.add_string_to_contents(oss.str());
 
@@ -603,7 +602,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		{
 			oss.clear();
 			oss.str("");
-			oss << "resolution must be greater than or equal to 3";
+			oss << "Resolution must be greater than or equal to 3";
 
 			log_system.add_string_to_contents(oss.str());
 
