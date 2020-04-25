@@ -69,8 +69,11 @@ class js_state_machine
 public:
 	vector<float> vertex_data;
 
-	size_t get_state(void);
 	js_state_machine(void);
+
+	~js_state_machine(void);
+
+	size_t get_state(void);
 	bool init(fractal_set_parameters& fsp_in, logging_system *ls);
 	void cancel(void);
 	void proceed(void);

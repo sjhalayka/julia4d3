@@ -2945,7 +2945,7 @@ string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsi
 	string code;
 	ostringstream oss;
 
-	code += "asldkmdmslklkds#version 430 core\n";
+	code += "#version 430 core\n";
 	oss << "layout(local_size_x = " << x_res << ", local_size_y = " << y_res << ") in;\n";
 	code += oss.str();
 	code += "layout(binding = 0, r32f) writeonly uniform image2D output_image;\n";
@@ -2982,11 +2982,11 @@ string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsi
 	code += "\n";
 	code += "void main()\n";
 	code += "{\n";
-	code += "const ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);\n";
-	code += "vec4 z = imageLoad(input_image, pixel_coords);\n";
-	code += "const float magnitude = iterate(z);\n";
-	code += "const vec4 output_pixel = vec4(magnitude, 0, 0, 0);\n";
-	code += "imageStore(output_image, pixel_coords, output_pixel);\n";
+	code += "\tconst ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);\n";
+	code += "\tvec4 z = imageLoad(input_image, pixel_coords);\n";
+	code += "\tconst float magnitude = iterate(z);\n";
+	code += "\tconst vec4 output_pixel = vec4(magnitude, 0, 0, 0);\n";
+	code += "\timageStore(output_image, pixel_coords, output_pixel);\n";
 	code += "}\n";
 
 

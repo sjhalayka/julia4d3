@@ -123,6 +123,18 @@ js_state_machine::js_state_machine(void)
 	log_system = 0;
 }
 
+js_state_machine::~js_state_machine(void)
+{
+	if (glIsProgram(g0_compute_shader_program))
+		glDeleteProgram(g0_compute_shader_program);
+
+	if (glIsTexture(g0_tex_output))
+		glDeleteTextures(1, &g0_tex_output);
+
+	if (glIsTexture(g0_tex_input))
+		glDeleteTextures(1, &g0_tex_input);
+}
+
 void js_state_machine::reclaim_all_but_vertex_buffer(void)
 {
 	g0_previous_slice.clear();
