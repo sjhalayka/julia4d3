@@ -810,26 +810,26 @@ static inline float random_float()
 }
 
 
-void load_shaders()
+bool load_shaders(void)
 {
 	// Set up shader
 	if (false == render.init("render.vs.glsl", "render.fs.glsl"))
 	{
 		cout << "Could not load render shader" << endl;
-		return;
+		return false;
 	}
 
 	if (false == flat.init("flat.vs.glsl", "flat.fs.glsl"))
 	{
 		cout << "Could not load flat shader" << endl;
-		return;
+		return false;
 	}
 
 	// Set up shader
 	if (false == ssao.init("ssao.vs.glsl", "ssao.fs.glsl"))
 	{
 		cout << "Could not load SSAO shader" << endl;
-		return;
+		return false;
 	}
 
 	uniforms.render.mv_matrix = glGetUniformLocation(render.get_program(), "mv_matrix");
@@ -846,6 +846,8 @@ void load_shaders()
 	uniforms.flat.mv_matrix = glGetUniformLocation(flat.get_program(), "mv_matrix");
 	uniforms.flat.proj_matrix = glGetUniformLocation(flat.get_program(), "proj_matrix");
 	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
+
+	return true;
 }
 
 
@@ -989,7 +991,6 @@ bool init(void)
 
 	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
 
-
 	BMP font;
 
 	if (false == font.load("font.bmp"))
@@ -1111,7 +1112,8 @@ bool init(void)
 	randomize_points = true;
 	point_count = 10;
 
-	load_shaders();
+	if (false == load_shaders())
+		return false;
 
 	glGenFramebuffers(1, &render_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
