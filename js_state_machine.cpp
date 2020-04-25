@@ -2,14 +2,19 @@
 
 
 
-bool compile_and_link_compute_shader(const char* const file_name, GLuint& program)
+bool compile_and_link_compute_shader(const char* const file_name, GLuint& program, logging_system& ls)
 {
 	// Read in compute shader contents
 	ifstream infile(file_name);
+	ostringstream oss;
 
 	if (infile.fail())
 	{
-		cout << "Could not open compute shader source file " << file_name << endl;
+		oss.clear();
+		oss.str("");
+		oss << "Could not open compute shader source file " << file_name;
+		ls.add_string_to_contents(oss.str());
+
 		return false;
 	}
 
@@ -46,7 +51,17 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 
 		status_string += '\n';
 
-		cout << status_string << endl;
+		vector<string> substrings = stl_str_tok("\n", status_string);
+
+		for (size_t i = 0; i < substrings.size(); i++)
+		{
+			if ("" == substrings[i])
+				ls.add_string_to_contents(" ");
+			else
+				ls.add_string_to_contents(substrings[i]);
+		}
+
+//		cout << status_string << endl;
 
 		glDeleteShader(shader);
 
@@ -71,7 +86,15 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 
 		status_string += '\n';
 
-		cout << status_string << endl;
+		vector<string> substrings = stl_str_tok("\n", status_string);
+
+		for (size_t i = 0; i < substrings.size(); i++)
+		{
+			if ("" == substrings[i])
+				ls.add_string_to_contents(" ");
+			else
+				ls.add_string_to_contents(substrings[i]);
+		}
 
 		glDetachShader(program, shader);
 		glDeleteShader(shader);
@@ -158,7 +181,7 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 	of << code;
 	of.close();
 
-	if (false == compile_and_link_compute_shader("julia.cs.glsl", g0_compute_shader_program))
+	if (false == compile_and_link_compute_shader("julia.cs.glsl", g0_compute_shader_program, *ls))
 	{
 		oss.clear();
 		oss.str("");

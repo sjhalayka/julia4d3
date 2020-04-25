@@ -34,7 +34,7 @@ using std::ostringstream;
 
 
 
-bool compile_and_link_compute_shader(const char* const file_name, GLuint& program);
+bool compile_and_link_compute_shader(const char* const file_name, GLuint& program, logging_system &ls);
 
 
 

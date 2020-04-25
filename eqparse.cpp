@@ -2945,7 +2945,7 @@ string quaternion_julia_set_equation_parser::emit_compute_shader_code(short unsi
 	string code;
 	ostringstream oss;
 
-	code += "#version 430 core\n";
+	code += "asldkmdmslklkds#version 430 core\n";
 	oss << "layout(local_size_x = " << x_res << ", local_size_y = " << y_res << ") in;\n";
 	code += oss.str();
 	code += "layout(binding = 0, r32f) writeonly uniform image2D output_image;\n";
