@@ -649,7 +649,17 @@ void generate_cancel_button_func(int control)
 		}
 
 		if (false == jsm.init(p, &log_system))
+		{
+			ostringstream oss;
+
+			oss.clear();
+			oss.str("");
+			oss << "Aborting";
+
+			log_system.add_string_to_contents(oss.str());
+
 			return;
+		}
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
