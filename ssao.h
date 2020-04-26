@@ -1402,8 +1402,8 @@ void display_func(void)
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 	}
 
-	vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
-	glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
+	//vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
+	//glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1424,80 +1424,80 @@ void display_func(void)
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	float depth_min = FLT_MAX, depth_max = FLT_MIN;
+	//float depth_min = FLT_MAX, depth_max = FLT_MIN;
 
-	for (size_t i = 0; i < win_x; i++)
-	{
-		for (size_t j = 0; j < win_y; j++)
-		{
-			size_t depth_index = i * win_y + j;
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
+	//		size_t depth_index = i * win_y + j;
 
-			float val = depth_pixels[depth_index];
+	//		float val = depth_pixels[depth_index];
 
-			if (val < depth_min)
-				depth_min = val;
+	//		if (val < depth_min)
+	//			depth_min = val;
 
-			if (val > depth_max)
-				depth_max = val;
-		}
-	}
+	//		if (val > depth_max)
+	//			depth_max = val;
+	//	}
+	//}
 
-	for (size_t i = 0; i < win_x; i++)
-	{
-		for (size_t j = 0; j < win_y; j++)
-		{
-			size_t depth_index = i * win_y + j;
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
+	//		size_t depth_index = i * win_y + j;
 
-			float val = depth_pixels[depth_index];
+	//		float val = depth_pixels[depth_index];
 
-			val = val - depth_min;
-			val *= depth_max / (depth_max - depth_min);
+	//		val = val - depth_min;
+	//		val *= depth_max / (depth_max - depth_min);
 
-			depth_pixels[depth_index] = val;
-		}
-	}
+	//		depth_pixels[depth_index] = val;
+	//	}
+	//}
 
 	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	//glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	vector<unsigned char> fbpixels_blurred = fbpixels;
-	vector<unsigned char> target_pixels = fbpixels;
+	//vector<unsigned char> fbpixels_blurred = fbpixels;
+	//vector<unsigned char> target_pixels = fbpixels;
 
-	blur_image(fbpixels_blurred, win_x, win_y, 4, 30);
+	//blur_image(fbpixels_blurred, win_x, win_y, 4, 30);
 
-	for (size_t i = 0; i < win_x; i++)
-	{
-		for (size_t j = 0; j < win_y; j++)
-		{
-			size_t depth_index = i * win_y + j;
-			size_t fb_index = 4 * depth_index;
-			
-			float t = depth_pixels[depth_index];
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
+	//		size_t depth_index = i * win_y + j;
+	//		size_t fb_index = 4 * depth_index;
+	//		
+	//		float t = depth_pixels[depth_index];
 
-			float r0 = fbpixels[fb_index];
-			float g0 = fbpixels[fb_index + 1];
-			float b0 = fbpixels[fb_index + 2];
+	//		float r0 = fbpixels[fb_index];
+	//		float g0 = fbpixels[fb_index + 1];
+	//		float b0 = fbpixels[fb_index + 2];
 
-			float r1 = fbpixels_blurred[fb_index];
-			float g1 = fbpixels_blurred[fb_index + 1];
-			float b1 = fbpixels_blurred[fb_index + 2];
+	//		float r1 = fbpixels_blurred[fb_index];
+	//		float g1 = fbpixels_blurred[fb_index + 1];
+	//		float b1 = fbpixels_blurred[fb_index + 2];
 
-			float r2 = (1.0f - t) * r0 + t * r1;
-			float g2 = (1.0f - t) * g0 + t * g1;
-			float b2 = (1.0f - t) * b0 + t * b1;
+	//		float r2 = (1.0f - t) * r0 + t * r1;
+	//		float g2 = (1.0f - t) * g0 + t * g1;
+	//		float b2 = (1.0f - t) * b0 + t * b1;
 
-			//unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
+	//		//unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
 
-			target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
-			target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
-			target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
-			target_pixels[fb_index + 3] = 255;
-		}
-	}
+	//		target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
+	//		target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
+	//		target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
+	//		target_pixels[fb_index + 3] = 255;
+	//	}
+	//}
 
-	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
+	//glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
 
 
 
