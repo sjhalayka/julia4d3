@@ -1199,16 +1199,48 @@ void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, siz
 			size_t left_index = num_channels * (j * width + (i + 1));
 			size_t right_index = num_channels * (j * width + (i - 1));
 
+			size_t upper_left_index = num_channels * ((j + 1) * width + (i + 1));
+			size_t upper_right_index = num_channels * ((j + 1) * width + (i - 1));
+			size_t lower_left_index = num_channels * ((j - 1) * width + (i + 1));
+			size_t lower_right_index = num_channels * ((j - 1) * width + (i - 1));
+
 			float r = 0, g = 0, b = 0, a = 0;
 
-			r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
-			r /= 5.0;
+			r = static_cast<float>(read_p[centre_index]) +
+				static_cast<float>(read_p[up_index]) +
+				static_cast<float>(read_p[down_index]) +
+				static_cast<float>(read_p[left_index]) +
+				static_cast<float>(read_p[right_index]) +
+				static_cast<float>(read_p[upper_left_index]) +
+				static_cast<float>(read_p[upper_right_index]) +
+				static_cast<float>(read_p[lower_left_index]) +
+				static_cast<float>(read_p[lower_left_index]);
+\
+			r /= 9.0;
 
-			g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
-			g /= 5.0;
+			g = static_cast<float>(read_p[centre_index + 1]) +
+				static_cast<float>(read_p[up_index + 1]) +
+				static_cast<float>(read_p[down_index + 1]) +
+				static_cast<float>(read_p[left_index + 1]) +
+				static_cast<float>(read_p[right_index + 1]) +
+				static_cast<float>(read_p[upper_left_index + 1]) +
+				static_cast<float>(read_p[upper_right_index + 1]) +
+				static_cast<float>(read_p[lower_left_index + 1]) +
+				static_cast<float>(read_p[lower_left_index + 1]);
 
-			b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
-			b /= 5.0;
+			g /= 9.0;
+
+			b = static_cast<float>(read_p[centre_index + 2]) +
+				static_cast<float>(read_p[up_index + 2]) +
+				static_cast<float>(read_p[down_index + 2]) +
+				static_cast<float>(read_p[left_index + 2]) +
+				static_cast<float>(read_p[right_index + 2]) +
+				static_cast<float>(read_p[upper_left_index + 2]) +
+				static_cast<float>(read_p[upper_right_index + 2]) +
+				static_cast<float>(read_p[lower_left_index + 2]) +
+				static_cast<float>(read_p[lower_left_index + 2]);
+
+			b /= 9.0;
 
 			a = 255.0f;
 
