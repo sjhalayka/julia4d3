@@ -96,6 +96,8 @@ GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
 
+GLUI_Checkbox* dof_checkbox;
+
 
 GLUI_EditText* pedestal_y_start_edittext;
 GLUI_EditText* pedestal_y_end_edittext;
@@ -1182,50 +1184,46 @@ bool init(void)
 }
 
 
-void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels, size_t num_iterations)
+void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels)
 {
-	for (size_t n = 0; n < num_iterations; n++)
+	const vector<unsigned char> read_p = write_p;
+
+	for (size_t i = 1; i < (width - 1); i++)
 	{
-		const vector<unsigned char> read_p = write_p;
-
-		for (size_t i = 1; i < (width - 1); i++)
+		for (size_t j = 1; j < (height - 1); j++)
 		{
-			for (size_t j = 1; j < (height - 1); j++)
-			{
-				size_t centre_index = num_channels * (j * width + i);
+			size_t centre_index = num_channels * (j * width + i);
 
-				size_t up_index = num_channels * ((j + 1) * width + i);
-				size_t down_index = num_channels * ((j - 1) * width + i);
-				size_t left_index = num_channels * (j * width + (i + 1));
-				size_t right_index = num_channels * (j * width + (i - 1));
+			size_t up_index = num_channels * ((j + 1) * width + i);
+			size_t down_index = num_channels * ((j - 1) * width + i);
+			size_t left_index = num_channels * (j * width + (i + 1));
+			size_t right_index = num_channels * (j * width + (i - 1));
 
-				float r = 0, g = 0, b = 0, a = 0;
+			float r = 0, g = 0, b = 0, a = 0;
 
-				r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
-				r /= 5.0;
+			r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
+			r /= 5.0;
 
-				g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
-				g /= 5.0;
+			g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
+			g /= 5.0;
 
-				b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
-				b /= 5.0;
+			b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
+			b /= 5.0;
 
-				a = 255.0f;
+			a = 255.0f;
 
-				write_p[centre_index + 0] = static_cast<unsigned char>(r);
-				write_p[centre_index + 1] = static_cast<unsigned char>(g);
-				write_p[centre_index + 2] = static_cast<unsigned char>(b);
-				write_p[centre_index + 3] = static_cast<unsigned char>(a);
-			}
+			write_p[centre_index + 0] = static_cast<unsigned char>(r);
+			write_p[centre_index + 1] = static_cast<unsigned char>(g);
+			write_p[centre_index + 2] = static_cast<unsigned char>(b);
+			write_p[centre_index + 3] = static_cast<unsigned char>(a);
 		}
 	}
+
 }
 
 
 void display_func(void)
 {
-
-
 	glClearColor(1, 0.5f, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1235,7 +1233,7 @@ void display_func(void)
 	static const GLfloat one = 1.0f;
 	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-	glViewport(0, 0, win_x, win_y);
+	//glViewport(0, 0, win_x, win_y);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
 	glEnable(GL_DEPTH_TEST);
@@ -1402,8 +1400,12 @@ void display_func(void)
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 	}
 
-	//vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
-	//glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
+	vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
+
+	bool do_dof = dof_checkbox->get_int_val();
+	
+	if(do_dof)
+		glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1424,83 +1426,85 @@ void display_func(void)
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	//float depth_min = FLT_MAX, depth_max = FLT_MIN;
 
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t depth_index = i * win_y + j;
+	if (do_dof)
+	{
+		float depth_min = FLT_MAX, depth_max = FLT_MIN;
 
-	//		float val = depth_pixels[depth_index];
+		for (size_t i = 0; i < win_x; i++)
+		{
+			for (size_t j = 0; j < win_y; j++)
+			{
+				size_t depth_index = i * win_y + j;
 
-	//		if (val < depth_min)
-	//			depth_min = val;
+				float val = depth_pixels[depth_index];
 
-	//		if (val > depth_max)
-	//			depth_max = val;
-	//	}
-	//}
+				if (val < depth_min)
+					depth_min = val;
 
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t depth_index = i * win_y + j;
+				if (val > depth_max)
+					depth_max = val;
+			}
+		}
 
-	//		float val = depth_pixels[depth_index];
+		for (size_t i = 0; i < win_x; i++)
+		{
+			for (size_t j = 0; j < win_y; j++)
+			{
+				size_t depth_index = i * win_y + j;
 
-	//		val = val - depth_min;
-	//		val *= depth_max / (depth_max - depth_min);
+				float val = depth_pixels[depth_index];
 
-	//		depth_pixels[depth_index] = val;
-	//	}
-	//}
+				val = val - depth_min;
+				val *= depth_max / (depth_max - depth_min);
 
-	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	//glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	//glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+				depth_pixels[depth_index] = val;
+			}
+		}
 
-	//vector<unsigned char> fbpixels_blurred = fbpixels;
-	//vector<unsigned char> target_pixels = fbpixels;
+		vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
+		glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
-	//blur_image(fbpixels_blurred, win_x, win_y, 4, 30);
+		vector<unsigned char> fbpixels_blurred = fbpixels;
+		vector<unsigned char> target_pixels = fbpixels;
 
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t depth_index = i * win_y + j;
-	//		size_t fb_index = 4 * depth_index;
-	//		
-	//		float t = depth_pixels[depth_index];
+		for (size_t i = 0; i < 10; i++)
+			blur_image(fbpixels_blurred, win_x, win_y, 4);
 
-	//		float r0 = fbpixels[fb_index];
-	//		float g0 = fbpixels[fb_index + 1];
-	//		float b0 = fbpixels[fb_index + 2];
+		for (size_t i = 0; i < win_x; i++)
+		{
+			for (size_t j = 0; j < win_y; j++)
+			{
+				size_t depth_index = i * win_y + j;
+				size_t fb_index = 4 * depth_index;
 
-	//		float r1 = fbpixels_blurred[fb_index];
-	//		float g1 = fbpixels_blurred[fb_index + 1];
-	//		float b1 = fbpixels_blurred[fb_index + 2];
+				float t = depth_pixels[depth_index];
 
-	//		float r2 = (1.0f - t) * r0 + t * r1;
-	//		float g2 = (1.0f - t) * g0 + t * g1;
-	//		float b2 = (1.0f - t) * b0 + t * b1;
+				t = sqrt(t * t);
 
-	//		//unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
+				float r0 = fbpixels[fb_index];
+				float g0 = fbpixels[fb_index + 1];
+				float b0 = fbpixels[fb_index + 2];
 
-	//		target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
-	//		target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
-	//		target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
-	//		target_pixels[fb_index + 3] = 255;
-	//	}
-	//}
+				float r1 = fbpixels_blurred[fb_index];
+				float g1 = fbpixels_blurred[fb_index + 1];
+				float b1 = fbpixels_blurred[fb_index + 2];
 
-	//glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
+				float r2 = (1.0f - t) * r0 + t * r1;
+				float g2 = (1.0f - t) * g0 + t * g1;
+				float b2 = (1.0f - t) * b0 + t * b1;
 
+				target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
+				target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
+				target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
+				target_pixels[fb_index + 3] = 255;
+			}
+		}
 
-
+		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
+	}
 
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
@@ -1536,21 +1540,6 @@ void display_func(void)
 }
 
 
-void reshape_func(int width, int height)
-{
-	win_x = width;
-	win_y = height;
-
-	if (win_x < 1)
-		win_x = 1;
-
-	if (win_y < 1)
-		win_y = 1;
-
-	glutSetWindow(win_id);
-	glutReshapeWindow(win_x, win_y);
-	glViewport(0, 0, win_x, win_y);
-}
 
 void keyboard_func(unsigned char key, int x, int y)
 {
@@ -1643,6 +1632,9 @@ void setup_gui(void)
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
+
+	dof_checkbox = glui->add_checkbox("Draw DOF");
+	dof_checkbox->set_int_val(1);
 
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
