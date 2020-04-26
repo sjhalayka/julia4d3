@@ -1182,38 +1182,41 @@ bool init(void)
 }
 
 
-void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels)
+void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels, size_t num_iterations)
 {
-	const vector<unsigned char> read_p = write_p;
-
-	for (size_t i = 1; i < (width - 1); i++)
+	for (size_t n = 0; n < num_iterations; n++)
 	{
-		for (size_t j = 1; j < (height - 1); j++)
+		const vector<unsigned char> read_p = write_p;
+
+		for (size_t i = 1; i < (width - 1); i++)
 		{
-			size_t centre_index = num_channels*(j * width + i);
+			for (size_t j = 1; j < (height - 1); j++)
+			{
+				size_t centre_index = num_channels * (j * width + i);
 
-			size_t up_index = num_channels * ((j+1) * width + i);
-			size_t down_index = num_channels * ((j - 1) * width + i);
-			size_t left_index = num_channels * (j * width + (i+1));
-			size_t right_index = num_channels * (j * width + (i-1));
+				size_t up_index = num_channels * ((j + 1) * width + i);
+				size_t down_index = num_channels * ((j - 1) * width + i);
+				size_t left_index = num_channels * (j * width + (i + 1));
+				size_t right_index = num_channels * (j * width + (i - 1));
 
-			float r = 0, g = 0, b = 0, a = 0;
+				float r = 0, g = 0, b = 0, a = 0;
 
-			r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
-			r /= 5.0;
+				r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
+				r /= 5.0;
 
-			g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
-			g /= 5.0;
+				g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
+				g /= 5.0;
 
-			b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
-			b /= 5.0;
+				b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
+				b /= 5.0;
 
-			a = 255.0f;
+				a = 255.0f;
 
-			write_p[centre_index + 0] = static_cast<unsigned char>(r);
-			write_p[centre_index + 1] = static_cast<unsigned char>(g);
-			write_p[centre_index + 2] = static_cast<unsigned char>(b);
-			write_p[centre_index + 3] = static_cast<unsigned char>(a);
+				write_p[centre_index + 0] = static_cast<unsigned char>(r);
+				write_p[centre_index + 1] = static_cast<unsigned char>(g);
+				write_p[centre_index + 2] = static_cast<unsigned char>(b);
+				write_p[centre_index + 3] = static_cast<unsigned char>(a);
+			}
 		}
 	}
 }
@@ -1460,28 +1463,41 @@ void display_func(void)
 	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
 	vector<unsigned char> fbpixels_blurred = fbpixels;
+	vector<unsigned char> target_pixels = fbpixels;
 
-	blur_image(fbpixels_blurred, win_x, win_y, 4);
-	blur_image(fbpixels_blurred, win_x, win_y, 4); 
-	blur_image(fbpixels_blurred, win_x, win_y, 4);
+	blur_image(fbpixels_blurred, win_x, win_y, 4, 30);
 
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t depth_index = i * win_y + j;
-	//		size_t fb_index = 4 * depth_index;
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+			size_t depth_index = i * win_y + j;
+			size_t fb_index = 4 * depth_index;
+			
+			float t = depth_pixels[depth_index];
 
-	//		unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
+			float r0 = fbpixels[fb_index];
+			float g0 = fbpixels[fb_index + 1];
+			float b0 = fbpixels[fb_index + 2];
 
-	//		fbpixels[fb_index + 0] = val;
-	//		fbpixels[fb_index + 1] = val;
-	//		fbpixels[fb_index + 2] = val;
-	//		fbpixels[fb_index + 3] = 255;
-	//	}
-//	}
+			float r1 = fbpixels_blurred[fb_index];
+			float g1 = fbpixels_blurred[fb_index + 1];
+			float b1 = fbpixels_blurred[fb_index + 2];
 
-	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels_blurred[0]);
+			float r2 = (1.0f - t) * r0 + t * r1;
+			float g2 = (1.0f - t) * g0 + t * g1;
+			float b2 = (1.0f - t) * b0 + t * b1;
+
+			//unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
+
+			target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
+			target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
+			target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
+			target_pixels[fb_index + 3] = 255;
+		}
+	}
+
+	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
 
 
 
