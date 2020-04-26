@@ -1182,6 +1182,41 @@ bool init(void)
 }
 
 
+void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels)
+{
+	const vector<unsigned char> read_p = write_p;
+
+	for (size_t i = 1; i < (width - 1); i++)
+	{
+		for (size_t j = 1; j < (height - 1); j++)
+		{
+			size_t centre_index = num_channels*(j * width + i);
+
+			size_t up_index = num_channels * ((j+1) * width + i);
+			size_t down_index = num_channels * ((j - 1) * width + i);
+			size_t left_index = num_channels * (j * width + (i+1));
+			size_t right_index = num_channels * (j * width + (i-1));
+
+			float r = 0, g = 0, b = 0, a = 0;
+
+			r = static_cast<float>(read_p[centre_index]) + static_cast<float>(read_p[up_index]) + static_cast<float>(read_p[down_index]) + static_cast<float>(read_p[left_index]) + static_cast<float>(read_p[right_index]);
+			r /= 5.0;
+
+			g = static_cast<float>(read_p[centre_index + 1]) + static_cast<float>(read_p[up_index + 1]) + static_cast<float>(read_p[down_index + 1]) + static_cast<float>(read_p[left_index + 1]) + static_cast<float>(read_p[right_index + 1]);
+			g /= 5.0;
+
+			b = static_cast<float>(read_p[centre_index + 2]) + static_cast<float>(read_p[up_index + 2]) + static_cast<float>(read_p[down_index + 2]) + static_cast<float>(read_p[left_index + 2]) + static_cast<float>(read_p[right_index + 2]);
+			b /= 5.0;
+
+			a = 255.0f;
+
+			write_p[centre_index + 0] = static_cast<unsigned char>(r);
+			write_p[centre_index + 1] = static_cast<unsigned char>(g);
+			write_p[centre_index + 2] = static_cast<unsigned char>(b);
+			write_p[centre_index + 3] = static_cast<unsigned char>(a);
+		}
+	}
+}
 
 
 void display_func(void)
@@ -1364,6 +1399,9 @@ void display_func(void)
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 	}
 
+	vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
+	glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glUseProgram(ssao.get_program());
@@ -1383,6 +1421,71 @@ void display_func(void)
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
+	float depth_min = FLT_MAX, depth_max = FLT_MIN;
+
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+			size_t depth_index = i * win_y + j;
+
+			float val = depth_pixels[depth_index];
+
+			if (val < depth_min)
+				depth_min = val;
+
+			if (val > depth_max)
+				depth_max = val;
+		}
+	}
+
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+			size_t depth_index = i * win_y + j;
+
+			float val = depth_pixels[depth_index];
+
+			val = val - depth_min;
+			val *= depth_max / (depth_max - depth_min);
+
+			depth_pixels[depth_index] = val;
+		}
+	}
+
+	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+	vector<unsigned char> fbpixels_blurred = fbpixels;
+
+	blur_image(fbpixels_blurred, win_x, win_y, 4);
+	blur_image(fbpixels_blurred, win_x, win_y, 4); 
+	blur_image(fbpixels_blurred, win_x, win_y, 4);
+
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
+	//		size_t depth_index = i * win_y + j;
+	//		size_t fb_index = 4 * depth_index;
+
+	//		unsigned char val = static_cast<unsigned char>(depth_pixels[depth_index] * 255.0f);
+
+	//		fbpixels[fb_index + 0] = val;
+	//		fbpixels[fb_index + 1] = val;
+	//		fbpixels[fb_index + 2] = val;
+	//		fbpixels[fb_index + 3] = 255;
+	//	}
+//	}
+
+	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels_blurred[0]);
+
+
+
+
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
@@ -1395,11 +1498,11 @@ void display_func(void)
 		text_colour.b = 255;
 
 		vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
-
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glPixelStorei(GL_PACK_ALIGNMENT, 1);
 		glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 
 		// Do anything you like here... for instance, use OpenCV for convolution
-
 
 		for (size_t i = 0; i < log_system.get_contents_size(); i++)
 		{
@@ -1408,7 +1511,6 @@ void display_func(void)
 			print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
 			char_y_pos += 20;
 		}
-
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
