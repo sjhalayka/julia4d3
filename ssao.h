@@ -773,13 +773,14 @@ void myGlutIdle(void)
 		std::chrono::high_resolution_clock::time_point compute_start_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float, std::milli> elapsed;
 
+		// Do calculations in bursts
 		do
 		{
 			jsm.proceed();
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		} while (elapsed.count() < jsm.fsp.burst_length); // Lower this amount to get more responsiveness
+		} while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness
 	}
 
 	glutPostRedisplay();
@@ -1702,11 +1703,11 @@ void setup_gui(void)
 
 	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = sin(Z) + C*sin(Z)"), 3, control_cb);
 	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
-	equation_edittext->set_w(150);
+	equation_edittext->set_w(200);
 
 	glui->add_separator();
 	
-	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst:"), 0, const_cast<char*>("333"), 3, control_cb);
+	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst (ms):"), 0, const_cast<char*>("333"), 3, control_cb);
 	burst_length_edittext->set_text("333");
 
 	glui->add_separator();

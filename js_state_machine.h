@@ -68,7 +68,11 @@ class js_state_machine
 {
 public:
 	vector<float> vertex_data;
-	fractal_set_parameters fsp;
+
+	size_t get_burst_length(void)
+	{
+		return fsp.burst_length;
+	}
 
 	js_state_machine(void);
 
@@ -83,6 +87,7 @@ protected:
 	ostringstream oss;
 	vector<triangle> triangles;
 	vector<vertex_3_with_normal> vertices_with_face_normals;
+	fractal_set_parameters fsp;
 
 	void reclaim_all_but_vertex_buffer(void);
 	void g0_draw(void);
