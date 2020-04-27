@@ -652,13 +652,6 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		}
 	}
 
-
-
-
-
-
-
-
 	return true;
 }
 
@@ -713,7 +706,6 @@ void generate_cancel_button_func(int control)
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
 
 		start_time = std::chrono::high_resolution_clock::now();
-
 	}
 }
 
@@ -763,7 +755,6 @@ void myGlutIdle(void)
 		log_system.add_string_to_contents(oss.str());
 	}
 
-
 	size_t state = jsm.get_state();
 
 	if (STATE_FINISHED != state &&
@@ -780,7 +771,8 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		} while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness
+		}
+		while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness during generation
 	}
 
 	glutPostRedisplay();
