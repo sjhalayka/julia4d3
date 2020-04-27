@@ -96,7 +96,6 @@ GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
 
-GLUI_Checkbox* dof_checkbox;
 
 
 GLUI_EditText* pedestal_y_start_edittext;
@@ -1664,9 +1663,6 @@ void setup_gui(void)
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
-
-	dof_checkbox = glui->add_checkbox("Draw DOF");
-	dof_checkbox->set_int_val(1);
 
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");
