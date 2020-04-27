@@ -68,6 +68,7 @@ class js_state_machine
 {
 public:
 	vector<float> vertex_data;
+	fractal_set_parameters fsp;
 
 	js_state_machine(void);
 
@@ -130,7 +131,6 @@ protected:
 
 	size_t g3_i0;
 
-	fractal_set_parameters fsp;
 	js_state_machine_member_function_pointer ptr = 0;
 	size_t g1_batch_size = 10000;
 	size_t g2_i0_batch_size = 10000;

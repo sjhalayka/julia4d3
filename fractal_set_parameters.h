@@ -20,6 +20,7 @@ public:
 	float x_min, x_max;
 	float y_min, y_max;
 	float z_min, z_max;
+	size_t burst_length;
 };
 
 #endif

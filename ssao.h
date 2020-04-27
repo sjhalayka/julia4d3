@@ -103,6 +103,8 @@ GLUI_EditText* pedestal_y_end_edittext;
 
 GLUI_EditText* equation_edittext;
 
+GLUI_EditText* burst_length_edittext;
+
 GLUI_EditText* c_x_edittext;
 GLUI_EditText* c_y_edittext;
 GLUI_EditText* c_z_edittext;
@@ -212,10 +214,48 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		return false;
 	}
 
+	string temp_string = burst_length_edittext->text;
+
+	if (false == is_unsigned_int(temp_string))
+	{
+		oss.clear();
+		oss.str("");
+		oss << "Burst is not an unsigned int";
+
+		log_system.add_string_to_contents(oss.str());
+
+		return false;
+	}
+	else
+	{
+		istringstream iss(temp_string);
+		iss >> p.burst_length;
+
+		if (p.burst_length < 1)
+		{
+			oss.clear();
+			oss.str("");
+			oss << "Burst must be greater than or equal to 1";
+
+			log_system.add_string_to_contents(oss.str());
+
+
+			return false;
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
 	p.randomize_c = randomize_c_checkbox->get_int_val();
 	p.use_pedestal = use_pedestal_checkbox->get_int_val();
-
-	string temp_string;
 
 	temp_string = pedestal_y_start_edittext->text;
 
@@ -612,6 +652,13 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		}
 	}
 
+
+
+
+
+
+
+
 	return true;
 }
 
@@ -732,7 +779,7 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		} while (elapsed.count() < 333); // Lower this amount to get more responsiveness
+		} while (elapsed.count() < jsm.fsp.burst_length); // Lower this amount to get more responsiveness
 	}
 
 	glutPostRedisplay();
@@ -1656,6 +1703,11 @@ void setup_gui(void)
 	equation_edittext = glui->add_edittext(const_cast<char*>("Equation:"), 0, const_cast<char*>("Z = sin(Z) + C*sin(Z)"), 3, control_cb);
 	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
 	equation_edittext->set_w(150);
+
+	glui->add_separator();
+	
+	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst:"), 0, const_cast<char*>("333"), 3, control_cb);
+	burst_length_edittext->set_text("333");
 
 	glui->add_separator();
 
