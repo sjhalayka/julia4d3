@@ -71,7 +71,6 @@ fractal_set_parameters p;
 js_state_machine jsm;
 logging_system log_system;
 
-std::chrono::high_resolution_clock::time_point start_time, end_time;
 
 GLint win_id = 0;
 GLuint win_x = 800;
@@ -696,8 +695,6 @@ void generate_cancel_button_func(int control)
 
 		generate_button = false;
 		generate_mesh_button->set_name(const_cast<char*>("Cancel"));
-
-		start_time = std::chrono::high_resolution_clock::now();
 	}
 }
 
@@ -734,17 +731,6 @@ void myGlutIdle(void)
 	{
 		generate_button = true;
 		generate_mesh_button->set_name(const_cast<char*>("Generate mesh"));
-
-		end_time = std::chrono::high_resolution_clock::now();
-
-		std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
-
-		ostringstream oss;
-		oss.clear();
-		oss.str("");
-		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
-
-		log_system.add_string_to_contents(oss.str());
 	}
 
 	size_t state = jsm.get_state();
@@ -1217,76 +1203,6 @@ bool init(void)
 
 	return true;
 }
-
-
-void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, size_t num_channels)
-{
-	const vector<unsigned char> read_p = write_p;
-
-	for (size_t i = 1; i < (width - 1); i++)
-	{
-		for (size_t j = 1; j < (height - 1); j++)
-		{
-			size_t centre_index = num_channels * (j * width + i);
-
-			size_t up_index = num_channels * ((j + 1) * width + i);
-			size_t down_index = num_channels * ((j - 1) * width + i);
-			size_t left_index = num_channels * (j * width + (i + 1));
-			size_t right_index = num_channels * (j * width + (i - 1));
-
-			size_t upper_left_index = num_channels * ((j + 1) * width + (i + 1));
-			size_t upper_right_index = num_channels * ((j + 1) * width + (i - 1));
-			size_t lower_left_index = num_channels * ((j - 1) * width + (i + 1));
-			size_t lower_right_index = num_channels * ((j - 1) * width + (i - 1));
-
-			float r = 0, g = 0, b = 0, a = 0;
-
-			r = static_cast<float>(read_p[centre_index]) +
-				static_cast<float>(read_p[up_index]) +
-				static_cast<float>(read_p[down_index]) +
-				static_cast<float>(read_p[left_index]) +
-				static_cast<float>(read_p[right_index]) +
-				static_cast<float>(read_p[upper_left_index]) +
-				static_cast<float>(read_p[upper_right_index]) +
-				static_cast<float>(read_p[lower_left_index]) +
-				static_cast<float>(read_p[lower_left_index]);
-\
-			r /= 9.0;
-
-			g = static_cast<float>(read_p[centre_index + 1]) +
-				static_cast<float>(read_p[up_index + 1]) +
-				static_cast<float>(read_p[down_index + 1]) +
-				static_cast<float>(read_p[left_index + 1]) +
-				static_cast<float>(read_p[right_index + 1]) +
-				static_cast<float>(read_p[upper_left_index + 1]) +
-				static_cast<float>(read_p[upper_right_index + 1]) +
-				static_cast<float>(read_p[lower_left_index + 1]) +
-				static_cast<float>(read_p[lower_left_index + 1]);
-
-			g /= 9.0;
-
-			b = static_cast<float>(read_p[centre_index + 2]) +
-				static_cast<float>(read_p[up_index + 2]) +
-				static_cast<float>(read_p[down_index + 2]) +
-				static_cast<float>(read_p[left_index + 2]) +
-				static_cast<float>(read_p[right_index + 2]) +
-				static_cast<float>(read_p[upper_left_index + 2]) +
-				static_cast<float>(read_p[upper_right_index + 2]) +
-				static_cast<float>(read_p[lower_left_index + 2]) +
-				static_cast<float>(read_p[lower_left_index + 2]);
-
-			b /= 9.0;
-
-			a = 255.0f;
-
-			write_p[centre_index + 0] = static_cast<unsigned char>(r);
-			write_p[centre_index + 1] = static_cast<unsigned char>(g);
-			write_p[centre_index + 2] = static_cast<unsigned char>(b);
-			write_p[centre_index + 3] = static_cast<unsigned char>(a);
-		}
-	}
-}
-
 
 void display_func(void)
 {

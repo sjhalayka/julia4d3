@@ -249,6 +249,8 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 	g0_Z.z = fsp.z_min;
 	g0_Z.w = fsp.Z_w;
 
+	start_time = std::chrono::high_resolution_clock::now();
+
 	if(fsp.use_gpu)
 		ptr = &js_state_machine::g0_stage_0_gpu;
 	else
@@ -487,6 +489,19 @@ int js_state_machine::g0_stage_1_gpu(void)
 		ptr = &js_state_machine::g1_stage_0;
 		state = STATE_G1_STAGE_0;
 		g1_i0 = triangles.begin();
+
+
+		end_time = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+
+		ostringstream oss;
+		oss.clear();
+		oss.str("");
+		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
+
+		if(0 != log_system)
+			log_system->add_string_to_contents(oss.str());
 
 
 		oss.clear();
@@ -952,6 +967,19 @@ int js_state_machine::g3_stage_0(void)
 		vertex_data.push_back(colour.y);
 		vertex_data.push_back(colour.z);
 	}
+
+	end_time = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+
+	ostringstream oss;
+	oss.clear();
+	oss.str("");
+	oss << "Total duration: " << elapsed.count() / 1000.0f << " seconds";
+
+	if (0 != log_system)
+		log_system->add_string_to_contents(oss.str());
+
 
 	ptr = 0;
 	state = STATE_FINISHED;

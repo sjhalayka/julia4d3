@@ -83,6 +83,8 @@ public:
 	void cancel(void);
 	void proceed(void);
 
+	std::chrono::high_resolution_clock::time_point start_time, end_time;
+
 protected:
 
 	ostringstream oss;
