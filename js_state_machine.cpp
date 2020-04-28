@@ -61,8 +61,6 @@ bool compile_and_link_compute_shader(const char* const file_name, GLuint& progra
 				ls.add_string_to_contents(substrings[i]);
 		}
 
-//		cout << status_string << endl;
-
 		glDeleteShader(shader);
 
 		return false;

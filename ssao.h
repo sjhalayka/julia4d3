@@ -1691,8 +1691,9 @@ void setup_gui(void)
 
 	glui->add_separator();
 	
-	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst (ms):"), 0, const_cast<char*>("333"), 3, control_cb);
+	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst length (ms):"), 0, const_cast<char*>("333"), 3, control_cb);
 	burst_length_edittext->set_text("333");
+	burst_length_edittext->set_w(150);
 
 	glui->add_separator();
 
