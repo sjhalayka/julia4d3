@@ -193,7 +193,7 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 
 	if (fsp.use_gpu)
 	{
-		string code = eqparser.emit_compute_shader_code(16, 16, fsp.max_iterations);
+		string code = eqparser.emit_compute_shader_code(1, 1, fsp.max_iterations);
 
 		ofstream of("julia.cs.glsl");
 		of << code;
