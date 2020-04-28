@@ -96,6 +96,7 @@ GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
 
+GLUI_Checkbox* use_gpu_checkbox;
 
 
 GLUI_EditText* pedestal_y_start_edittext;
@@ -244,18 +245,9 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		}
 	}
 
-
-
-
-
-
-
-
-
-
-
 	p.randomize_c = randomize_c_checkbox->get_int_val();
 	p.use_pedestal = use_pedestal_checkbox->get_int_val();
+	p.use_gpu = use_gpu_checkbox->get_int_val();
 
 	temp_string = pedestal_y_start_edittext->text;
 
@@ -1708,6 +1700,9 @@ void setup_gui(void)
 	draw_console_checkbox->set_int_val(1);
 	draw_axis_checkbox = glui->add_checkbox("Draw axis");
 	draw_axis_checkbox->set_int_val(1);
+
+	use_gpu_checkbox = glui->add_checkbox("Use GPU");
+	use_gpu_checkbox->set_int_val(1);
 
 	randomize_c_checkbox = glui->add_checkbox("Randomize C");
 	use_pedestal_checkbox = glui->add_checkbox("Use pedestal");

@@ -12,6 +12,7 @@ public:
 	bool use_pedestal;
 	float pedestal_y_start;
 	float pedestal_y_end;
+	bool use_gpu;
 	float C_x, C_y, C_z, C_w;
 	float Z_w;
 	short unsigned int max_iterations;

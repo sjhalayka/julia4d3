@@ -125,14 +125,17 @@ js_state_machine::js_state_machine(void)
 
 js_state_machine::~js_state_machine(void)
 {
-	if (glIsProgram(g0_compute_shader_program))
-		glDeleteProgram(g0_compute_shader_program);
+	if (fsp.use_gpu)
+	{
+		if (glIsProgram(g0_compute_shader_program))
+			glDeleteProgram(g0_compute_shader_program);
 
-	if (glIsTexture(g0_tex_output))
-		glDeleteTextures(1, &g0_tex_output);
+		if (glIsTexture(g0_tex_output))
+			glDeleteTextures(1, &g0_tex_output);
 
-	if (glIsTexture(g0_tex_input))
-		glDeleteTextures(1, &g0_tex_input);
+		if (glIsTexture(g0_tex_input))
+			glDeleteTextures(1, &g0_tex_input);
+	}
 }
 
 void js_state_machine::reclaim_all_but_vertex_buffer(void)
@@ -152,6 +155,8 @@ void js_state_machine::reclaim_all_but_vertex_buffer(void)
 
 bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 {
+	cout << "Use GPU: " << fsp_in.use_gpu << endl;
+
 	reclaim_all_but_vertex_buffer();
 	vertex_data.clear();
 
@@ -165,15 +170,17 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 	C.z = fsp.C_z;
 	C.w = fsp.C_w;
 
-	if (glIsProgram(g0_compute_shader_program))
-		glDeleteProgram(g0_compute_shader_program);
+	if (fsp.use_gpu)
+	{
+		if (glIsProgram(g0_compute_shader_program))
+			glDeleteProgram(g0_compute_shader_program);
 
-	if (glIsTexture(g0_tex_output))
-		glDeleteTextures(1, &g0_tex_output);
+		if (glIsTexture(g0_tex_output))
+			glDeleteTextures(1, &g0_tex_output);
 
-	if (glIsTexture(g0_tex_input))
-		glDeleteTextures(1, &g0_tex_input);
-
+		if (glIsTexture(g0_tex_input))
+			glDeleteTextures(1, &g0_tex_input);
+	}
 
 	if (false == eqparser.setup(fsp.equation_text, error_string, C))
 	{
@@ -187,42 +194,45 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 		return false;
 	}
 
-	string code = eqparser.emit_compute_shader_code(1, 1, fsp.max_iterations);
-
-	ofstream of("julia.cs.glsl");
-	of << code;
-	of.close();
-
-	if (false == compile_and_link_compute_shader("julia.cs.glsl", g0_compute_shader_program, *ls))
+	if (fsp.use_gpu)
 	{
-		oss.clear();
-		oss.str("");
-		oss << "Compute shader compile error";
+		string code = eqparser.emit_compute_shader_code(16, 16, fsp.max_iterations);
 
-		if (0 != log_system)
-			log_system->add_string_to_contents(oss.str());
+		ofstream of("julia.cs.glsl");
+		of << code;
+		of.close();
 
-		return false;
+		if (false == compile_and_link_compute_shader("julia.cs.glsl", g0_compute_shader_program, *ls))
+		{
+			oss.clear();
+			oss.str("");
+			oss << "Compute shader compile error";
+
+			if (0 != log_system)
+				log_system->add_string_to_contents(oss.str());
+
+			return false;
+		}
+
+		glGenTextures(1, &g0_tex_output);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, g0_tex_output);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, fsp.resolution, fsp.resolution, 0, GL_RED, GL_FLOAT, NULL);
+		glBindImageTexture(0, g0_tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+		// Generate input texture
+		glGenTextures(1, &g0_tex_input);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, g0_tex_input);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	}
-
-	glGenTextures(1, &g0_tex_output);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, g0_tex_output);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, fsp.resolution, fsp.resolution, 0, GL_RED, GL_FLOAT, NULL);
-	glBindImageTexture(0, g0_tex_output, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-	// Generate input texture
-	glGenTextures(1, &g0_tex_input);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, g0_tex_input);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	g0_num_output_channels = 1;
 	g0_output_pixels.resize(fsp.resolution * fsp.resolution * g0_num_output_channels);
@@ -249,7 +259,11 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 	g0_Z.z = fsp.z_min;
 	g0_Z.w = fsp.Z_w;
 
-	ptr = &js_state_machine::g0_stage_0;
+	if(fsp.use_gpu)
+		ptr = &js_state_machine::g0_stage_0_gpu;
+	else
+		ptr = &js_state_machine::g0_stage_0_cpu;
+
 	state = STATE_G0_STAGE_0;
 
 	return true;
@@ -270,7 +284,33 @@ void js_state_machine::proceed(void)
 		(this->*(this->ptr))();
 }
 
-void js_state_machine::g0_draw(void)
+
+
+void js_state_machine::g0_draw_cpu(void)
+{
+	g0_Z.x = fsp.x_min;
+
+	for (size_t x = 0; x < fsp.resolution; x++, g0_Z.x += g0_step_size_x)
+	{
+		g0_Z.y = fsp.y_min;
+
+		for (size_t y = 0; y < fsp.resolution; y++, g0_Z.y += g0_step_size_y)
+		{
+			const size_t output_index = g0_num_output_channels * (x * fsp.resolution + y);
+
+			quaternion Z(g0_Z.x, g0_Z.y, g0_Z.z, g0_Z.w);
+
+			float magnitude = eqparser.iterate(Z, fsp.max_iterations, fsp.infinity);
+
+			g0_output_pixels[output_index] = magnitude;
+		}
+	}
+}
+
+
+
+
+void js_state_machine::g0_draw_gpu(void)
 {
 	g0_Z.x = fsp.x_min;
 
@@ -365,24 +405,39 @@ void js_state_machine::g0_draw(void)
 	}
 }
 
-int js_state_machine::g0_stage_0(void)
+int js_state_machine::g0_stage_0_gpu(void)
 {
-	g0_draw();
+	g0_draw_gpu();
 
 	g0_previous_slice = g0_output_pixels;
 
 	g0_z++;
 	g0_Z.z += g0_step_size_z;
 
-	ptr = &js_state_machine::g0_stage_1;
+	ptr = &js_state_machine::g0_stage_1_gpu;
 	state = STATE_G0_STAGE_1;
 
 	return 1;
 }
 
-int js_state_machine::g0_stage_1(void)
+int js_state_machine::g0_stage_0_cpu(void)
 {
-	g0_draw();
+	g0_draw_gpu();
+
+	g0_previous_slice = g0_output_pixels;
+
+	g0_z++;
+	g0_Z.z += g0_step_size_z;
+
+	ptr = &js_state_machine::g0_stage_1_cpu;
+	state = STATE_G0_STAGE_1;
+
+	return 1;
+}
+
+int js_state_machine::g0_stage_1_gpu(void)
+{
+	g0_draw_gpu();
 
 	size_t box_count = 0;
 
@@ -433,6 +488,64 @@ int js_state_machine::g0_stage_1(void)
 
 	return 1;
 }
+
+
+int js_state_machine::g0_stage_1_cpu(void)
+{
+	g0_draw_gpu();
+
+	size_t box_count = 0;
+
+	oss.clear();
+	oss.str("");
+	oss << "Calculating triangles from xy-plane pair " << g0_z << " of " << fsp.resolution - 1;
+
+	if (0 != log_system)
+		log_system->add_string_to_contents(oss.str());
+
+	// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
+	tesselate_adjacent_xy_plane_pair(
+		box_count,
+		g0_previous_slice, g0_output_pixels,
+		g0_z - 1,
+		triangles,
+		fsp.infinity, // Use threshold as isovalue.
+		fsp.x_min, fsp.x_max, fsp.resolution,
+		fsp.y_min, fsp.y_max, fsp.resolution,
+		fsp.z_min, fsp.z_max, fsp.resolution);
+
+	if (g0_z >= fsp.resolution - 1)
+	{
+		ptr = &js_state_machine::g1_stage_0;
+		state = STATE_G1_STAGE_0;
+		g1_i0 = triangles.begin();
+
+
+		oss.clear();
+		oss.str("");
+		oss << triangles.size() << " triangles";
+		if (0 != log_system)
+			log_system->add_string_to_contents(oss.str());
+
+		oss.clear();
+		oss.str("");
+		oss << "Welding vertices";
+
+		if (0 != log_system)
+			log_system->add_string_to_contents(oss.str());
+	}
+	else
+	{
+		g0_z++;
+		g0_Z.z += g0_step_size_z;
+		g0_previous_slice = g0_output_pixels;
+	}
+
+	return 1;
+}
+
+
+
 
 int js_state_machine::g1_stage_0(void)
 {

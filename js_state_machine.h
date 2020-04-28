@@ -84,15 +84,21 @@ public:
 	void proceed(void);
 
 protected:
+
 	ostringstream oss;
 	vector<triangle> triangles;
 	vector<vertex_3_with_normal> vertices_with_face_normals;
 	fractal_set_parameters fsp;
 
 	void reclaim_all_but_vertex_buffer(void);
-	void g0_draw(void);
-	int g0_stage_0(void);
-	int g0_stage_1(void);
+	void g0_draw_gpu(void);
+	void g0_draw_cpu(void);
+
+	int g0_stage_0_gpu(void);
+	int g0_stage_1_gpu(void);
+	int g0_stage_0_cpu(void);
+	int g0_stage_1_cpu(void);
+
 	int g1_stage_0(void);
 	int g1_stage_1(void);
 	int g1_stage_2(void);
