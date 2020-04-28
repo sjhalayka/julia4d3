@@ -170,17 +170,14 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 	C.z = fsp.C_z;
 	C.w = fsp.C_w;
 
-	if (fsp.use_gpu)
-	{
-		if (glIsProgram(g0_compute_shader_program))
-			glDeleteProgram(g0_compute_shader_program);
+	if (glIsProgram(g0_compute_shader_program))
+		glDeleteProgram(g0_compute_shader_program);
 
-		if (glIsTexture(g0_tex_output))
-			glDeleteTextures(1, &g0_tex_output);
+	if (glIsTexture(g0_tex_output))
+		glDeleteTextures(1, &g0_tex_output);
 
-		if (glIsTexture(g0_tex_input))
-			glDeleteTextures(1, &g0_tex_input);
-	}
+	if (glIsTexture(g0_tex_input))
+		glDeleteTextures(1, &g0_tex_input);
 
 	if (false == eqparser.setup(fsp.equation_text, error_string, C))
 	{
@@ -422,7 +419,7 @@ int js_state_machine::g0_stage_0_gpu(void)
 
 int js_state_machine::g0_stage_0_cpu(void)
 {
-	g0_draw_gpu();
+	g0_draw_cpu();
 
 	g0_previous_slice = g0_output_pixels;
 
@@ -492,7 +489,7 @@ int js_state_machine::g0_stage_1_gpu(void)
 
 int js_state_machine::g0_stage_1_cpu(void)
 {
-	g0_draw_gpu();
+	g0_draw_cpu();
 
 	size_t box_count = 0;
 
