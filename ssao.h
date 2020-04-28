@@ -1395,47 +1395,47 @@ void display_func(void)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
-//	monochrome_image img = mimgs[64];
-//
-//	// set up ortho camera
-//	// draw textured quad
-//	GLuint text_tex = 0;
-//	glEnable(GL_TEXTURE_2D);
-//	glGenTextures(1, &text_tex);
-//	glActiveTexture(GL_TEXTURE2);
-//	glBindTexture(GL_TEXTURE_2D, text_tex);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.width, font.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &font.Pixels[0]);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-//
-//	glPushMatrix();
-//
-//	glMatrixMode(GL_PROJECTION);
-//	glLoadIdentity();
-//	glOrtho(0, 1, 0, 1, 0, 1);
-//
-//	glMatrixMode(GL_MODELVIEW);
-//	glLoadIdentity();
-//
-////	glColor3f(1, 1, 1);
-//
-//	glActiveTexture(GL_TEXTURE2);
-//	glBindTexture(GL_TEXTURE_2D, text_tex);
-//	glBegin(GL_QUADS);
-//		glTexCoord2f(0, 0);
-//		glVertex2f(0, 0);
-//		glTexCoord2f(1, 0);
-//		glVertex2f(1, 0);
-//		glTexCoord2f(1, 1);
-//		glVertex2f(1, 1);
-//		glTexCoord2f(0, 1);
-//		glVertex2f(0, 1);
-//	glEnd();
-//
-//	glPopMatrix();
-//
+	//	monochrome_image img = mimgs[64];
+	//
+	//	// set up ortho camera
+	//	// draw textured quad
+	//	GLuint text_tex = 0;
+	//	glEnable(GL_TEXTURE_2D);
+	//	glGenTextures(1, &text_tex);
+	//	glActiveTexture(GL_TEXTURE2);
+	//	glBindTexture(GL_TEXTURE_2D, text_tex);
+	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.width, font.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &font.Pixels[0]);
+	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	//
+	//	glPushMatrix();
+	//
+	//	glMatrixMode(GL_PROJECTION);
+	//	glLoadIdentity();
+	//	glOrtho(0, 1, 0, 1, 0, 1);
+	//
+	//	glMatrixMode(GL_MODELVIEW);
+	//	glLoadIdentity();
+	//
+	////	glColor3f(1, 1, 1);
+	//
+	//	glActiveTexture(GL_TEXTURE2);
+	//	glBindTexture(GL_TEXTURE_2D, text_tex);
+	//	glBegin(GL_QUADS);
+	//		glTexCoord2f(0, 0);
+	//		glVertex2f(0, 0);
+	//		glTexCoord2f(1, 0);
+	//		glVertex2f(1, 0);
+	//		glTexCoord2f(1, 1);
+	//		glVertex2f(1, 1);
+	//		glTexCoord2f(0, 1);
+	//		glVertex2f(0, 1);
+	//	glEnd();
+	//
+	//	glPopMatrix();
+	//
 
 
 	glDisable(GL_DEPTH_TEST);
@@ -1443,7 +1443,69 @@ void display_func(void)
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
+
+
+	//https://stackoverflow.com/questions/3073796/how-to-use-glcopyimage2d
+
+//	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	GLuint copy_tex = 0;
+	glGenTextures(1, &copy_tex);
+
+	vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, copy_tex);
+	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+	
+	for (size_t i = 0; i < win_x; i++)
+	{
+		for (size_t j = 0; j < win_y; j++)
+		{
+			size_t index = 4 * (i*win_y + j);
+
+			//GLubyte temp = tex_buf[index + 0];
+			tex_buf[index + 0] = 255;
+			tex_buf[index + 1] = 127;
+			tex_buf[index + 2] = 0;
+		}
+	}
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+
+	//vector<GLubyte> tex_buf2(4 * win_x * win_y, 0);
+
+	//glActiveTexture(GL_TEXTURE2);
+	//glBindTexture(GL_TEXTURE_2D, copy_tex);
+	//glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
+	//glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf2[0]);
+
+
+
+
+//	glBlitNamedFramebuffer(render_fbo, )
+
+
+	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+	glDeleteTextures(1, &copy_tex);
+
+
+
+
+
+
+
+
+
+
+
+
+
+	if (0)//draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
 		size_t char_x_pos = 10;
 		size_t char_y_pos = 30;
