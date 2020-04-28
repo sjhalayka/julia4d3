@@ -994,6 +994,11 @@ bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vect
 }
 
 
+
+
+BMP font;
+
+
 bool init(void)
 {
 	if (GLEW_OK != glewInit())
@@ -1010,7 +1015,7 @@ bool init(void)
 
 	if (GL_major_version < 4)
 	{
-		cout << "GPU does not support OpenGL 4.x or higher" << endl;
+		cout << "GPU does not support OpenGL 4.3 or higher" << endl;
 		return false;
 	}
 	else if (GL_major_version == 4)
@@ -1024,7 +1029,6 @@ bool init(void)
 
 	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
 
-	BMP font;
 
 	if (false == font.load("font.bmp"))
 	{
@@ -1281,7 +1285,6 @@ void blur_image(vector<unsigned char>& write_p, GLuint width, GLuint height, siz
 			write_p[centre_index + 3] = static_cast<unsigned char>(a);
 		}
 	}
-
 }
 
 
@@ -1417,7 +1420,6 @@ void display_func(void)
 		glDrawArrays(GL_LINES, 0, num_vertices);
 	}
 
-
 	if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
 	{
 		glUseProgram(render.get_program());
@@ -1459,16 +1461,8 @@ void display_func(void)
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
 
-		// Draw 12 vertices per card
 		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 	}
-
-	//vector<float> depth_pixels(static_cast<size_t>(win_x)* static_cast<size_t>(win_y), 0.0f);
-
-	//bool do_dof = dof_checkbox->get_int_val();
-	//
-	//if(do_dof)
-	//	glReadPixels(0, 0, win_x, win_y, GL_DEPTH_COMPONENT, GL_FLOAT, &depth_pixels[0]);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1485,90 +1479,53 @@ void display_func(void)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
+//	monochrome_image img = mimgs[64];
+//
+//	// set up ortho camera
+//	// draw textured quad
+//	GLuint text_tex = 0;
+//	glEnable(GL_TEXTURE_2D);
+//	glGenTextures(1, &text_tex);
+//	glActiveTexture(GL_TEXTURE2);
+//	glBindTexture(GL_TEXTURE_2D, text_tex);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.width, font.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &font.Pixels[0]);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+//
+//	glPushMatrix();
+//
+//	glMatrixMode(GL_PROJECTION);
+//	glLoadIdentity();
+//	glOrtho(0, 1, 0, 1, 0, 1);
+//
+//	glMatrixMode(GL_MODELVIEW);
+//	glLoadIdentity();
+//
+////	glColor3f(1, 1, 1);
+//
+//	glActiveTexture(GL_TEXTURE2);
+//	glBindTexture(GL_TEXTURE_2D, text_tex);
+//	glBegin(GL_QUADS);
+//		glTexCoord2f(0, 0);
+//		glVertex2f(0, 0);
+//		glTexCoord2f(1, 0);
+//		glVertex2f(1, 0);
+//		glTexCoord2f(1, 1);
+//		glVertex2f(1, 1);
+//		glTexCoord2f(0, 1);
+//		glVertex2f(0, 1);
+//	glEnd();
+//
+//	glPopMatrix();
+//
+
+
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(quad_vao);
+
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-	//if (do_dof)
-	//{
-	//	float depth_min = FLT_MAX, depth_max = FLT_MIN;
-
-	//	for (size_t i = 0; i < win_x; i++)
-	//	{
-	//		for (size_t j = 0; j < win_y; j++)
-	//		{
-	//			size_t depth_index = i * win_y + j;
-
-	//			float val = depth_pixels[depth_index];
-
-	//			if (val < depth_min)
-	//				depth_min = val;
-
-	//			if (val > depth_max)
-	//				depth_max = val;
-	//		}
-	//	}
-
-	//	for (size_t i = 0; i < win_x; i++)
-	//	{
-	//		for (size_t j = 0; j < win_y; j++)
-	//		{
-	//			size_t depth_index = i * win_y + j;
-
-	//			float val = depth_pixels[depth_index];
-
-	//			val = val - depth_min;
-	//			val *= depth_max / (depth_max - depth_min);
-
-	//			depth_pixels[depth_index] = val;
-	//		}
-	//	}
-
-	//	vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
-	//	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	//	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	//	glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
-
-	//	vector<unsigned char> fbpixels_blurred = fbpixels;
-	//	vector<unsigned char> target_pixels = fbpixels;
-
-	//	for (size_t i = 0; i < 10; i++)
-	//		blur_image(fbpixels_blurred, win_x, win_y, 4);
-
-	//	for (size_t i = 0; i < win_x; i++)
-	//	{
-	//		for (size_t j = 0; j < win_y; j++)
-	//		{
-	//			size_t depth_index = i * win_y + j;
-	//			size_t fb_index = 4 * depth_index;
-
-	//			float t = depth_pixels[depth_index];
-
-	//			t = sqrt(t * t);
-
-	//			float r0 = fbpixels[fb_index];
-	//			float g0 = fbpixels[fb_index + 1];
-	//			float b0 = fbpixels[fb_index + 2];
-
-	//			float r1 = fbpixels_blurred[fb_index];
-	//			float g1 = fbpixels_blurred[fb_index + 1];
-	//			float b1 = fbpixels_blurred[fb_index + 2];
-
-	//			float r2 = (1.0f - t) * r0 + t * r1;
-	//			float g2 = (1.0f - t) * g0 + t * g1;
-	//			float b2 = (1.0f - t) * b0 + t * b1;
-
-	//			target_pixels[fb_index + 0] = static_cast<unsigned char>(r2);
-	//			target_pixels[fb_index + 1] = static_cast<unsigned char>(g2);
-	//			target_pixels[fb_index + 2] = static_cast<unsigned char>(b2);
-	//			target_pixels[fb_index + 3] = 255;
-	//		}
-	//	}
-
-	//	glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &target_pixels[0]);
-	//}
-
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
@@ -1597,7 +1554,6 @@ void display_func(void)
 
 		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
 	}
-
 
 	glutSwapBuffers();
 }
