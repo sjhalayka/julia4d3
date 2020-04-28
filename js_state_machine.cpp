@@ -125,17 +125,14 @@ js_state_machine::js_state_machine(void)
 
 js_state_machine::~js_state_machine(void)
 {
-	if (fsp.use_gpu)
-	{
-		if (glIsProgram(g0_compute_shader_program))
-			glDeleteProgram(g0_compute_shader_program);
+	if (glIsProgram(g0_compute_shader_program))
+		glDeleteProgram(g0_compute_shader_program);
 
-		if (glIsTexture(g0_tex_output))
-			glDeleteTextures(1, &g0_tex_output);
+	if (glIsTexture(g0_tex_output))
+		glDeleteTextures(1, &g0_tex_output);
 
-		if (glIsTexture(g0_tex_input))
-			glDeleteTextures(1, &g0_tex_input);
-	}
+	if (glIsTexture(g0_tex_input))
+		glDeleteTextures(1, &g0_tex_input);
 }
 
 void js_state_machine::reclaim_all_but_vertex_buffer(void)
@@ -155,8 +152,6 @@ void js_state_machine::reclaim_all_but_vertex_buffer(void)
 
 bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 {
-	cout << "Use GPU: " << fsp_in.use_gpu << endl;
-
 	reclaim_all_but_vertex_buffer();
 	vertex_data.clear();
 
@@ -300,6 +295,39 @@ void js_state_machine::g0_draw_cpu(void)
 			float magnitude = eqparser.iterate(Z, fsp.max_iterations, fsp.infinity);
 
 			g0_output_pixels[output_index] = magnitude;
+		}
+	}
+
+	quaternion tempq;
+	tempq.x = fsp.x_min;
+	tempq.y = fsp.y_min;
+	tempq.z = g0_Z.z;
+	tempq.w = 1.0f;
+
+	for (size_t x = 0; x < fsp.resolution; x++, tempq.x += g0_step_size_x)
+	{
+		tempq.y = fsp.y_min;
+
+		for (size_t y = 0; y < fsp.resolution; y++, tempq.y += g0_step_size_y)
+		{
+			if (g0_z == 0 || g0_z == fsp.resolution - 1 ||
+				x == 0 || x == fsp.resolution - 1 ||
+				y == 0 || y == fsp.resolution - 1)
+			{
+				const size_t index = g0_num_output_channels * (y * fsp.resolution + x);
+				g0_output_pixels[index] = fsp.infinity + 1.0f;
+			}
+			else
+			{
+				const float y_span = (fsp.y_max - fsp.y_min);
+				const float curr_span = 1.0f - static_cast<float>(fsp.y_max - tempq.y) / y_span;
+				const size_t index = g0_num_output_channels * (x * fsp.resolution + y);
+
+				if (fsp.use_pedestal == true && curr_span >= fsp.pedestal_y_start && curr_span <= fsp.pedestal_y_end)
+				{
+					g0_output_pixels[index] = fsp.infinity - 0.00001f;
+				}
+			}
 		}
 	}
 }
