@@ -1486,27 +1486,7 @@ void display_func(void)
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
 	
 
-	// Alter here, say, using OpenCV
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t index = 4 * (i * win_y + j);
-
-	//		tex_buf[index + 0] = 255;
-	//		tex_buf[index + 1] = 127;
-	//		tex_buf[index + 2] = 0;
-	//		tex_buf[index + 3] = 255;
-	//	}
-	//}
-
-	// Copy back to GPU
-//	glActiveTexture(GL_TEXTURE2);
-//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-//	glBindImageTexture(2, copy_tex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
-
-
-
+	// Alter here
 
 
 
@@ -1612,90 +1592,7 @@ void display_func(void)
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ibo);
 
-
-
-
-
-
-
-
-
-
-
-
-	//glUseProgram(ortho.get_program());
-
-	//glUniform1i(uniforms.ortho.tex, 2);
-
-	//glPushMatrix();
-
-	////	glColor3f(1, 1, 1);
-
-	//glActiveTexture(GL_TEXTURE2);
-	//glBindTexture(GL_TEXTURE_2D, copy_tex);
-	//glBegin(GL_QUADS);
-	//glTexCoord2f(0, 0);
-	//glVertex2f(-1, -1);
-	//glTexCoord2f(1, 0);
-	//glVertex2f(1, -1);
-	//glTexCoord2f(1, 1);
-	//glVertex2f(1, 1);
-	//glTexCoord2f(0, 1);
-	//glVertex2f(-1, 1);
-	//glEnd();
-
-	//glPopMatrix();
-
-
-	
-	
-	
-	
-	// https://github.com/progschj/OpenGL-Examples/blob/master/03texture.cpp
-
-
-	
-	
-	
-	//GLuint copy_tex2 = 0;
-	//glGenTextures(1, &copy_tex2);
-
-	//vector<GLubyte> tex_buf2(4 * win_x * win_y, 0);
-
-	//glActiveTexture(GL_TEXTURE2);
-	//glBindTexture(GL_TEXTURE_2D, copy_tex2);
-	//glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
-	//glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf2[0]);
-
-	//for (size_t i = 0; i < win_x; i++)
-	//{
-	//	for (size_t j = 0; j < win_y; j++)
-	//	{
-	//		size_t index = 4 * (i * win_y + j);
-
-	//		cout << (int)tex_buf[index + 0] << endl;
-	//	}
-	//}
-
-
-
-
-	//glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-
-
-	
-	
 	glDeleteTextures(1, &copy_tex);
-
-
-
-
-
-
-
-
-
-
 
 
 
