@@ -1012,49 +1012,15 @@ bool is_column_all_zeroes(size_t column, size_t width, size_t height, const vect
 
 
 
-
-BMP font;
-
-
-bool init(void)
+bool init_character_set(void)
 {
-	if (GLEW_OK != glewInit())
-	{
-		cout << "GLEW initialization error" << endl;
-		return false;
-	}
-
-	int GL_major_version = 0;
-	glGetIntegerv(GL_MAJOR_VERSION, &GL_major_version);
-
-	int GL_minor_version = 0;
-	glGetIntegerv(GL_MINOR_VERSION, &GL_minor_version);
-
-	if (GL_major_version < 4)
-	{
-		cout << "GPU does not support OpenGL 4.3 or higher" << endl;
-		return false;
-	}
-	else if (GL_major_version == 4)
-	{
-		if (GL_minor_version < 3)
-		{
-			cout << "GPU does not support OpenGL 4.3 or higher" << endl;
-			return false;
-		}
-	}
-
-	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
-
+	BMP font;
 
 	if (false == font.load("font.bmp"))
 	{
 		cout << "could not load font.bmp" << endl;
 		return false;
 	}
-
-	glGenBuffers(1, &triangle_buffer);
-	glGenBuffers(1, &axis_buffer);
 
 	size_t char_index = 0;
 
@@ -1158,6 +1124,50 @@ bool init(void)
 		}
 	}
 
+	return true;
+}
+
+
+
+
+
+
+bool init(void)
+{
+	if (GLEW_OK != glewInit())
+	{
+		cout << "GLEW initialization error" << endl;
+		return false;
+	}
+
+	int GL_major_version = 0;
+	glGetIntegerv(GL_MAJOR_VERSION, &GL_major_version);
+
+	int GL_minor_version = 0;
+	glGetIntegerv(GL_MINOR_VERSION, &GL_minor_version);
+
+	if (GL_major_version < 4)
+	{
+		cout << "GPU does not support OpenGL 4.3 or higher" << endl;
+		return false;
+	}
+	else if (GL_major_version == 4)
+	{
+		if (GL_minor_version < 3)
+		{
+			cout << "GPU does not support OpenGL 4.3 or higher" << endl;
+			return false;
+		}
+	}
+
+	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
+
+	glGenBuffers(1, &triangle_buffer);
+	glGenBuffers(1, &axis_buffer);
+
+
+	init_character_set();
+
 	ssao_level = 1.0f;
 	ssao_radius = 0.05f;
 	show_shading = true;
@@ -1235,6 +1245,272 @@ bool init(void)
 	return true;
 }
 
+
+void draw_axis(void)
+{
+	glLineWidth(2.0);
+
+	glUseProgram(flat.get_program());
+
+	main_camera.calculate_camera_matrices(win_x, win_y);
+	glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	glUniformMatrix4fv(uniforms.flat.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+
+	const GLuint components_per_vertex = 3;
+	const GLuint components_per_position = 3;
+
+	vector<GLfloat> flat_data;
+
+	//flat_data.clear();
+
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(1);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+
+	glUniform3f(uniforms.flat.flat_colour, 1.0, 0.0, 0.0);
+
+	glDeleteBuffers(1, &axis_buffer);
+	glGenBuffers(1, &axis_buffer);
+
+	GLuint num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+	glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+	glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+		components_per_position,
+		GL_FLOAT,
+		GL_FALSE,
+		components_per_vertex * sizeof(GLfloat),
+		NULL);
+
+	glDrawArrays(GL_LINES, 0, num_vertices);
+
+	flat_data.clear();
+
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(1);
+	flat_data.push_back(0);
+
+	glUniform3f(uniforms.flat.flat_colour, 0.0, 1.0, 0.0);
+
+	glDeleteBuffers(1, &axis_buffer);
+	glGenBuffers(1, &axis_buffer);
+
+	num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+	glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+	glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+		components_per_position,
+		GL_FLOAT,
+		GL_FALSE,
+		components_per_vertex * sizeof(GLfloat),
+		NULL);
+
+	glDrawArrays(GL_LINES, 0, num_vertices);
+
+	flat_data.clear();
+
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(0);
+	flat_data.push_back(1);
+
+	glUniform3f(uniforms.flat.flat_colour, 0.0, 0.0, 1.0);
+
+	glDeleteBuffers(1, &axis_buffer);
+	glGenBuffers(1, &axis_buffer);
+
+	num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
+
+	glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
+	glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+		components_per_position,
+		GL_FLOAT,
+		GL_FALSE,
+		components_per_vertex * sizeof(GLfloat),
+		NULL);
+
+	glDrawArrays(GL_LINES, 0, num_vertices);
+}
+
+void draw_mesh(void)
+{
+	glUseProgram(render.get_program());
+
+	const GLuint components_per_vertex = 9;
+	const GLuint components_per_normal = 3;
+	const GLuint components_per_position = 3;
+	const GLuint components_per_colour = 3;
+
+	glDeleteBuffers(1, &triangle_buffer);
+	glGenBuffers(1, &triangle_buffer);
+
+	const GLuint num_vertices = static_cast<GLuint>(jsm.vertex_data.size()) / components_per_vertex;
+
+	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+	glBufferData(GL_ARRAY_BUFFER, jsm.vertex_data.size() * sizeof(GLfloat), &jsm.vertex_data[0], GL_DYNAMIC_DRAW);
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
+		components_per_position,
+		GL_FLOAT,
+		GL_FALSE,
+		components_per_vertex * sizeof(GLfloat),
+		NULL);
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
+		components_per_normal,
+		GL_FLOAT,
+		GL_TRUE,
+		components_per_vertex * sizeof(GLfloat),
+		(const GLvoid*)(components_per_position * sizeof(GLfloat)));
+
+	glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
+	glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
+		components_per_colour,
+		GL_FLOAT,
+		GL_TRUE,
+		components_per_vertex * sizeof(GLfloat),
+		(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
+
+	glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+}
+
+void draw_console(void)
+{
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+	GLuint copy_tex = 0;
+	glGenTextures(1, &copy_tex);
+
+	vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
+
+	// Copy from GPU
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, copy_tex);
+	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+	glDeleteTextures(1, &copy_tex);
+
+	// Begin alter
+
+	size_t char_x_pos = 10;
+	size_t char_y_pos = 30;
+
+	RGB text_colour;
+	text_colour.r = 255;
+	text_colour.g = 255;
+	text_colour.b = 255;
+
+	for (size_t i = 0; i < log_system.get_contents_size(); i++)
+	{
+		string s;
+		log_system.get_string_from_contents(i, s);
+		print_sentence(tex_buf, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
+		char_y_pos += 20;
+	}
+
+	// End alter here
+
+
+
+	GLuint vao, vbo, ibo;
+
+	// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+	// http://www.songho.ca/opengl/gl_transform.html
+
+
+	// data for a fullscreen quad (this time with texture coords)
+	static const GLfloat vertexData[] = {
+		//  X     Y     Z           U     V     
+		   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
+		  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
+		   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
+		  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
+	}; // 4 vertices with 5 components (floats) each
+
+	// fill with data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
+
+
+	// set up generic attrib pointers
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 0 * sizeof(GLfloat));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 3 * sizeof(GLfloat));
+
+
+	// generate and bind the index buffer object
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+	static const GLuint indexData[] = {
+		0,1,2, // first triangle
+		2,1,3, // second triangle
+	};
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+
+	GLuint ortho_tex;
+
+	glActiveTexture(GL_TEXTURE2);
+
+	glGenTextures(1, &ortho_tex);
+
+	glBindTexture(GL_TEXTURE_2D, ortho_tex);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+	glUseProgram(ortho.get_program());
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, ortho_tex);
+
+	glUniform1i(uniforms.ortho.tex, 2);
+
+	glBindVertexArray(vao);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ibo);
+
+	glDeleteTextures(1, &ortho_tex);
+}
+
 void display_func(void)
 {
 	glClearColor(1, 0.5f, 0, 1);
@@ -1266,149 +1542,12 @@ void display_func(void)
 
 	if (draw_axis_checkbox->get_int_val())
 	{
-		glLineWidth(2.0);
-
-		glUseProgram(flat.get_program());
-
-		main_camera.calculate_camera_matrices(win_x, win_y);
-		glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-		glUniformMatrix4fv(uniforms.flat.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
-
-		const GLuint components_per_vertex = 3;
-		const GLuint components_per_position = 3;
-
-		vector<GLfloat> flat_data;
-
-		//flat_data.clear();
-
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(1);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-
-		glUniform3f(uniforms.flat.flat_colour, 1.0, 0.0, 0.0);
-
-		glDeleteBuffers(1, &axis_buffer);
-		glGenBuffers(1, &axis_buffer);
-
-		GLuint num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
-
-		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
-		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-			components_per_position,
-			GL_FLOAT,
-			GL_FALSE,
-			components_per_vertex * sizeof(GLfloat),
-			NULL);
-
-		glDrawArrays(GL_LINES, 0, num_vertices);
-
-		flat_data.clear();
-
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(1);
-		flat_data.push_back(0);
-
-		glUniform3f(uniforms.flat.flat_colour, 0.0, 1.0, 0.0);
-
-		glDeleteBuffers(1, &axis_buffer);
-		glGenBuffers(1, &axis_buffer);
-
-		num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
-
-		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
-		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-			components_per_position,
-			GL_FLOAT,
-			GL_FALSE,
-			components_per_vertex * sizeof(GLfloat),
-			NULL);
-
-		glDrawArrays(GL_LINES, 0, num_vertices);
-
-		flat_data.clear();
-
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(0);
-		flat_data.push_back(1);
-
-		glUniform3f(uniforms.flat.flat_colour, 0.0, 0.0, 1.0);
-
-		glDeleteBuffers(1, &axis_buffer);
-		glGenBuffers(1, &axis_buffer);
-
-		num_vertices = static_cast<GLuint>(flat_data.size()) / components_per_vertex;
-
-		glBindBuffer(GL_ARRAY_BUFFER, axis_buffer);
-		glBufferData(GL_ARRAY_BUFFER, flat_data.size() * sizeof(GLfloat), &flat_data[0], GL_DYNAMIC_DRAW);
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-			components_per_position,
-			GL_FLOAT,
-			GL_FALSE,
-			components_per_vertex * sizeof(GLfloat),
-			NULL);
-
-		glDrawArrays(GL_LINES, 0, num_vertices);
+		draw_axis();
 	}
 
 	if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
 	{
-		glUseProgram(render.get_program());
-
-		const GLuint components_per_vertex = 9;
-		const GLuint components_per_normal = 3;
-		const GLuint components_per_position = 3;
-		const GLuint components_per_colour = 3;
-
-		glDeleteBuffers(1, &triangle_buffer);
-		glGenBuffers(1, &triangle_buffer);
-
-		const GLuint num_vertices = static_cast<GLuint>(jsm.vertex_data.size()) / components_per_vertex;
-
-		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
-		glBufferData(GL_ARRAY_BUFFER, jsm.vertex_data.size() * sizeof(GLfloat), &jsm.vertex_data[0], GL_DYNAMIC_DRAW);
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "position"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "position"),
-			components_per_position,
-			GL_FLOAT,
-			GL_FALSE,
-			components_per_vertex * sizeof(GLfloat),
-			NULL);
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "normal"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "normal"),
-			components_per_normal,
-			GL_FLOAT,
-			GL_TRUE,
-			components_per_vertex * sizeof(GLfloat),
-			(const GLvoid*)(components_per_position * sizeof(GLfloat)));
-
-		glEnableVertexAttribArray(glGetAttribLocation(render.get_program(), "colour"));
-		glVertexAttribPointer(glGetAttribLocation(render.get_program(), "colour"),
-			components_per_colour,
-			GL_FLOAT,
-			GL_TRUE,
-			components_per_vertex * sizeof(GLfloat),
-			(const GLvoid*)(components_per_normal * sizeof(GLfloat) + components_per_position * sizeof(GLfloat)));
-
-		glDrawArrays(GL_TRIANGLES, 0, num_vertices);
+		draw_mesh();
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1430,125 +1569,9 @@ void display_func(void)
 	glBindVertexArray(quad_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
-
-
-
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
-		glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-		GLuint copy_tex = 0;
-		glGenTextures(1, &copy_tex);
-
-		vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
-
-		// Copy from GPU
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, copy_tex);
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-		glDeleteTextures(1, &copy_tex);
-
-		// Begin alter
-
-		size_t char_x_pos = 10;
-		size_t char_y_pos = 30;
-
-		RGB text_colour;
-		text_colour.r = 255;
-		text_colour.g = 255;
-		text_colour.b = 255;
-
-		for (size_t i = 0; i < log_system.get_contents_size(); i++)
-		{
-			string s;
-			log_system.get_string_from_contents(i, s);
-			print_sentence(tex_buf, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
-			char_y_pos += 20;
-		}
-
-		// End alter here
-
-
-
-		GLuint vao, vbo, ibo;
-
-		// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
-
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		glGenBuffers(1, &vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-		// http://www.songho.ca/opengl/gl_transform.html
-
-
-		// data for a fullscreen quad (this time with texture coords)
-		static const GLfloat vertexData[] = {
-			//  X     Y     Z           U     V     
-			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
-			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
-			   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
-			  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
-		}; // 4 vertices with 5 components (floats) each
-
-		// fill with data
-		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
-
-
-		// set up generic attrib pointers
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 0 * sizeof(GLfloat));
-
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 3 * sizeof(GLfloat));
-
-
-		// generate and bind the index buffer object
-		glGenBuffers(1, &ibo);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-		static const GLuint indexData[] = {
-			0,1,2, // first triangle
-			2,1,3, // second triangle
-		};
-
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
-
-		glBindVertexArray(0);
-
-		GLuint ortho_tex;
-
-		glActiveTexture(GL_TEXTURE2);
-
-		glGenTextures(1, &ortho_tex);
-
-		glBindTexture(GL_TEXTURE_2D, ortho_tex);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-
-		glUseProgram(ortho.get_program());
-
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, ortho_tex);
-
-		glUniform1i(uniforms.ortho.tex, 2);
-
-		glBindVertexArray(vao);
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-		glDeleteVertexArrays(1, &vao);
-		glDeleteBuffers(1, &vbo);
-		glDeleteBuffers(1, &ibo);
-
-		glDeleteTextures(1, &ortho_tex);
+		draw_console();
 	}
 
 
