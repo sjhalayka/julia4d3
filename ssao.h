@@ -1409,60 +1409,10 @@ void display_func(void)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
 
-	//	monochrome_image img = mimgs[64];
-	//
-	//	// set up ortho camera
-	//	// draw textured quad
-	//	GLuint text_tex = 0;
-	//	glEnable(GL_TEXTURE_2D);
-	//	glGenTextures(1, &text_tex);
-	//	glActiveTexture(GL_TEXTURE2);
-	//	glBindTexture(GL_TEXTURE_2D, text_tex);
-	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.width, font.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &font.Pixels[0]);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	//
-	//	glPushMatrix();
-	//
-	//	glMatrixMode(GL_PROJECTION);
-	//	glLoadIdentity();
-	//	glOrtho(0, 1, 0, 1, 0, 1);
-	//
-	//	glMatrixMode(GL_MODELVIEW);
-	//	glLoadIdentity();
-	//
-	////	glColor3f(1, 1, 1);
-	//
-	//	glActiveTexture(GL_TEXTURE2);
-	//	glBindTexture(GL_TEXTURE_2D, text_tex);
-	//	glBegin(GL_QUADS);
-	//		glTexCoord2f(0, 0);
-	//		glVertex2f(0, 0);
-	//		glTexCoord2f(1, 0);
-	//		glVertex2f(1, 0);
-	//		glTexCoord2f(1, 1);
-	//		glVertex2f(1, 1);
-	//		glTexCoord2f(0, 1);
-	//		glVertex2f(0, 1);
-	//	glEnd();
-	//
-	//	glPopMatrix();
-	//
-
-
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(quad_vao);
 
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-
-
-
-
-
-
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
@@ -1516,7 +1466,7 @@ void display_func(void)
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 		// data for a fullscreen quad (this time with texture coords)
-		GLfloat vertexData[] = {
+		const GLfloat vertexData[] = {
 			//  X     Y     Z           U     V     
 			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
 			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
@@ -1598,6 +1548,7 @@ void display_func(void)
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ibo);
 
+		glDeleteTextures(1, &texture);
 		glDeleteTextures(1, &copy_tex);
 	}
 
