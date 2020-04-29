@@ -1480,9 +1480,21 @@ void display_func(void)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
 	glBindImageTexture(2, copy_tex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 	
-	
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, copy_tex, 0);
 
 
+//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//	glBindFramebuffer(GL_READ_FRAMEBUFFER, render_fbo);
+
+//	glBlitFramebuffer(0, 0, win_x, win_y, 0, 0, win_x, win_y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, copy_tex, 0);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//GLuint copy_tex2 = 0;
 	//glGenTextures(1, &copy_tex2);
