@@ -1466,17 +1466,12 @@ void display_func(void)
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
-		//https://stackoverflow.com/questions/3073796/how-to-use-glcopyimage2d
-
-		//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
 		glReadBuffer(GL_COLOR_ATTACHMENT0);
 
 		GLuint copy_tex = 0;
 		glGenTextures(1, &copy_tex);
 
 		vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
-
-
 
 		// Copy from GPU
 		glActiveTexture(GL_TEXTURE2);
@@ -1510,7 +1505,7 @@ void display_func(void)
 		// vao and vbo handle
 		GLuint vao, vbo, ibo;
 
-
+		// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
 
 		// generate and bind the vao
 		glGenVertexArrays(1, &vao);
@@ -1598,7 +1593,6 @@ void display_func(void)
 
 		// draw
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
