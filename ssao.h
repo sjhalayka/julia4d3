@@ -749,8 +749,7 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
-		}
-		while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness during generation
+		} while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness during generation
 	}
 
 	glutPostRedisplay();
@@ -878,7 +877,7 @@ bool load_shaders(void)
 	uniforms.flat.mv_matrix = glGetUniformLocation(flat.get_program(), "mv_matrix");
 	uniforms.flat.proj_matrix = glGetUniformLocation(flat.get_program(), "proj_matrix");
 	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
-	
+
 	uniforms.ortho.tex = glGetUniformLocation(ortho.get_program(), "tex");
 
 	return true;
@@ -1465,139 +1464,29 @@ void display_func(void)
 
 
 
-
-
-	//https://stackoverflow.com/questions/3073796/how-to-use-glcopyimage2d
-
-	//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-	GLuint copy_tex = 0;
-	glGenTextures(1, &copy_tex);
-
-	vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
-
-
-
-	// Copy from GPU
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, copy_tex);
-	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-	
-
-	// Alter here
-
-
-
-
-
-
-
-
-	// vao and vbo handle
-	GLuint vao, vbo, ibo;
-
-
-
-   // generate and bind the vao
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    
-    // generate and bind the vertex buffer object
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            
-    // data for a fullscreen quad (this time with texture coords)
-    GLfloat vertexData[] = {
-    //  X     Y     Z           U     V     
-       1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
-      -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
-       1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
-      -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
-    }; // 4 vertices with 5 components (floats) each
-
-    // fill with data
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*4*5, vertexData, GL_STATIC_DRAW);
-                    
-           
-    // set up generic attrib pointers
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (char*)0 + 0*sizeof(GLfloat));
- 
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (char*)0 + 3*sizeof(GLfloat));
-    
-    
-    // generate and bind the index buffer object
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            
-    GLuint indexData[] = {
-        0,1,2, // first triangle
-        2,1,3, // second triangle
-    };
-
-    // fill with data
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*2*3, indexData, GL_STATIC_DRAW);
-    
-    // "unbind" vao
-    glBindVertexArray(0);
-
-
-	// texture handle
-	GLuint texture;
-
-	glActiveTexture(GL_TEXTURE3);
-
-	// generate texture
-	glGenTextures(1, &texture);
-
-	// bind the texture
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	// set texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// set texture content
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-
-
-
-
-
-
-
-
-	// use the shader program
-	glUseProgram(ortho.get_program());
-
-	// bind texture to third texture
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glUniform1i(uniforms.ortho.tex, 3);
-
-	// bind the vao
-	glBindVertexArray(vao);
-
-	// draw
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ibo);
-
-	glDeleteTextures(1, &copy_tex);
-
-
-
-	if (0)//draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
+	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
+		//https://stackoverflow.com/questions/3073796/how-to-use-glcopyimage2d
+
+		//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+		glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+		GLuint copy_tex = 0;
+		glGenTextures(1, &copy_tex);
+
+		vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
+
+
+
+		// Copy from GPU
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, copy_tex);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+
+		// Alter here
+
 		size_t char_x_pos = 10;
 		size_t char_y_pos = 30;
 
@@ -1606,23 +1495,121 @@ void display_func(void)
 		text_colour.g = 255;
 		text_colour.b = 255;
 
-		vector<unsigned char> fbpixels(4 * static_cast<size_t>(win_x) * static_cast<size_t>(win_y));
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		glReadPixels(0, 0, win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
-
-		// Do anything you like here... for instance, use OpenCV for convolution
-
 		for (size_t i = 0; i < log_system.get_contents_size(); i++)
 		{
 			string s;
 			log_system.get_string_from_contents(i, s);
-			print_sentence(fbpixels, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
+			print_sentence(tex_buf, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
 			char_y_pos += 20;
 		}
 
-		glDrawPixels(win_x, win_y, GL_RGBA, GL_UNSIGNED_BYTE, &fbpixels[0]);
+
+
+
+
+		// vao and vbo handle
+		GLuint vao, vbo, ibo;
+
+
+
+		// generate and bind the vao
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		// generate and bind the vertex buffer object
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+		// data for a fullscreen quad (this time with texture coords)
+		GLfloat vertexData[] = {
+			//  X     Y     Z           U     V     
+			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
+			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
+			   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
+			  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
+		}; // 4 vertices with 5 components (floats) each
+
+		// fill with data
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
+
+
+		// set up generic attrib pointers
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 0 * sizeof(GLfloat));
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 3 * sizeof(GLfloat));
+
+
+		// generate and bind the index buffer object
+		glGenBuffers(1, &ibo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+		GLuint indexData[] = {
+			0,1,2, // first triangle
+			2,1,3, // second triangle
+		};
+
+		// fill with data
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
+
+		// "unbind" vao
+		glBindVertexArray(0);
+
+
+		// texture handle
+		GLuint texture;
+
+		glActiveTexture(GL_TEXTURE3);
+
+		// generate texture
+		glGenTextures(1, &texture);
+
+		// bind the texture
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		// set texture parameters
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// set texture content
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+
+
+
+
+
+
+
+		// use the shader program
+		glUseProgram(ortho.get_program());
+
+		// bind texture to third texture
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glUniform1i(uniforms.ortho.tex, 3);
+
+		// bind the vao
+		glBindVertexArray(vao);
+
+		// draw
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ibo);
+
+		glDeleteTextures(1, &copy_tex);
 	}
+
+
+
+
 
 	glutSwapBuffers();
 }
@@ -1715,7 +1702,7 @@ void setup_gui(void)
 	equation_edittext->set_w(200);
 
 	glui->add_separator();
-	
+
 	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst length (ms):"), 0, const_cast<char*>("333"), 3, control_cb);
 	burst_length_edittext->set_text("333");
 	burst_length_edittext->set_w(150);
