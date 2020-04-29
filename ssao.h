@@ -48,6 +48,7 @@
 #include <iostream>
 #include <chrono>
 #include <sstream>
+#include <complex>
 using namespace std;
 
 #include "vertex_fragment_shader.h"
@@ -148,6 +149,22 @@ public:
 };
 
 
+
+complex<float> get_window_coords_from_ndc_coords(size_t viewport_width, size_t viewport_height, complex<float>& src_coords)
+{
+	float x_w = viewport_width / 2.0f * src_coords.real() + viewport_width / 2.0f;
+	float y_w = viewport_height / 2.0f * src_coords.imag() + viewport_height / 2.0f;
+
+	return complex<float>(x_w, y_w);
+}
+
+complex<float> get_ndc_coords_from_window_coords(size_t viewport_width, size_t viewport_height, complex<float>& src_coords)
+{
+	float x_ndc = (2.0f * src_coords.real() / viewport_width) - 1.0f;
+	float y_ndc = (2.0f * src_coords.imag() / viewport_height) - 1.0f;
+
+	return complex<float>(x_ndc, y_ndc);
+}
 
 
 
@@ -1411,8 +1428,10 @@ void display_func(void)
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(quad_vao);
-
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
@@ -1428,9 +1447,9 @@ void display_func(void)
 		glBindTexture(GL_TEXTURE_2D, copy_tex);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+		glDeleteTextures(1, &copy_tex);
 
-
-		// Alter here
+		// Begin alter
 
 		size_t char_x_pos = 10;
 		size_t char_y_pos = 30;
@@ -1448,25 +1467,25 @@ void display_func(void)
 			char_y_pos += 20;
 		}
 
+		// End alter here
 
 
 
-
-		// vao and vbo handle
 		GLuint vao, vbo, ibo;
 
 		// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
 
-		// generate and bind the vao
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 
-		// generate and bind the vertex buffer object
 		glGenBuffers(1, &vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
+		// http://www.songho.ca/opengl/gl_transform.html
+
+
 		// data for a fullscreen quad (this time with texture coords)
-		const GLfloat vertexData[] = {
+		static const GLfloat vertexData[] = {
 			//  X     Y     Z           U     V     
 			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
 			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
@@ -1490,66 +1509,46 @@ void display_func(void)
 		glGenBuffers(1, &ibo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
-		GLuint indexData[] = {
+		static const GLuint indexData[] = {
 			0,1,2, // first triangle
 			2,1,3, // second triangle
 		};
 
-		// fill with data
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
 
-		// "unbind" vao
 		glBindVertexArray(0);
 
+		GLuint ortho_tex;
 
-		// texture handle
-		GLuint texture;
+		glActiveTexture(GL_TEXTURE2);
 
-		glActiveTexture(GL_TEXTURE3);
+		glGenTextures(1, &ortho_tex);
 
-		// generate texture
-		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, ortho_tex);
 
-		// bind the texture
-		glBindTexture(GL_TEXTURE_2D, texture);
-
-		// set texture parameters
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		// set texture content
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
 
-
-
-
-
-
-
-
-		// use the shader program
 		glUseProgram(ortho.get_program());
 
-		// bind texture to third texture
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, ortho_tex);
 
-		glUniform1i(uniforms.ortho.tex, 3);
+		glUniform1i(uniforms.ortho.tex, 2);
 
-		// bind the vao
 		glBindVertexArray(vao);
 
-		// draw
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
 		glDeleteBuffers(1, &ibo);
 
-		glDeleteTextures(1, &texture);
-		glDeleteTextures(1, &copy_tex);
+		glDeleteTextures(1, &ortho_tex);
 	}
 
 
