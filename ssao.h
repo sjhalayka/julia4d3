@@ -766,7 +766,7 @@ void passive_motion_func(int x, int y)
 vertex_fragment_shader render;
 vertex_fragment_shader ssao;
 vertex_fragment_shader flat;
-
+vertex_fragment_shader ortho;
 
 
 
@@ -794,6 +794,13 @@ struct
 		GLint           proj_matrix;
 		GLint			flat_colour;
 	} flat;
+
+	struct
+	{
+		GLint			tex;
+	} ortho;
+
+
 } uniforms;
 
 bool  show_shading;
@@ -844,6 +851,12 @@ bool load_shaders(void)
 		return false;
 	}
 
+	if (false == ortho.init("ortho.vs.glsl", "ortho.fs.glsl"))
+	{
+		cout << "Could not load ortho shader" << endl;
+		return false;
+	}
+
 	// Set up shader
 	if (false == ssao.init("ssao.vs.glsl", "ssao.fs.glsl"))
 	{
@@ -865,6 +878,8 @@ bool load_shaders(void)
 	uniforms.flat.mv_matrix = glGetUniformLocation(flat.get_program(), "mv_matrix");
 	uniforms.flat.proj_matrix = glGetUniformLocation(flat.get_program(), "proj_matrix");
 	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
+	
+	uniforms.ortho.tex = glGetUniformLocation(ortho.get_program(), "tex");
 
 	return true;
 }
@@ -1445,6 +1460,13 @@ void display_func(void)
 
 
 
+
+
+
+
+
+
+
 	//https://stackoverflow.com/questions/3073796/how-to-use-glcopyimage2d
 
 	//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
@@ -1455,47 +1477,186 @@ void display_func(void)
 
 	vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
 
+
+
 	// Copy from GPU
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, copy_tex);
 	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-
-	// Alter here, say, using OpenCV
-	for (size_t i = 0; i < win_x; i++)
-	{
-		for (size_t j = 0; j < win_y; j++)
-		{
-			size_t index = 4 * (i * win_y + j);
-
-			tex_buf[index + 0] = 255;
-			tex_buf[index + 1] = 127;
-			tex_buf[index + 2] = 0;
-			tex_buf[index + 3] = 255;
-		}
-	}
-
-	// Copy back to GPU
-	glActiveTexture(GL_TEXTURE2);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-	glBindImageTexture(2, copy_tex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 	
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, copy_tex, 0);
+	// Alter here, say, using OpenCV
+	//for (size_t i = 0; i < win_x; i++)
+	//{
+	//	for (size_t j = 0; j < win_y; j++)
+	//	{
+	//		size_t index = 4 * (i * win_y + j);
+
+	//		tex_buf[index + 0] = 255;
+	//		tex_buf[index + 1] = 127;
+	//		tex_buf[index + 2] = 0;
+	//		tex_buf[index + 3] = 255;
+	//	}
+	//}
+
+	// Copy back to GPU
+//	glActiveTexture(GL_TEXTURE2);
+//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+//	glBindImageTexture(2, copy_tex, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8UI);
 
 
-//	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//	glBindFramebuffer(GL_READ_FRAMEBUFFER, render_fbo);
-
-//	glBlitFramebuffer(0, 0, win_x, win_y, 0, 0, win_x, win_y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, copy_tex, 0);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+
+
+
+
+
+	// vao and vbo handle
+	GLuint vao, vbo, ibo;
+
+
+
+   // generate and bind the vao
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    
+    // generate and bind the vertex buffer object
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            
+    // data for a fullscreen quad (this time with texture coords)
+    GLfloat vertexData[] = {
+    //  X     Y     Z           U     V     
+       1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
+      -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
+       1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
+      -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
+    }; // 4 vertices with 5 components (floats) each
+
+    // fill with data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*4*5, vertexData, GL_STATIC_DRAW);
+                    
+           
+    // set up generic attrib pointers
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (char*)0 + 0*sizeof(GLfloat));
+ 
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (char*)0 + 3*sizeof(GLfloat));
+    
+    
+    // generate and bind the index buffer object
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+            
+    GLuint indexData[] = {
+        0,1,2, // first triangle
+        2,1,3, // second triangle
+    };
+
+    // fill with data
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*2*3, indexData, GL_STATIC_DRAW);
+    
+    // "unbind" vao
+    glBindVertexArray(0);
+
+
+	// texture handle
+	GLuint texture;
+
+	glActiveTexture(GL_TEXTURE3);
+
+	// generate texture
+	glGenTextures(1, &texture);
+
+	// bind the texture
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// set texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// set texture content
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
+
+
+
+
+
+
+
+
+	// use the shader program
+	glUseProgram(ortho.get_program());
+
+	// bind texture to third texture
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glUniform1i(uniforms.ortho.tex, 3);
+
+	// bind the vao
+	glBindVertexArray(vao);
+
+	// draw
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ibo);
+
+
+
+
+
+
+
+
+
+
+
+
+	//glUseProgram(ortho.get_program());
+
+	//glUniform1i(uniforms.ortho.tex, 2);
+
+	//glPushMatrix();
+
+	////	glColor3f(1, 1, 1);
+
+	//glActiveTexture(GL_TEXTURE2);
+	//glBindTexture(GL_TEXTURE_2D, copy_tex);
+	//glBegin(GL_QUADS);
+	//glTexCoord2f(0, 0);
+	//glVertex2f(-1, -1);
+	//glTexCoord2f(1, 0);
+	//glVertex2f(1, -1);
+	//glTexCoord2f(1, 1);
+	//glVertex2f(1, 1);
+	//glTexCoord2f(0, 1);
+	//glVertex2f(-1, 1);
+	//glEnd();
+
+	//glPopMatrix();
+
+
+	
+	
+	
+	
+	// https://github.com/progschj/OpenGL-Examples/blob/master/03texture.cpp
+
+
+	
+	
+	
 	//GLuint copy_tex2 = 0;
 	//glGenTextures(1, &copy_tex2);
 
