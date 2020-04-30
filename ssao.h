@@ -92,6 +92,8 @@ GLUI_Panel* obj_panel, * obj_panel2, * obj_panel3;
 
 GLUI_Button* generate_mesh_button, * export_to_stl_button;
 
+GLUI_StaticText *fps_statictext;
+
 GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
@@ -739,8 +741,82 @@ void myGlutReshape(int x, int y)
 	glutPostRedisplay();
 }
 
+
+
+
+
+// https://noobtuts.com/cpp/frames-per-second
+class Interval
+{
+private:
+	unsigned int initial_;
+
+public:
+	// Ctor
+	inline Interval() : initial_(GetTickCount())
+	{
+	}
+
+	// Dtor
+	virtual ~Interval()
+	{
+	}
+
+	inline unsigned int value() const
+	{
+		return GetTickCount() - initial_;
+	}
+};
+
+
+class Fps
+{
+protected:
+	unsigned int m_fps;
+	unsigned int m_fpscount;
+	Interval m_fpsinterval;
+
+public:
+	// Constructor
+	Fps() : m_fps(0), m_fpscount(0)
+	{
+	}
+
+	// Update
+	void update()
+	{
+		// increase the counter by one
+		m_fpscount++;
+
+		// one second elapsed? (= 1000 milliseconds)
+		if (m_fpsinterval.value() > 1000)
+		{
+			// save the current counter value to m_fps
+			m_fps = m_fpscount;
+
+			// reset the counter and the interval
+			m_fpscount = 0;
+			m_fpsinterval = Interval();
+		}
+	}
+
+	// Get fps
+	unsigned int get() const
+	{
+		return m_fps;
+	}
+};
+
+
+
+
+Fps f;
+
+
 void myGlutIdle(void)
 {
+	std::chrono::high_resolution_clock::time_point frame_begin_time = std::chrono::high_resolution_clock::now();
+
 	glutSetWindow(win_id);
 
 	if ((STATE_FINISHED == jsm.get_state() || STATE_UNINITIALIZED == jsm.get_state())
@@ -767,7 +843,14 @@ void myGlutIdle(void)
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
 		} while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness during generation
+
 	}
+
+	f.update();
+
+	ostringstream oss;
+	oss << "FPS: " << f.get();
+	fps_statictext->set_text(oss.str());
 
 	glutPostRedisplay();
 }
@@ -1574,10 +1657,6 @@ void display_func(void)
 		draw_console();
 	}
 
-
-
-
-
 	glutSwapBuffers();
 }
 
@@ -1668,6 +1747,7 @@ void setup_gui(void)
 	equation_edittext->set_text("Z = sin(Z) + C*sin(Z)");
 	equation_edittext->set_w(200);
 
+
 	glui->add_separator();
 
 	burst_length_edittext = glui->add_edittext(const_cast<char*>("Burst length (ms):"), 0, const_cast<char*>("333"), 3, control_cb);
@@ -1746,6 +1826,10 @@ void setup_gui(void)
 	x_max_edittext->set_text("1.5");
 	y_max_edittext->set_text("1.5");
 	z_max_edittext->set_text("1.5");
+
+	glui->add_separator();
+
+	fps_statictext = glui->add_statictext("FPS: --");
 }
 
 
