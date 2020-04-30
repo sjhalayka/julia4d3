@@ -981,15 +981,124 @@ bool load_shaders(void)
 
 
 
-class monochrome_image
+class font_image
 {
 public:
 	size_t width;
 	size_t height;
 	vector<unsigned char> pixel_data;
+	vector<unsigned char> rgba_data;
+
+	GLuint tex_handle, vao, vbo, ibo;
+
+	void opengl_init(void)
+	{
+		glGenVertexArrays(1, &vao);
+		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &ibo);
+
+		rgba_data.resize(4 * width * height);
+
+		for (size_t i = 0; i < width; i++)
+		{
+			for (size_t j = 0; j < height; j++)
+			{
+				size_t mono_index = j * width + i;
+				size_t rgba_index = 4 * mono_index;
+
+				rgba_data[rgba_index + 3] = pixel_data[mono_index];
+				rgba_data[rgba_index + 0] = 255;// pixel_data[mono_index];
+				rgba_data[rgba_index + 1] = 255;// pixel_data[mono_index];
+				rgba_data[rgba_index + 2] = 255;// pixel_data[mono_index];
+			}
+		}
+
+		glGenTextures(1, &tex_handle);
+		glBindTexture(GL_TEXTURE_2D, tex_handle);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &rgba_data[0]);
+	}
+
+	void draw(GLuint shader_program, size_t x, size_t y, size_t win_width, size_t win_height)
+	{
+
+
+
+
+
+
+
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
+
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+		// http://www.songho.ca/opengl/gl_transform.html
+
+
+		// data for a fullscreen quad (this time with texture coords)
+		static const GLfloat vertexData[] = {
+			//  X     Y     Z           U     V     
+			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
+			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
+			   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
+			  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
+		}; // 4 vertices with 5 components (floats) each
+
+		// fill with data
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
+
+
+		// set up generic attrib pointers
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 0 * sizeof(GLfloat));
+
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 3 * sizeof(GLfloat));
+
+		// generate and bind the index buffer object
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
+		static const GLuint indexData[] = {
+			0,1,2, // first triangle
+			2,1,3, // second triangle
+		};
+
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
+
+		glBindVertexArray(0);
+
+		glUseProgram(ortho.get_program());
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, tex_handle);
+
+		glUniform1i(uniforms.ortho.tex, 0);
+
+		glBindVertexArray(vao);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	}
+
+	~font_image(void)
+	{
+		glDeleteTextures(1, &tex_handle);
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ibo);
+	}
 };
 
-vector<monochrome_image> mimgs;
+vector<font_image> mimgs;
 
 const size_t num_chars = 256;
 const size_t image_width = 256;
@@ -1134,7 +1243,7 @@ bool init_character_set(void)
 	{
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
-			monochrome_image img;
+			font_image img;
 
 			img.width = char_width / 4;
 			img.height = char_height;
@@ -1171,7 +1280,7 @@ bool init_character_set(void)
 
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
-			monochrome_image img;
+			font_image img;
 			img.width = cropped_width;
 			img.height = char_height;
 			img.pixel_data.resize(img.width * img.height, 0);
@@ -1201,6 +1310,9 @@ bool init_character_set(void)
 			mimgs.push_back(img);
 		}
 	}
+
+	for (size_t i = 0; i < mimgs.size(); i++)
+		mimgs[i].opengl_init();
 
 	return true;
 }
@@ -1649,7 +1761,11 @@ void display_func(void)
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
-		draw_console();
+		//draw_console();
+
+		glUseProgram(ortho.get_program());
+
+		mimgs[64].draw(ortho.get_program(), 30, 30, win_x, win_y);
 	}
 
 	glutSwapBuffers();
