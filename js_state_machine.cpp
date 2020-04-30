@@ -1044,8 +1044,6 @@ int js_state_machine::g2_stage_1(void)
 
 int js_state_machine::g3_stage_0_blue(void)
 {
-	cout << "blue" << endl;
-
 	size_t count = 0;
 
 	for (; g3_i0 != triangles.size(); g3_i0++)
@@ -1121,8 +1119,6 @@ int js_state_machine::g3_stage_0_blue(void)
 
 int js_state_machine::g3_stage_0_rainbow(void)
 {
-	cout << "rainbow" << endl;
-
 	vertex_3 cube_v0(fsp.x_min, fsp.y_max, fsp.z_max);
 	vertex_3 cube_v1(fsp.x_min, fsp.y_min, fsp.z_max);
 	vertex_3 cube_v2(fsp.x_max, fsp.y_min, fsp.z_max);
