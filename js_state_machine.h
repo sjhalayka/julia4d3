@@ -60,8 +60,17 @@ typedef int (js_state_machine::* js_state_machine_member_function_pointer)(void)
 #define STATE_G3_STAGE_1 13
 
 
+class RGB
+{
+public:
+	unsigned char r, g, b;
+};
 
 
+
+
+
+RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned char bri_percent);
 
 
 class js_state_machine
@@ -107,9 +116,12 @@ protected:
 	int g1_stage_3(void);
 	int g1_stage_4(void);
 	int g1_stage_5(void);
+
 	int g2_stage_0(void);
 	int g2_stage_1(void);
-	int g3_stage_0(void);
+
+	int g3_stage_0_blue(void);
+	int g3_stage_0_rainbow(void);
 
 	float g0_step_size_x = 0, g0_step_size_y = 0, g0_step_size_z = 0;
 	quaternion g0_Z;

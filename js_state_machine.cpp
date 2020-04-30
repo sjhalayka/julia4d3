@@ -1,6 +1,131 @@
 #include "js_state_machine.h"
 
 
+RGB HSBtoRGB(unsigned short int hue_degree, unsigned char sat_percent, unsigned char bri_percent)
+{
+	float R = 0.0f;
+	float G = 0.0f;
+	float B = 0.0f;
+
+	if (hue_degree > 359)
+		hue_degree = 359;
+
+	if (sat_percent > 100)
+		sat_percent = 100;
+
+	if (bri_percent > 100)
+		bri_percent = 100;
+
+	float hue_pos = 6.0f - ((static_cast<float>(hue_degree) / 359.0f) * 6.0f);
+
+	if (hue_pos >= 0.0f && hue_pos < 1.0f)
+	{
+		R = 255.0f;
+		G = 0.0f;
+		B = 255.0f * hue_pos;
+	}
+	else if (hue_pos >= 1.0f && hue_pos < 2.0f)
+	{
+		hue_pos -= 1.0f;
+
+		R = 255.0f - (255.0f * hue_pos);
+		G = 0.0f;
+		B = 255.0f;
+	}
+	else if (hue_pos >= 2.0f && hue_pos < 3.0f)
+	{
+		hue_pos -= 2.0f;
+
+		R = 0.0f;
+		G = 255.0f * hue_pos;
+		B = 255.0f;
+	}
+	else if (hue_pos >= 3.0f && hue_pos < 4.0f)
+	{
+		hue_pos -= 3.0f;
+
+		R = 0.0f;
+		G = 255.0f;
+		B = 255.0f - (255.0f * hue_pos);
+	}
+	else if (hue_pos >= 4.0f && hue_pos < 5.0f)
+	{
+		hue_pos -= 4.0f;
+
+		R = 255.0f * hue_pos;
+		G = 255.0f;
+		B = 0.0f;
+	}
+	else
+	{
+		hue_pos -= 5.0f;
+
+		R = 255.0f;
+		G = 255.0f - (255.0f * hue_pos);
+		B = 0.0f;
+	}
+
+	if (100 != sat_percent)
+	{
+		if (0 == sat_percent)
+		{
+			R = 255.0f;
+			G = 255.0f;
+			B = 255.0f;
+		}
+		else
+		{
+			if (255.0f != R)
+				R += ((255.0f - R) / 100.0f) * (100.0f - sat_percent);
+			if (255.0f != G)
+				G += ((255.0f - G) / 100.0f) * (100.0f - sat_percent);
+			if (255.0f != B)
+				B += ((255.0f - B) / 100.0f) * (100.0f - sat_percent);
+		}
+	}
+
+	if (100 != bri_percent)
+	{
+		if (0 == bri_percent)
+		{
+			R = 0.0f;
+			G = 0.0f;
+			B = 0.0f;
+		}
+		else
+		{
+			if (0.0f != R)
+				R *= static_cast<float>(bri_percent) / 100.0f;
+			if (0.0f != G)
+				G *= static_cast<float>(bri_percent) / 100.0f;
+			if (0.0f != B)
+				B *= static_cast<float>(bri_percent) / 100.0f;
+		}
+	}
+
+	if (R < 0.0f)
+		R = 0.0f;
+	else if (R > 255.0f)
+		R = 255.0f;
+
+	if (G < 0.0f)
+		G = 0.0f;
+	else if (G > 255.0f)
+		G = 255.0f;
+
+	if (B < 0.0f)
+		B = 0.0f;
+	else if (B > 255.0f)
+		B = 255.0f;
+
+	RGB rgb;
+
+	rgb.r = static_cast<unsigned char>(R);
+	rgb.g = static_cast<unsigned char>(G);
+	rgb.b = static_cast<unsigned char>(B);
+
+	return rgb;
+}
 
 bool compile_and_link_compute_shader(const char* const file_name, GLuint& program, logging_system& ls)
 {
@@ -898,7 +1023,12 @@ int js_state_machine::g2_stage_1(void)
 		g2_out.close();
 
 		g3_i0 = 0;
-		ptr = &js_state_machine::g3_stage_0;
+
+		if(fsp.rainbow_colouring)
+			ptr = &js_state_machine::g3_stage_0_rainbow;
+		else
+			ptr = &js_state_machine::g3_stage_0_blue;
+
 		state = STATE_G3_STAGE_0;
 
 		oss.clear();
@@ -912,8 +1042,10 @@ int js_state_machine::g2_stage_1(void)
 	return 1;
 }
 
-int js_state_machine::g3_stage_0(void)
+int js_state_machine::g3_stage_0_blue(void)
 {
+	cout << "blue" << endl;
+
 	size_t count = 0;
 
 	for (; g3_i0 != triangles.size(); g3_i0++)
@@ -956,6 +1088,157 @@ int js_state_machine::g3_stage_0(void)
 		vertex_data.push_back(colour.x);
 		vertex_data.push_back(colour.y);
 		vertex_data.push_back(colour.z);
+
+		vertex_data.push_back(v2.x);
+		vertex_data.push_back(v2.y);
+		vertex_data.push_back(v2.z);
+		vertex_data.push_back(v2_fn.x);
+		vertex_data.push_back(v2_fn.y);
+		vertex_data.push_back(v2_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+	}
+
+	end_time = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+
+	ostringstream oss;
+	oss.clear();
+	oss.str("");
+	oss << "Total duration: " << elapsed.count() / 1000.0f << " seconds";
+
+	if (0 != log_system)
+		log_system->add_string_to_contents(oss.str());
+
+
+	ptr = 0;
+	state = STATE_FINISHED;
+	reclaim_all_but_vertex_buffer();
+	return 0;
+}
+
+int js_state_machine::g3_stage_0_rainbow(void)
+{
+	cout << "rainbow" << endl;
+
+	vertex_3 cube_v0(fsp.x_min, fsp.y_max, fsp.z_max);
+	vertex_3 cube_v1(fsp.x_min, fsp.y_min, fsp.z_max);
+	vertex_3 cube_v2(fsp.x_max, fsp.y_min, fsp.z_max);
+	vertex_3 cube_v3(fsp.x_max, fsp.y_max, fsp.z_max);
+	vertex_3 cube_v4(fsp.x_min, fsp.y_max, fsp.z_min);
+	vertex_3 cube_v5(fsp.x_min, fsp.y_min, fsp.z_min);
+	vertex_3 cube_v6(fsp.x_max, fsp.y_min, fsp.z_min);
+	vertex_3 cube_v7(fsp.x_max, fsp.y_max, fsp.z_min);
+
+	float min_length = 0, max_length = 0;
+
+	if (cube_v0.length() > max_length)
+		max_length = cube_v0.length();
+
+	if (cube_v1.length() > max_length)
+		max_length = cube_v1.length();
+
+	if (cube_v2.length() > max_length)
+		max_length = cube_v2.length();
+
+	if (cube_v3.length() > max_length)
+		max_length = cube_v3.length();
+
+	if (cube_v4.length() > max_length)
+		max_length = cube_v4.length();
+
+	if (cube_v5.length() > max_length)
+		max_length = cube_v5.length();
+
+	if (cube_v6.length() > max_length)
+		max_length = cube_v6.length();
+
+	if (cube_v7.length() > max_length)
+		max_length = cube_v7.length();
+
+
+	
+	float max_rainbow = 360.0f;
+	float min_rainbow = 360.0f;
+
+	size_t count = 0;
+
+	for (; g3_i0 != triangles.size(); g3_i0++)
+	{
+		if (count == g3_batch_size)
+			return 0;
+		else
+			count++;
+
+		vertex_3 colour(1.0f, 0.5f, 0.0);
+
+		size_t v0_index = triangles[g3_i0].vertex[0].index;
+		size_t v1_index = triangles[g3_i0].vertex[1].index;
+		size_t v2_index = triangles[g3_i0].vertex[2].index;
+
+		vertex_3 v0_fn(vertices_with_face_normals[v0_index].nx, vertices_with_face_normals[v0_index].ny, vertices_with_face_normals[v0_index].nz);
+		vertex_3 v1_fn(vertices_with_face_normals[v1_index].nx, vertices_with_face_normals[v1_index].ny, vertices_with_face_normals[v1_index].nz);
+		vertex_3 v2_fn(vertices_with_face_normals[v2_index].nx, vertices_with_face_normals[v2_index].ny, vertices_with_face_normals[v2_index].nz);
+
+		vertex_3 v0(triangles[g3_i0].vertex[0].x, triangles[g3_i0].vertex[0].y, triangles[g3_i0].vertex[0].z);
+		vertex_3 v1(triangles[g3_i0].vertex[1].x, triangles[g3_i0].vertex[1].y, triangles[g3_i0].vertex[1].z);
+		vertex_3 v2(triangles[g3_i0].vertex[2].x, triangles[g3_i0].vertex[2].y, triangles[g3_i0].vertex[2].z);
+
+		float vertex_length = v0.length() - min_length;
+
+		RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
+
+		vertex_data.push_back(v0.x);
+		vertex_data.push_back(v0.y);
+		vertex_data.push_back(v0.z);
+		vertex_data.push_back(v0_fn.x);
+		vertex_data.push_back(v0_fn.y);
+		vertex_data.push_back(v0_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+
+		vertex_length = v1.length() - min_length;
+
+		rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
+
+		vertex_data.push_back(v1.x);
+		vertex_data.push_back(v1.y);
+		vertex_data.push_back(v1.z);
+		vertex_data.push_back(v1_fn.x);
+		vertex_data.push_back(v1_fn.y);
+		vertex_data.push_back(v1_fn.z);
+		vertex_data.push_back(colour.x);
+		vertex_data.push_back(colour.y);
+		vertex_data.push_back(colour.z);
+
+
+		vertex_length = v2.length() - min_length;
+
+		rgb = HSBtoRGB(static_cast<unsigned short int>(
+			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
+			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(100));
+
+		colour.x = rgb.r / 255.0f;
+		colour.y = rgb.g / 255.0f;
+		colour.z = rgb.b / 255.0f;
 
 		vertex_data.push_back(v2.x);
 		vertex_data.push_back(v2.y);

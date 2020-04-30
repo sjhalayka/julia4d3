@@ -95,6 +95,8 @@ GLUI_Button* generate_mesh_button, * export_to_stl_button;
 GLUI_StaticText *fps_statictext;
 
 GLUI_Checkbox* randomize_c_checkbox, * use_pedestal_checkbox;
+GLUI_Checkbox* rainbow_checkbox;
+
 GLUI_Checkbox* draw_console_checkbox;
 GLUI_Checkbox* draw_axis_checkbox;
 
@@ -144,11 +146,6 @@ unsigned int triangle_buffer = 0;
 unsigned int axis_buffer = 0;
 
 
-class RGB
-{
-public:
-	unsigned char r, g, b;
-};
 
 
 
@@ -167,9 +164,6 @@ complex<float> get_ndc_coords_from_window_coords(size_t viewport_width, size_t v
 
 	return complex<float>(x_ndc, y_ndc);
 }
-
-
-
 
 
 
@@ -266,6 +260,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 	p.randomize_c = randomize_c_checkbox->get_int_val();
 	p.use_pedestal = use_pedestal_checkbox->get_int_val();
 	p.use_gpu = use_gpu_checkbox->get_int_val();
+	p.rainbow_colouring = rainbow_checkbox->get_int_val();
 
 	temp_string = pedestal_y_start_edittext->text;
 
@@ -1755,6 +1750,10 @@ void setup_gui(void)
 	burst_length_edittext->set_w(150);
 
 	glui->add_separator();
+
+
+	rainbow_checkbox = glui->add_checkbox("Rainbow colouring");
+	rainbow_checkbox->set_int_val(0);
 
 	draw_console_checkbox = glui->add_checkbox("Draw console text");
 	draw_console_checkbox->set_int_val(1);

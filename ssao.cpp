@@ -7,7 +7,7 @@ int main(int argc, char **argv)
 	srand(static_cast<unsigned int>(time(0)));
 
 	log_system.set_max_size(20);
-	log_system.add_string_to_contents("Welcome to Julia 4D 3 v1.4");
+	log_system.add_string_to_contents("Welcome to Julia 4D 3 v1.5");
 	log_system.add_string_to_contents("Press the Generate mesh button to begin!");
 	log_system.add_string_to_contents("- - - - - - - - - - - - - - - - - - - - - - - - - - - -");
 	log_system.add_string_to_contents("LMB + drag: rotate camera view");
@@ -21,7 +21,7 @@ int main(int argc, char **argv)
     win_id = glutCreateWindow("Julia 4D 3");
  
 	if(false == init())
-		return 3;
+		return 1;
 
 	setup_gui();
 
