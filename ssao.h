@@ -147,7 +147,7 @@ unsigned int axis_buffer = 0;
 
 
 
-
+// http://www.songho.ca/opengl/gl_transform.html
 
 complex<float> get_window_coords_from_ndc_coords(size_t viewport_width, size_t viewport_height, complex<float>& src_coords)
 {
@@ -1025,10 +1025,25 @@ public:
 
 	void draw(GLuint shader_program, size_t x, size_t y, size_t win_width, size_t win_height)
 	{
+		complex<float> v0w(x, y);
+		complex<float> v1w(x, y + this->height);
+		complex<float> v2w(x + this->width, y + this->height);
+		complex<float> v3w(x + this->width, y);
+
+		complex<float> v0ndc = get_ndc_coords_from_window_coords(win_width, win_height, v0w);
+		complex<float> v1ndc = get_ndc_coords_from_window_coords(win_width, win_height, v1w);
+		complex<float> v2ndc = get_ndc_coords_from_window_coords(win_width, win_height, v2w);
+		complex<float> v3ndc = get_ndc_coords_from_window_coords(win_width, win_height, v3w);
 
 
-
-
+		// data for a fullscreen quad (this time with texture coords)
+		const GLfloat vertexData[] = {
+		//	//  X     Y     Z           U     V     
+			   v0ndc.real(), v0ndc.imag(), 0.0f,      0, 0, // vertex 0
+			  v1ndc.real(), v1ndc.imag(), 0.0f,       0.0f, 1.0f, // vertex 1
+			  v2ndc.real(), v2ndc.imag(), 0.0f,       1.0f, 1.0f, // vertex 2
+			  v3ndc.real(), v3ndc.imag(), 0.0f,       1.0f, 0.0f, // vertex 3
+		}; // 4 vertices with 5 components (floats) each
 
 
 
@@ -1041,17 +1056,17 @@ public:
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-		// http://www.songho.ca/opengl/gl_transform.html
+	
 
 
 		// data for a fullscreen quad (this time with texture coords)
-		static const GLfloat vertexData[] = {
-			//  X     Y     Z           U     V     
-			   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
-			  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
-			   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
-			  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
-		}; // 4 vertices with 5 components (floats) each
+	 //const GLfloat vertexData[] = {
+		//	//  X     Y     Z           U     V     
+		//	   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
+		//	  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
+		//	   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
+		//	  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
+		//}; // 4 vertices with 5 components (floats) each
 
 		// fill with data
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
@@ -1069,7 +1084,7 @@ public:
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
 		static const GLuint indexData[] = {
-			0,1,2, // first triangle
+			3,1,0, // first triangle
 			2,1,3, // second triangle
 		};
 
