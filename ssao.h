@@ -994,6 +994,10 @@ public:
 
 	void opengl_init(RGB text_colour)
 	{
+		// Clean up, in case this opengl_init() function is called more than once
+		// (it shouldn't)
+		cleanup();
+
 		glGenVertexArrays(1, &vao);
 		glGenBuffers(1, &vbo);
 		glGenBuffers(1, &ibo);
@@ -1093,12 +1097,24 @@ public:
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
+	void cleanup(void)
+	{
+		if(glIsTexture(tex_handle))
+			glDeleteTextures(1, &tex_handle);
+
+		if(glIsVertexArray(vao))
+			glDeleteVertexArrays(1, &vao);
+		
+		if(glIsBuffer(vbo))
+			glDeleteBuffers(1, &vbo);
+		
+		if(glIsBuffer(ibo))
+			glDeleteBuffers(1, &ibo);
+	}
+
 	~font_character_image(void)
 	{
-		glDeleteTextures(1, &tex_handle);
-		glDeleteVertexArrays(1, &vao);
-		glDeleteBuffers(1, &vbo);
-		glDeleteBuffers(1, &ibo);
+		cleanup();
 	}
 };
 
