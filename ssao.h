@@ -988,8 +988,7 @@ class font_character_image
 public:
 	size_t width;
 	size_t height;
-	vector<unsigned char> pixel_data;
-	vector<unsigned char> rgba_data;
+	vector<unsigned char> monochrome_data;
 
 	GLuint tex_handle, vao, vbo, ibo;
 
@@ -999,7 +998,7 @@ public:
 		glGenBuffers(1, &vbo);
 		glGenBuffers(1, &ibo);
 
-		rgba_data.resize(4 * width * height);
+		vector<unsigned char> rgba_data(4 * width * height, 0);
 
 		for (size_t i = 0; i < width; i++)
 		{
@@ -1011,7 +1010,7 @@ public:
 				rgba_data[rgba_index + 0] = text_colour.r;
 				rgba_data[rgba_index + 1] = text_colour.g;
 				rgba_data[rgba_index + 2] = text_colour.b;
-				rgba_data[rgba_index + 3] = pixel_data[mono_index];
+				rgba_data[rgba_index + 3] = monochrome_data[mono_index];
 			}
 		}
 
@@ -1223,7 +1222,7 @@ bool init_character_set(void)
 			img.width = char_width / 4;
 			img.height = char_height;
 
-			img.pixel_data.resize(img.width * img.height, 0);
+			img.monochrome_data.resize(img.width * img.height, 0);
 
 			mimgs.push_back(img);
 		}
@@ -1258,7 +1257,7 @@ bool init_character_set(void)
 			font_character_image img;
 			img.width = cropped_width;
 			img.height = char_height;
-			img.pixel_data.resize(img.width * img.height, 0);
+			img.monochrome_data.resize(img.width * img.height, 0);
 
 			for (size_t i = 0; i < num_chars_wide; i++)
 			{
@@ -1276,7 +1275,7 @@ bool init_character_set(void)
 							const size_t img_pos = l * char_width + k;
 							const size_t sub_pos = y * cropped_width + x;
 
-							img.pixel_data[sub_pos] = char_data[n][img_pos];
+							img.monochrome_data[sub_pos] = char_data[n][img_pos];
 						}
 					}
 				}
