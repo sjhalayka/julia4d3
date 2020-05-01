@@ -744,22 +744,23 @@ void myGlutReshape(int x, int y)
 class Interval
 {
 private:
-	unsigned int initial_;
+	std::chrono::high_resolution_clock::time_point initial_;
 
 public:
 	// Ctor
-	inline Interval() : initial_(GetTickCount())
+	inline Interval() : initial_(std::chrono::high_resolution_clock::now())
 	{
 	}
 
 	// Dtor
-	virtual ~Interval()
+	virtual ~Interval(void)
 	{
 	}
 
 	inline unsigned int value() const
 	{
-		return GetTickCount() - initial_;
+		std::chrono::duration<float, std::milli> elapsed = std::chrono::high_resolution_clock::now() - initial_;
+		return static_cast<unsigned int>(elapsed.count());
 	}
 };
 
@@ -981,7 +982,7 @@ bool load_shaders(void)
 
 
 
-class font_image
+class font_character_image
 {
 public:
 	size_t width;
@@ -991,7 +992,7 @@ public:
 
 	GLuint tex_handle, vao, vbo, ibo;
 
-	void opengl_init(void)
+	void opengl_init(RGB text_colour)
 	{
 		glGenVertexArrays(1, &vao);
 		glGenBuffers(1, &vbo);
@@ -1006,10 +1007,10 @@ public:
 				size_t mono_index = j * width + i;
 				size_t rgba_index = 4 * mono_index;
 
+				rgba_data[rgba_index + 0] = text_colour.r;
+				rgba_data[rgba_index + 1] = text_colour.g;
+				rgba_data[rgba_index + 2] = text_colour.b;
 				rgba_data[rgba_index + 3] = pixel_data[mono_index];
-				rgba_data[rgba_index + 0] = 255;// pixel_data[mono_index];
-				rgba_data[rgba_index + 1] = 255;// pixel_data[mono_index];
-				rgba_data[rgba_index + 2] = 255;// pixel_data[mono_index];
 			}
 		}
 
@@ -1092,7 +1093,7 @@ public:
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	}
 
-	~font_image(void)
+	~font_character_image(void)
 	{
 		glDeleteTextures(1, &tex_handle);
 		glDeleteVertexArrays(1, &vao);
@@ -1101,7 +1102,7 @@ public:
 	}
 };
 
-vector<font_image> mimgs;
+vector<font_character_image> mimgs;
 
 const size_t num_chars = 256;
 const size_t image_width = 256;
@@ -1216,7 +1217,7 @@ bool init_character_set(void)
 	{
 		if (is_all_zeroes(char_width, char_height, char_data[n]))
 		{
-			font_image img;
+			font_character_image img;
 
 			img.width = char_width / 4;
 			img.height = char_height;
@@ -1253,7 +1254,7 @@ bool init_character_set(void)
 
 			size_t cropped_width = last_non_zeroes_column - first_non_zeroes_column + 1;
 
-			font_image img;
+			font_character_image img;
 			img.width = cropped_width;
 			img.height = char_height;
 			img.pixel_data.resize(img.width * img.height, 0);
@@ -1284,8 +1285,13 @@ bool init_character_set(void)
 		}
 	}
 
+	RGB text_colour;
+	text_colour.r = 255;
+	text_colour.g = 255;
+	text_colour.b = 255;
+
 	for (size_t i = 0; i < mimgs.size(); i++)
-		mimgs[i].opengl_init();
+		mimgs[i].opengl_init(text_colour);
 
 	return true;
 }
@@ -1323,7 +1329,9 @@ bool init(void)
 		}
 	}
 
-	cout << "OpenGL Version: " << GL_major_version << "." << GL_minor_version << endl;
+	ostringstream oss;
+	oss << "OpenGL version: " << GL_major_version << "." << GL_minor_version;
+	log_system.add_string_to_contents(oss.str());
 
 	glGenBuffers(1, &triangle_buffer);
 	glGenBuffers(1, &axis_buffer);
@@ -1630,7 +1638,6 @@ void display_func(void)
 			char_y_pos += 20;
 		}
 	}
-
 
 	glutSwapBuffers();
 }
