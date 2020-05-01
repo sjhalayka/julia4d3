@@ -1,11 +1,11 @@
 #version 430
-layout(location = 0) in vec4 vposition;
-layout(location = 1) in vec2 vtexcoord;
+layout(location = 0) in vec4 position;
+layout(location = 1) in vec2 texcoord;
 
 out vec2 ftexcoord;
 
 void main()
 {
-    ftexcoord = vtexcoord;
-    gl_Position = vposition;
+    ftexcoord = texcoord;
+    gl_Position = position;
 }
