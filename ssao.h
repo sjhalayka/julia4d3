@@ -838,6 +838,7 @@ void myGlutIdle(void)
 
 			std::chrono::high_resolution_clock::time_point compute_end_time = std::chrono::high_resolution_clock::now();
 			elapsed = compute_end_time - compute_start_time;
+
 		} while (elapsed.count() < jsm.get_burst_length()); // Lower this amount to get more UI responsiveness during generation
 
 	}
