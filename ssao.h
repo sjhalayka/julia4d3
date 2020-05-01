@@ -1021,7 +1021,7 @@ public:
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, &rgba_data[0]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0, GL_RGBA, GL_UNSIGNED_BYTE, &rgba_data[0]);
 	}
 
 	void draw(GLuint shader_program, size_t x, size_t y, size_t win_width, size_t win_height)
@@ -1029,10 +1029,10 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		complex<float> v0w(x, y);
-		complex<float> v1w(x, y + this->height);
-		complex<float> v2w(x + this->width, y + this->height);
-		complex<float> v3w(x + this->width, y);
+		complex<float> v0w(static_cast<float>(x), static_cast<float>(y));
+		complex<float> v1w(static_cast<float>(x), static_cast<float>(y + this->height));
+		complex<float> v2w(static_cast<float>(x + this->width), static_cast<float>(y + this->height));
+		complex<float> v3w(static_cast<float>(x + this->width), static_cast<float>(y));
 
 		complex<float> v0ndc = get_ndc_coords_from_window_coords(win_width, win_height, v0w);
 		complex<float> v1ndc = get_ndc_coords_from_window_coords(win_width, win_height, v1w);
