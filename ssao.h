@@ -1025,6 +1025,9 @@ public:
 
 	void draw(GLuint shader_program, size_t x, size_t y, size_t win_width, size_t win_height)
 	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		complex<float> v0w(x, y);
 		complex<float> v1w(x, y + this->height);
 		complex<float> v2w(x + this->width, y + this->height);
@@ -1035,38 +1038,23 @@ public:
 		complex<float> v2ndc = get_ndc_coords_from_window_coords(win_width, win_height, v2w);
 		complex<float> v3ndc = get_ndc_coords_from_window_coords(win_width, win_height, v3w);
 
-
 		// data for a fullscreen quad (this time with texture coords)
 		const GLfloat vertexData[] = {
-		//	//  X     Y     Z           U     V     
-			   v0ndc.real(), v0ndc.imag(), 0.0f,      0, 0, // vertex 0
-			  v1ndc.real(), v1ndc.imag(), 0.0f,       0.0f, 1.0f, // vertex 1
-			  v2ndc.real(), v2ndc.imag(), 0.0f,       1.0f, 1.0f, // vertex 2
-			  v3ndc.real(), v3ndc.imag(), 0.0f,       1.0f, 0.0f, // vertex 3
+		//	       X     Y     Z					  U     V     
+			  v0ndc.real(), v0ndc.imag(), 0,      0, 1, // vertex 0
+			  v1ndc.real(), v1ndc.imag(), 0,      0, 0, // vertex 1
+			  v2ndc.real(), v2ndc.imag(), 0,      1, 0, // vertex 2
+			  v3ndc.real(), v3ndc.imag(), 0,      1, 1, // vertex 3
 		}; // 4 vertices with 5 components (floats) each
 
 
-
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
 
 		glBindVertexArray(vao);
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	
 
-
-		// data for a fullscreen quad (this time with texture coords)
-	 //const GLfloat vertexData[] = {
-		//	//  X     Y     Z           U     V     
-		//	   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
-		//	  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
-		//	   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
-		//	  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
-		//}; // 4 vertices with 5 components (floats) each
 
 		// fill with data
 		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
@@ -1122,6 +1110,27 @@ const size_t char_width = 16;
 const size_t char_height = 16;
 const size_t num_chars_wide = image_width / char_width;
 const size_t num_chars_high = image_height / char_height;
+
+
+
+void print_char2(const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c)
+{
+	mimgs[c].draw(ortho.get_program(), char_x_pos, char_y_pos, win_x, win_y);
+}
+
+void print_sentence2(const size_t fb_width, const size_t fb_height, size_t char_x_pos,  size_t char_y_pos, const string s)
+{
+	char_y_pos = fb_height - char_y_pos;
+
+	for (size_t i = 0; i < s.size(); i++)
+	{
+		print_char2(fb_width, fb_height, char_x_pos, char_y_pos, s[i]);
+
+		size_t char_width = mimgs[s[i]].width;
+
+		char_x_pos += char_width + 2;
+	}
+}
 
 
 
@@ -1598,123 +1607,6 @@ void draw_mesh(void)
 	glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 }
 
-void draw_console(void)
-{
-	glReadBuffer(GL_COLOR_ATTACHMENT0);
-
-	GLuint copy_tex = 0;
-	glGenTextures(1, &copy_tex);
-
-	vector<GLubyte> tex_buf(4 * win_x * win_y, 0);
-
-	// Copy from GPU
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, copy_tex);
-	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, win_x, win_y, 0);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-	glDeleteTextures(1, &copy_tex);
-
-	// Begin alter
-
-	size_t char_x_pos = 10;
-	size_t char_y_pos = 30;
-
-	RGB text_colour;
-	text_colour.r = 255;
-	text_colour.g = 255;
-	text_colour.b = 255;
-
-	for (size_t i = 0; i < log_system.get_contents_size(); i++)
-	{
-		string s;
-		log_system.get_string_from_contents(i, s);
-		print_sentence(tex_buf, win_x, win_y, char_x_pos, char_y_pos, s, text_colour);
-		char_y_pos += 20;
-	}
-
-	// End alter here
-
-
-
-	GLuint vao, vbo, ibo;
-
-	// https://raw.githubusercontent.com/progschj/OpenGL-Examples/master/03texture.cpp
-
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-	// http://www.songho.ca/opengl/gl_transform.html
-
-
-	// data for a fullscreen quad (this time with texture coords)
-	static const GLfloat vertexData[] = {
-		//  X     Y     Z           U     V     
-		   1.0f, 1.0f, 0.0f,       1.0f, 1.0f, // vertex 0
-		  -1.0f, 1.0f, 0.0f,       0.0f, 1.0f, // vertex 1
-		   1.0f,-1.0f, 0.0f,       1.0f, 0.0f, // vertex 2
-		  -1.0f,-1.0f, 0.0f,       0.0f, 0.0f, // vertex 3
-	}; // 4 vertices with 5 components (floats) each
-
-	// fill with data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 4 * 5, vertexData, GL_STATIC_DRAW);
-
-
-	// set up generic attrib pointers
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 0 * sizeof(GLfloat));
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (char*)0 + 3 * sizeof(GLfloat));
-
-
-	// generate and bind the index buffer object
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-
-	static const GLuint indexData[] = {
-		0,1,2, // first triangle
-		2,1,3, // second triangle
-	};
-
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 2 * 3, indexData, GL_STATIC_DRAW);
-
-	glBindVertexArray(0);
-
-	GLuint ortho_tex;
-
-	glActiveTexture(GL_TEXTURE2);
-
-	glGenTextures(1, &ortho_tex);
-
-	glBindTexture(GL_TEXTURE_2D, ortho_tex);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, win_x, win_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, &tex_buf[0]);
-
-	glUseProgram(ortho.get_program());
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, ortho_tex);
-
-	glUniform1i(uniforms.ortho.tex, 2);
-
-	glBindVertexArray(vao);
-
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ibo);
-
-	glDeleteTextures(1, &ortho_tex);
-}
 
 void display_func(void)
 {
@@ -1776,12 +1668,20 @@ void display_func(void)
 
 	if (draw_console_checkbox->get_int_val() && log_system.get_contents_size() > 0)
 	{
-		//draw_console();
-
 		glUseProgram(ortho.get_program());
 
-		mimgs[64].draw(ortho.get_program(), 30, 30, win_x, win_y);
+		size_t char_x_pos = 10;
+		size_t char_y_pos = 30;
+
+		for (size_t i = 0; i < log_system.get_contents_size(); i++)
+		{
+			string s;
+			log_system.get_string_from_contents(i, s);
+			print_sentence2(win_x, win_y, char_x_pos, char_y_pos, s);
+			char_y_pos += 20;
+		}
 	}
+
 
 	glutSwapBuffers();
 }
