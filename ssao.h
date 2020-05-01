@@ -990,7 +990,7 @@ public:
 	size_t height;
 	vector<unsigned char> monochrome_data;
 
-	GLuint tex_handle, vao, vbo, ibo;
+	GLuint tex_handle = 0, vao = 0, vbo = 0, ibo = 0;
 
 	void opengl_init(RGB text_colour)
 	{
