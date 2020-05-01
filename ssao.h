@@ -1113,18 +1113,18 @@ const size_t num_chars_high = image_height / char_height;
 
 
 
-void print_char2(const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c)
+void print_char(const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c)
 {
 	mimgs[c].draw(ortho.get_program(), char_x_pos, char_y_pos, win_x, win_y);
 }
 
-void print_sentence2(const size_t fb_width, const size_t fb_height, size_t char_x_pos,  size_t char_y_pos, const string s)
+void print_sentence(const size_t fb_width, const size_t fb_height, size_t char_x_pos,  size_t char_y_pos, const string s)
 {
 	char_y_pos = fb_height - char_y_pos;
 
 	for (size_t i = 0; i < s.size(); i++)
 	{
-		print_char2(fb_width, fb_height, char_x_pos, char_y_pos, s[i]);
+		print_char(fb_width, fb_height, char_x_pos, char_y_pos, s[i]);
 
 		size_t char_width = mimgs[s[i]].width;
 
@@ -1134,57 +1134,6 @@ void print_sentence2(const size_t fb_width, const size_t fb_height, size_t char_
 
 
 
-
-void print_char(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, const size_t char_x_pos, const size_t char_y_pos, const unsigned char c, const RGB& text_colour)
-{
-	for (size_t i = 0; i < mimgs[c].width; i++)
-	{
-		for (size_t j = 0; j < mimgs[c].height; j++)
-		{
-			size_t y = mimgs[c].height - j;
-
-			size_t fb_x = char_x_pos + i;
-			size_t fb_y = fb_height - char_y_pos + y;
-
-			// If out of bounds, skip this pixel
-			if (fb_x >= fb_width || fb_y >= fb_height)
-				continue;
-
-			size_t fb_index = 4 * (fb_y * fb_width + fb_x);
-			size_t img_index = j * mimgs[c].width + i;
-
-			RGB background_colour;
-			background_colour.r = fbpixels[fb_index + 0];
-			background_colour.g = fbpixels[fb_index + 1];
-			background_colour.b = fbpixels[fb_index + 2];
-
-			const unsigned char alpha = mimgs[c].pixel_data[img_index];
-			const float alpha_float = alpha / 255.0f;
-
-			RGB target_colour;
-			target_colour.r = static_cast<unsigned char>(alpha_float * double(text_colour.r - background_colour.r) + background_colour.r);
-			target_colour.g = static_cast<unsigned char>(alpha_float * double(text_colour.g - background_colour.g) + background_colour.g);
-			target_colour.b = static_cast<unsigned char>(alpha_float * double(text_colour.b - background_colour.b) + background_colour.b);
-
-			fbpixels[fb_index + 0] = target_colour.r;
-			fbpixels[fb_index + 1] = target_colour.g;
-			fbpixels[fb_index + 2] = target_colour.b;
-			fbpixels[fb_index + 3] = 255;
-		}
-	}
-}
-
-void print_sentence(vector<unsigned char>& fbpixels, const size_t fb_width, const size_t fb_height, size_t char_x_pos, const size_t char_y_pos, const string s, const RGB& text_colour)
-{
-	for (size_t i = 0; i < s.size(); i++)
-	{
-		print_char(fbpixels, fb_width, fb_height, char_x_pos, char_y_pos, s[i], text_colour);
-
-		size_t char_width = mimgs[s[i]].width;
-
-		char_x_pos += char_width + 2;
-	}
-}
 
 
 bool is_all_zeroes(size_t width, size_t height, const vector<unsigned char>& pixel_data)
@@ -1677,7 +1626,7 @@ void display_func(void)
 		{
 			string s;
 			log_system.get_string_from_contents(i, s);
-			print_sentence2(win_x, win_y, char_x_pos, char_y_pos, s);
+			print_sentence(win_x, win_y, char_x_pos, char_y_pos, s);
 			char_y_pos += 20;
 		}
 	}
