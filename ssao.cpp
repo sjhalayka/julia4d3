@@ -6,7 +6,7 @@ int main(int argc, char **argv)
 {
 	srand(static_cast<unsigned int>(time(0)));
 
-	log_system.set_max_size(20);
+	log_system.set_max_size(30);
 	log_system.add_string_to_contents("Welcome to Julia 4D 3 v1.6");
 	log_system.add_string_to_contents("Press the Generate mesh button to begin!");
 	log_system.add_string_to_contents("-------------------------------------------------------");
@@ -23,6 +23,29 @@ int main(int argc, char **argv)
  
 	if(false == init())
 		return 1;
+
+
+	GLuint mc_shader = 0;
+
+	if (false == compile_and_link_compute_shader("mc.cs.glsl", mc_shader, log_system))
+	{
+		ostringstream oss;
+		oss.clear();
+		oss.str("");
+		oss << "Compute shader compile error";
+	
+		log_system.add_string_to_contents(oss.str());
+
+		//return 2;
+	}
+
+
+
+
+
+
+
+
 
 	setup_gui();
 

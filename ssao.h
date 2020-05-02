@@ -983,6 +983,13 @@ bool load_shaders(void)
 
 
 
+// https://stackoverflow.com/questions/14909796/simple-pass-through-geometry-shader-with-normal-and-color
+
+
+// https://opengl-notes.readthedocs.io/en/latest/topics/geometry-tessellation.html
+
+
+
 class font_character_image
 {
 public:
@@ -995,7 +1002,6 @@ public:
 	void opengl_init(RGB text_colour)
 	{
 		// Clean up, in case this opengl_init() function is called more than once
-		// (it shouldn't)
 		cleanup();
 
 		glGenVertexArrays(1, &vao);
