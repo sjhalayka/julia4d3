@@ -1,24 +1,21 @@
 #version 430 core
 layout(local_size_x = 1, local_size_y = 1) in;
 
-
-
-// not 5 inputs, 3*5 inputs
-layout(binding = 0, rgba32f) writeonly uniform image2D output_triangle0_vertex0_tex;
-layout(binding = 1, rgba32f) writeonly uniform image2D output_triangle0_vertex1_tex;
-layout(binding = 2, rgba32f) writeonly uniform image2D output_triangle0_vertex2_tex;
-layout(binding = 3, rgba32f) writeonly uniform image2D output_triangle1_vertex0_tex;
-layout(binding = 4, rgba32f) writeonly uniform image2D output_triangle1_vertex1_tex;
-layout(binding = 5, rgba32f) writeonly uniform image2D output_triangle1_vertex2_tex;
-layout(binding = 6, rgba32f) writeonly uniform image2D output_triangle2_vertex0_tex;
-layout(binding = 7, rgba32f) writeonly uniform image2D output_triangle2_vertex1_tex;
-layout(binding = 8, rgba32f) writeonly uniform image2D output_triangle2_vertex2_tex;
-layout(binding = 9, rgba32f) writeonly uniform image2D output_triangle3_vertex0_tex;
-layout(binding = 10, rgba32f) writeonly uniform image2D output_triangle3_vertex1_tex;
-layout(binding = 11, rgba32f) writeonly uniform image2D output_triangle3_vertex2_tex;
-layout(binding = 12, rgba32f) writeonly uniform image2D output_triangle4_vertex0_tex;
-layout(binding = 13, rgba32f) writeonly uniform image2D output_triangle4_vertex1_tex;
-layout(binding = 14, rgba32f) writeonly uniform image2D output_triangle4_vertex2_tex;
+layout(binding = 0, rgb32f) writeonly uniform image2D output_triangle0_vertex0_tex;
+layout(binding = 1, rgb32f) writeonly uniform image2D output_triangle0_vertex1_tex;
+layout(binding = 2, rgb32f) writeonly uniform image2D output_triangle0_vertex2_tex;
+layout(binding = 3, rgb32f) writeonly uniform image2D output_triangle1_vertex0_tex;
+layout(binding = 4, rgb32f) writeonly uniform image2D output_triangle1_vertex1_tex;
+layout(binding = 5, rgb32f) writeonly uniform image2D output_triangle1_vertex2_tex;
+layout(binding = 6, rgb32f) writeonly uniform image2D output_triangle2_vertex0_tex;
+layout(binding = 7, rgb32f) writeonly uniform image2D output_triangle2_vertex1_tex;
+layout(binding = 8, rgb32f) writeonly uniform image2D output_triangle2_vertex2_tex;
+layout(binding = 9, rgb32f) writeonly uniform image2D output_triangle3_vertex0_tex;
+layout(binding = 10, rgb32f) writeonly uniform image2D output_triangle3_vertex1_tex;
+layout(binding = 11, rgb32f) writeonly uniform image2D output_triangle3_vertex2_tex;
+layout(binding = 12, rgb32f) writeonly uniform image2D output_triangle4_vertex0_tex;
+layout(binding = 13, rgb32f) writeonly uniform image2D output_triangle4_vertex1_tex;
+layout(binding = 14, rgb32f) writeonly uniform image2D output_triangle4_vertex2_tex;
 layout(binding = 15, r32f) writeonly uniform image2D tri_count_tex;
 
 layout(binding = 16, rgba32f) readonly uniform image2D input_grid_cube_tex0;
@@ -32,7 +29,7 @@ layout(binding = 23, rgba32f) readonly uniform image2D input_grid_cube_tex7;
 
 
 
-
+// change this to a uniform
 #define isovalue 4.0
 
 
@@ -378,8 +375,8 @@ vec4 vertex_interp(vec4 v0, vec4 v1)
 
 struct grid_cube
 {
-vec4 vertex_val[8];
-} grid;
+	vec4 vertex_val[8];
+};
 
 float tesselate_grid_cube(grid_cube grid, ivec2 pixel_coords)
 {
@@ -435,7 +432,7 @@ float tesselate_grid_cube(grid_cube grid, ivec2 pixel_coords)
 	if(MC_EdgeTable[cubeindex] & 2048)
 		vertlist[11] = vertex_interp(grid.vertex_val[3], grid.vertex_val[7]);
 
-	float ntriang = 0.0f;
+	float ntriang = 0;
 
 	for(int i = 0; MC_TriTable[cubeindex][i] != -1; i += 3)
 	{
@@ -444,17 +441,17 @@ float tesselate_grid_cube(grid_cube grid, ivec2 pixel_coords)
 		vertex0.x = vertlist[MC_TriTable[cubeindex][i]].x;
 		vertex0.y = vertlist[MC_TriTable[cubeindex][i]].y;
 		vertex0.z = vertlist[MC_TriTable[cubeindex][i]].z;
-		vertex0.w = 1;
+		vertex0.w = 0;
 
-		vertex1.x = vertlist[MC_TriTable[cubeindex][i+1]].x;
+		vertex1.x = vertlist[MC_TriTable[cubeindex][i + 1]].x;
 		vertex1.y = vertlist[MC_TriTable[cubeindex][i + 1]].y;
 		vertex1.z = vertlist[MC_TriTable[cubeindex][i + 1]].z;
-		vertex1.w = 1;
+		vertex1.w = 0;
 
-		vertex2.x = vertlist[MC_TriTable[cubeindex][i+2]].x;
+		vertex2.x = vertlist[MC_TriTable[cubeindex][i + 2]].x;
 		vertex2.y = vertlist[MC_TriTable[cubeindex][i + 2]].y;
 		vertex2.z = vertlist[MC_TriTable[cubeindex][i + 2]].z;
-		vertex2.w = 1;
+		vertex2.w = 0;
 
 		if(ntriang == 0)
 		{
@@ -487,7 +484,7 @@ float tesselate_grid_cube(grid_cube grid, ivec2 pixel_coords)
 			imageStore(output_triangle4_vertex2_tex, pixel_coords, vertex2);
 		}
 
-		ntriang += 1.0f;
+		ntriang += 1;
 	}
 
 	return ntriang;
