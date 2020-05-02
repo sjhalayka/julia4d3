@@ -50,7 +50,8 @@ namespace marching_cubes
 
 	vertex_3 vertex_interp(const float isovalue, vertex_3 p1, vertex_3 p2, float valp1, float valp2);
 	short unsigned int tesselate_grid_cube(const float isovalue, const grid_cube &grid, triangle *const triangles);
-	bool tesselate_adjacent_xy_plane_pair(size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res);
+	bool tesselate_adjacent_xy_plane_pair_cpu(size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res);
+	bool tesselate_adjacent_xy_plane_pair_gpu(size_t& box_count, const vector<float>& xyplane0, const vector<float>& xyplane1, const size_t z, vector<triangle>& triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res);
 };
 
 #endif

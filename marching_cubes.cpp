@@ -408,7 +408,7 @@ short unsigned int marching_cubes::tesselate_grid_cube(const float isovalue, con
 	return ntriang;
 }
 
-bool marching_cubes::tesselate_adjacent_xy_plane_pair(size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
+bool marching_cubes::tesselate_adjacent_xy_plane_pair_cpu(size_t &box_count, const vector<float> &xyplane0, const vector<float> &xyplane1, const size_t z, vector<triangle> &triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
 {
     const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
     const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
@@ -540,6 +540,143 @@ bool marching_cubes::tesselate_adjacent_xy_plane_pair(size_t &box_count, const v
                  triangles.push_back(temp_triangle_array[i]);
         }
     }
+
+	return true;
+}
+
+
+bool marching_cubes::tesselate_adjacent_xy_plane_pair_gpu(size_t& box_count, const vector<float>& xyplane0, const vector<float>& xyplane1, const size_t z, vector<triangle>& triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
+{
+	const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
+	const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
+	const float z_step_size = (z_grid_max - z_grid_min) / (z_res - 1);
+
+	for (size_t x = 0; x < x_res - 1; x++)
+	{
+		for (size_t y = 0; y < y_res - 1; y++)
+		{
+			grid_cube temp_cube;
+
+			size_t x_offset = 0;
+			size_t y_offset = 0;
+			size_t z_offset = 0;
+
+			// Setup vertex 0
+			x_offset = 0;
+			y_offset = 0;
+			z_offset = 0;
+			temp_cube.vertex[0].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[0].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[0].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[0] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[0] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 1
+			x_offset = 1;
+			y_offset = 0;
+			z_offset = 0;
+			temp_cube.vertex[1].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[1].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[1].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[1] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[1] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 2
+			x_offset = 1;
+			y_offset = 0;
+			z_offset = 1;
+			temp_cube.vertex[2].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[2].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[2].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[2] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[2] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 3
+			x_offset = 0;
+			y_offset = 0;
+			z_offset = 1;
+			temp_cube.vertex[3].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[3].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[3].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[3] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[3] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 4
+			x_offset = 0;
+			y_offset = 1;
+			z_offset = 0;
+			temp_cube.vertex[4].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[4].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[4].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[4] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[4] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 5
+			x_offset = 1;
+			y_offset = 1;
+			z_offset = 0;
+			temp_cube.vertex[5].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[5].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[5].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[5] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[5] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 6
+			x_offset = 1;
+			y_offset = 1;
+			z_offset = 1;
+			temp_cube.vertex[6].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[6].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[6].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[6] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[6] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Setup vertex 7
+			x_offset = 0;
+			y_offset = 1;
+			z_offset = 1;
+			temp_cube.vertex[7].x = x_grid_min + ((x + x_offset) * x_step_size);
+			temp_cube.vertex[7].y = y_grid_min + ((y + y_offset) * y_step_size);
+			temp_cube.vertex[7].z = z_grid_min + ((z + z_offset) * z_step_size);
+
+			if (0 == z_offset)
+				temp_cube.value[7] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
+			else
+				temp_cube.value[7] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
+
+			// Generate triangles from cube.
+			static triangle temp_triangle_array[5];
+
+			short unsigned int number_of_triangles_generated = tesselate_grid_cube(isovalue, temp_cube, temp_triangle_array);
+
+			if (number_of_triangles_generated > 0)
+				box_count++;
+
+			for (short unsigned int i = 0; i < number_of_triangles_generated; i++)
+				triangles.push_back(temp_triangle_array[i]);
+		}
+	}
 
 	return true;
 }
