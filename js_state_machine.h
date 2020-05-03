@@ -233,6 +233,7 @@ public:
 	}
 
 
+	/*
 	bool tesselate_adjacent_xy_plane_pair_gpu(size_t& box_count, const vector<float>& xyplane0, const vector<float>& xyplane1, const size_t z, vector<triangle>& triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
 	{
 		const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
@@ -272,6 +273,7 @@ public:
 		vector<GLfloat> output_tex14_data(3 * width * height);
 
 		GLuint input_tex0, input_tex1, input_tex2, input_tex3, input_tex4, input_tex5, input_tex6, input_tex7;
+
 		glGenTextures(1, &input_tex0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, input_tex0);
@@ -337,6 +339,7 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		GLuint output_triangle_number_tex;
+
 		glGenTextures(1, &output_triangle_number_tex);
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, output_triangle_number_tex);
@@ -500,10 +503,6 @@ public:
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
 		glBindImageTexture(23, output_tex14, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-
-
-
 
 
 		size_t index = 0;
@@ -715,7 +714,6 @@ public:
 		glActiveTexture(GL_TEXTURE8);
 		glBindImageTexture(8, output_triangle_number_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_tri_count_data[0]);
-	
 
 		glActiveTexture(GL_TEXTURE9);
 		glBindImageTexture(9, output_tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
@@ -1015,7 +1013,12 @@ public:
 
 				t.vertex[2].x = output_tex2_data[output_data_index + 0];
 				t.vertex[2].y = output_tex2_data[output_data_index + 1];
-				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2]; 
+
+				//cout << t.vertex[0].x << " " << t.vertex[0].y << " " << t.vertex[0].z << endl;
+				//cout << t.vertex[1].x << " " << t.vertex[1].y << " " << t.vertex[1].z << endl;
+				//cout << t.vertex[2].x << " " << t.vertex[2].y << " " << t.vertex[2].z << endl;
+				//cout << endl;
 
 				triangles.push_back(t);
 			}
@@ -1023,7 +1026,7 @@ public:
 
 		return true;
 	}
-
+	*/
 
 
 
