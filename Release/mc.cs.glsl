@@ -511,5 +511,6 @@ void main()
 	int n = tesselate_grid_cube(g, pixel_coords);
 
 	vec4 ntriang = vec4(n, n, n, n);
+
 	imageStore(tri_count_tex, pixel_coords, ntriang);
 }
