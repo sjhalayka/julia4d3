@@ -239,11 +239,37 @@ public:
 		const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
 		const float z_step_size = (z_grid_max - z_grid_min) / (z_res - 1);
 
-		size_t width = x_res - 1;
-		size_t height = y_res - 1;
+		GLsizei width = static_cast<GLsizei>(x_res) - 1;
+		GLsizei height = static_cast<GLsizei>(y_res) - 1;
 
 		glUseProgram(mc_shader);
 
+		vector<GLfloat> input_tex0_data(4 * width * height);
+		vector<GLfloat> input_tex1_data(4 * width * height);
+		vector<GLfloat> input_tex2_data(4 * width * height);
+		vector<GLfloat> input_tex3_data(4 * width * height);
+		vector<GLfloat> input_tex4_data(4 * width * height);
+		vector<GLfloat> input_tex5_data(4 * width * height);
+		vector<GLfloat> input_tex6_data(4 * width * height);
+		vector<GLfloat> input_tex7_data(4 * width * height);
+
+		vector<GLfloat> output_tri_count_data(width * height);
+
+		vector<GLfloat> output_tex0_data(3 * width * height);
+		vector<GLfloat> output_tex1_data(3 * width * height);
+		vector<GLfloat> output_tex2_data(3 * width * height);
+		vector<GLfloat> output_tex3_data(3 * width * height);
+		vector<GLfloat> output_tex4_data(3 * width * height);
+		vector<GLfloat> output_tex5_data(3 * width * height);
+		vector<GLfloat> output_tex6_data(3 * width * height);
+		vector<GLfloat> output_tex7_data(3 * width * height);
+		vector<GLfloat> output_tex8_data(3 * width * height);
+		vector<GLfloat> output_tex9_data(3 * width * height);
+		vector<GLfloat> output_tex10_data(3 * width * height);
+		vector<GLfloat> output_tex11_data(3 * width * height);
+		vector<GLfloat> output_tex12_data(3 * width * height);
+		vector<GLfloat> output_tex13_data(3 * width * height);
+		vector<GLfloat> output_tex14_data(3 * width * height);
 
 		GLuint input_tex0, input_tex1, input_tex2, input_tex3, input_tex4, input_tex5, input_tex6, input_tex7;
 		glGenTextures(1, &input_tex0);
@@ -321,26 +347,170 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
 		glBindImageTexture(8, output_triangle_number_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-//		GLuint output_tex0, output_tex1, output_tex2, output_tex3, output_tex4, output_tex5, 
+		GLuint output_tex0, output_tex1, output_tex2, output_tex3, output_tex4, output_tex5, output_tex6,
+			output_tex7, output_tex8, output_tex9, output_tex10, output_tex11, output_tex12, output_tex13,
+			output_tex14;
+
+		glGenTextures(1, &output_tex0);
+		glActiveTexture(GL_TEXTURE9);
+		glBindTexture(GL_TEXTURE_2D, output_tex0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(9, output_tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex1);
+		glActiveTexture(GL_TEXTURE10);
+		glBindTexture(GL_TEXTURE_2D, output_tex1);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(10, output_tex1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex2);
+		glActiveTexture(GL_TEXTURE11);
+		glBindTexture(GL_TEXTURE_2D, output_tex2);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(11, output_tex2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex3);
+		glActiveTexture(GL_TEXTURE12);
+		glBindTexture(GL_TEXTURE_2D, output_tex3);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(12, output_tex3, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex4);
+		glActiveTexture(GL_TEXTURE13);
+		glBindTexture(GL_TEXTURE_2D, output_tex4);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(13, output_tex4, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex5);
+		glActiveTexture(GL_TEXTURE14);
+		glBindTexture(GL_TEXTURE_2D, output_tex5);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(14, output_tex5, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex6);
+		glActiveTexture(GL_TEXTURE15);
+		glBindTexture(GL_TEXTURE_2D, output_tex6);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(15, output_tex6, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+	
+		glGenTextures(1, &output_tex7);
+		glActiveTexture(GL_TEXTURE16);
+		glBindTexture(GL_TEXTURE_2D, output_tex7);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(16, output_tex7, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex8);
+		glActiveTexture(GL_TEXTURE17);
+		glBindTexture(GL_TEXTURE_2D, output_tex8);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(17, output_tex8, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex9);
+		glActiveTexture(GL_TEXTURE18);
+		glBindTexture(GL_TEXTURE_2D, output_tex9);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(18, output_tex9, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex10);
+		glActiveTexture(GL_TEXTURE19);
+		glBindTexture(GL_TEXTURE_2D, output_tex10);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(19, output_tex10, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex11);
+		glActiveTexture(GL_TEXTURE20);
+		glBindTexture(GL_TEXTURE_2D, output_tex11);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(20, output_tex11, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex12);
+		glActiveTexture(GL_TEXTURE21);
+		glBindTexture(GL_TEXTURE_2D, output_tex12);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(21, output_tex12, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex13);
+		glActiveTexture(GL_TEXTURE22);
+		glBindTexture(GL_TEXTURE_2D, output_tex13);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(22, output_tex13, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+
+		glGenTextures(1, &output_tex14);
+		glActiveTexture(GL_TEXTURE23);
+		glBindTexture(GL_TEXTURE_2D, output_tex14);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+		glBindImageTexture(23, output_tex14, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
 
 
 
-		vector<GLfloat> input_tex0_data(4 * width * height);
-		vector<GLfloat> input_tex1_data(4 * width * height);
-		vector<GLfloat> input_tex2_data(4 * width * height);
-		vector<GLfloat> input_tex3_data(4 * width * height);
-		vector<GLfloat> input_tex4_data(4 * width * height);
-		vector<GLfloat> input_tex5_data(4 * width * height);
-		vector<GLfloat> input_tex6_data(4 * width * height);
-		vector<GLfloat> input_tex7_data(4 * width * height);
 
-		vector<GLfloat> output_tex0_data(width * height);
+
 
 		size_t index = 0;
 
-		for (size_t x = 0; x < x_res - 1; x++)
+		for (size_t x = 0; x < width; x++)
 		{
-			for (size_t y = 0; y < y_res - 1; y++)
+			for (size_t y = 0; y < height; y++)
 			{
 				grid_cube temp_cube;
 
@@ -493,18 +663,6 @@ public:
 				input_tex7_data[index + 3] = temp_cube.value[7];
 
 				index += 4;
-
-
-				//// Generate triangles from cube.
-				//static triangle temp_triangle_array[5];
-
-				//short unsigned int number_of_triangles_generated = tesselate_grid_cube(isovalue, temp_cube, temp_triangle_array);
-
-				//if (number_of_triangles_generated > 0)
-				//	box_count++;
-
-				//for (short unsigned int i = 0; i < number_of_triangles_generated; i++)
-				//	triangles.push_back(temp_triangle_array[i]);
 			}
 		}
 
@@ -556,11 +714,312 @@ public:
 		// Copy output pixel array to CPU as texture 8
 		glActiveTexture(GL_TEXTURE8);
 		glBindImageTexture(8, output_triangle_number_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_tex0_data[0]);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_tri_count_data[0]);
+	
 
-		//for (size_t i = 0; i < output_tex0_data.size(); i++)
-		//	if(output_tex0_data[i] != 0)
-		//	cout << (int)output_tex0_data[i] << ' ';
+		glActiveTexture(GL_TEXTURE9);
+		glBindImageTexture(9, output_tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex0_data[0]);
+
+		glActiveTexture(GL_TEXTURE10);
+		glBindImageTexture(10, output_tex1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex1_data[0]);
+
+		glActiveTexture(GL_TEXTURE11);
+		glBindImageTexture(11, output_tex2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex2_data[0]);
+
+		glActiveTexture(GL_TEXTURE12);
+		glBindImageTexture(12, output_tex3, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex3_data[0]);
+
+		glActiveTexture(GL_TEXTURE13);
+		glBindImageTexture(13, output_tex4, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex4_data[0]);
+
+		glActiveTexture(GL_TEXTURE14);
+		glBindImageTexture(14, output_tex5, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex5_data[0]);
+
+		glActiveTexture(GL_TEXTURE15);
+		glBindImageTexture(15, output_tex6, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex6_data[0]);
+
+		glActiveTexture(GL_TEXTURE16);
+		glBindImageTexture(16, output_tex7, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex7_data[0]);
+
+		glActiveTexture(GL_TEXTURE17);
+		glBindImageTexture(17, output_tex8, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex8_data[0]);
+
+		glActiveTexture(GL_TEXTURE18);
+		glBindImageTexture(18, output_tex9, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex9_data[0]);	
+
+		glActiveTexture(GL_TEXTURE19);
+		glBindImageTexture(19, output_tex10, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex10_data[0]);
+
+		glActiveTexture(GL_TEXTURE20);
+		glBindImageTexture(20, output_tex11, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex11_data[0]);
+
+		glActiveTexture(GL_TEXTURE21);
+		glBindImageTexture(21, output_tex12, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex12_data[0]);
+
+		glActiveTexture(GL_TEXTURE22);
+		glBindImageTexture(22, output_tex13, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex13_data[0]);
+
+		glActiveTexture(GL_TEXTURE23);
+		glBindImageTexture(23, output_tex14, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex14_data[0]);
+		
+
+
+
+		for (size_t i = 0; i < output_tri_count_data.size(); i++)
+		{
+			size_t output_data_index = 3 * i;
+
+			size_t num_tris = static_cast<size_t>(output_tri_count_data[i]);
+
+			if (num_tris == 5)
+			{
+				triangle t;
+
+				t.vertex[0].x = output_tex0_data[output_data_index + 0];
+				t.vertex[0].y = output_tex0_data[output_data_index + 1];
+				t.vertex[0].z = output_tex0_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex1_data[output_data_index + 0];
+				t.vertex[1].y = output_tex1_data[output_data_index + 1];
+				t.vertex[1].z = output_tex1_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex2_data[output_data_index + 0];
+				t.vertex[2].y = output_tex2_data[output_data_index + 1];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex3_data[output_data_index + 0];
+				t.vertex[0].y = output_tex3_data[output_data_index + 1];
+				t.vertex[0].z = output_tex3_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex4_data[output_data_index + 0];
+				t.vertex[1].y = output_tex4_data[output_data_index + 1];
+				t.vertex[1].z = output_tex4_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex5_data[output_data_index + 0];
+				t.vertex[2].y = output_tex5_data[output_data_index + 1];
+				t.vertex[2].z = output_tex5_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex6_data[output_data_index + 0];
+				t.vertex[0].y = output_tex6_data[output_data_index + 1];
+				t.vertex[0].z = output_tex6_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex7_data[output_data_index + 0];
+				t.vertex[1].y = output_tex7_data[output_data_index + 1];
+				t.vertex[1].z = output_tex7_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex8_data[output_data_index + 0];
+				t.vertex[2].y = output_tex8_data[output_data_index + 1];
+				t.vertex[2].z = output_tex8_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex9_data[output_data_index + 0];
+				t.vertex[0].y = output_tex9_data[output_data_index + 1];
+				t.vertex[0].z = output_tex9_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex10_data[output_data_index + 0];
+				t.vertex[1].y = output_tex10_data[output_data_index + 1];
+				t.vertex[1].z = output_tex10_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex11_data[output_data_index + 0];
+				t.vertex[2].y = output_tex11_data[output_data_index + 1];
+				t.vertex[2].z = output_tex11_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex12_data[output_data_index + 0];
+				t.vertex[0].y = output_tex12_data[output_data_index + 1];
+				t.vertex[0].z = output_tex12_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex13_data[output_data_index + 0];
+				t.vertex[1].y = output_tex13_data[output_data_index + 1];
+				t.vertex[1].z = output_tex13_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex14_data[output_data_index + 0];
+				t.vertex[2].y = output_tex14_data[output_data_index + 1];
+				t.vertex[2].z = output_tex14_data[output_data_index + 2];
+
+				triangles.push_back(t);
+			}
+			else if (num_tris == 4)
+			{
+
+				triangle t;
+
+				t.vertex[0].x = output_tex0_data[output_data_index + 0];
+				t.vertex[0].y = output_tex0_data[output_data_index + 1];
+				t.vertex[0].z = output_tex0_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex1_data[output_data_index + 0];
+				t.vertex[1].y = output_tex1_data[output_data_index + 1];
+				t.vertex[1].z = output_tex1_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex2_data[output_data_index + 0];
+				t.vertex[2].y = output_tex2_data[output_data_index + 1];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex3_data[output_data_index + 0];
+				t.vertex[0].y = output_tex3_data[output_data_index + 1];
+				t.vertex[0].z = output_tex3_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex4_data[output_data_index + 0];
+				t.vertex[1].y = output_tex4_data[output_data_index + 1];
+				t.vertex[1].z = output_tex4_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex5_data[output_data_index + 0];
+				t.vertex[2].y = output_tex5_data[output_data_index + 1];
+				t.vertex[2].z = output_tex5_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex6_data[output_data_index + 0];
+				t.vertex[0].y = output_tex6_data[output_data_index + 1];
+				t.vertex[0].z = output_tex6_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex7_data[output_data_index + 0];
+				t.vertex[1].y = output_tex7_data[output_data_index + 1];
+				t.vertex[1].z = output_tex7_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex8_data[output_data_index + 0];
+				t.vertex[2].y = output_tex8_data[output_data_index + 1];
+				t.vertex[2].z = output_tex8_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex9_data[output_data_index + 0];
+				t.vertex[0].y = output_tex9_data[output_data_index + 1];
+				t.vertex[0].z = output_tex9_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex10_data[output_data_index + 0];
+				t.vertex[1].y = output_tex10_data[output_data_index + 1];
+				t.vertex[1].z = output_tex10_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex11_data[output_data_index + 0];
+				t.vertex[2].y = output_tex11_data[output_data_index + 1];
+				t.vertex[2].z = output_tex11_data[output_data_index + 2];
+
+				triangles.push_back(t);
+			}
+			else if (num_tris == 3)
+			{
+				triangle t;
+
+				t.vertex[0].x = output_tex0_data[output_data_index + 0];
+				t.vertex[0].y = output_tex0_data[output_data_index + 1];
+				t.vertex[0].z = output_tex0_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex1_data[output_data_index + 0];
+				t.vertex[1].y = output_tex1_data[output_data_index + 1];
+				t.vertex[1].z = output_tex1_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex2_data[output_data_index + 0];
+				t.vertex[2].y = output_tex2_data[output_data_index + 1];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex3_data[output_data_index + 0];
+				t.vertex[0].y = output_tex3_data[output_data_index + 1];
+				t.vertex[0].z = output_tex3_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex4_data[output_data_index + 0];
+				t.vertex[1].y = output_tex4_data[output_data_index + 1];
+				t.vertex[1].z = output_tex4_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex5_data[output_data_index + 0];
+				t.vertex[2].y = output_tex5_data[output_data_index + 1];
+				t.vertex[2].z = output_tex5_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex6_data[output_data_index + 0];
+				t.vertex[0].y = output_tex6_data[output_data_index + 1];
+				t.vertex[0].z = output_tex6_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex7_data[output_data_index + 0];
+				t.vertex[1].y = output_tex7_data[output_data_index + 1];
+				t.vertex[1].z = output_tex7_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex8_data[output_data_index + 0];
+				t.vertex[2].y = output_tex8_data[output_data_index + 1];
+				t.vertex[2].z = output_tex8_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+
+			}
+			else if (num_tris == 2)
+			{
+				triangle t;
+
+				t.vertex[0].x = output_tex0_data[output_data_index + 0];
+				t.vertex[0].y = output_tex0_data[output_data_index + 1];
+				t.vertex[0].z = output_tex0_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex1_data[output_data_index + 0];
+				t.vertex[1].y = output_tex1_data[output_data_index + 1];
+				t.vertex[1].z = output_tex1_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex2_data[output_data_index + 0];
+				t.vertex[2].y = output_tex2_data[output_data_index + 1];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+
+				triangles.push_back(t);
+
+				t.vertex[0].x = output_tex3_data[output_data_index + 0];
+				t.vertex[0].y = output_tex3_data[output_data_index + 1];
+				t.vertex[0].z = output_tex3_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex4_data[output_data_index + 0];
+				t.vertex[1].y = output_tex4_data[output_data_index + 1];
+				t.vertex[1].z = output_tex4_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex5_data[output_data_index + 0];
+				t.vertex[2].y = output_tex5_data[output_data_index + 1];
+				t.vertex[2].z = output_tex5_data[output_data_index + 2];
+
+				triangles.push_back(t);
+			}
+			else if (num_tris == 1)
+			{
+				triangle t;
+
+				t.vertex[0].x = output_tex0_data[output_data_index + 0];
+				t.vertex[0].y = output_tex0_data[output_data_index + 1];
+				t.vertex[0].z = output_tex0_data[output_data_index + 2];
+
+				t.vertex[1].x = output_tex1_data[output_data_index + 0];
+				t.vertex[1].y = output_tex1_data[output_data_index + 1];
+				t.vertex[1].z = output_tex1_data[output_data_index + 2];
+
+				t.vertex[2].x = output_tex2_data[output_data_index + 0];
+				t.vertex[2].y = output_tex2_data[output_data_index + 1];
+				t.vertex[2].z = output_tex2_data[output_data_index + 2];
+
+				triangles.push_back(t);
+			}
+		}
 
 		return true;
 	}

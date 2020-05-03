@@ -24,16 +24,6 @@ int main(int argc, char **argv)
 	if(false == init())
 		return 1;
 
-
-
-
-
-
-
-
-
-
-
 	setup_gui();
 
     glui->set_main_gfx_window(win_id);
