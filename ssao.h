@@ -52,6 +52,7 @@
 using namespace std;
 
 #include "vertex_fragment_shader.h"
+#include "vertex_geometry_fragment_shader.h"
 #include "matrix_utils.h"
 #include "uv_camera.h"
 #include "mesh.h"
@@ -865,8 +866,8 @@ void passive_motion_func(int x, int y)
 	mouse_y = y;
 }
 
-
-vertex_fragment_shader render;
+// https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/9.1.geometry_shader_houses/9.1.geometry_shader.gs
+vertex_geometry_fragment_shader render;
 vertex_fragment_shader ssao;
 vertex_fragment_shader flat;
 vertex_fragment_shader ortho;
@@ -942,7 +943,7 @@ static inline float random_float()
 bool load_shaders(void)
 {
 	// Set up shader
-	if (false == render.init("render.vs.glsl", "render.fs.glsl"))
+	if (false == render.init("render.vs.glsl", "render.gs.glsl", "render.fs.glsl"))
 	{
 		cout << "Could not load render shader" << endl;
 		return false;
