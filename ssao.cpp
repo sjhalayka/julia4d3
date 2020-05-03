@@ -25,19 +25,6 @@ int main(int argc, char **argv)
 		return 1;
 
 
-	GLuint mc_shader = 0;
-
-	if (false == compile_and_link_compute_shader("mc.cs.glsl", mc_shader, log_system))
-	{
-		ostringstream oss;
-		oss.clear();
-		oss.str("");
-		oss << "Compute shader compile error";
-	
-		log_system.add_string_to_contents(oss.str());
-
-		//return 2;
-	}
 
 
 

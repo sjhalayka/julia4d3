@@ -311,6 +311,22 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 
 	if (fsp.use_gpu)
 	{
+		mc_shader = 0;
+
+		if (false == compile_and_link_compute_shader("mc.cs.glsl", mc_shader, *log_system))
+		{
+			ostringstream oss;
+			oss.clear();
+			oss.str("");
+			oss << "Compute shader compile error";
+
+			log_system->add_string_to_contents(oss.str());
+
+			return false;
+		}
+
+
+
 		string code = eqparser.emit_compute_shader_code(1, 1, fsp.max_iterations);
 
 		ofstream of("julia.cs.glsl");
@@ -680,7 +696,6 @@ int js_state_machine::g0_stage_1_cpu(void)
 		ptr = &js_state_machine::g1_stage_0;
 		state = STATE_G1_STAGE_0;
 		g1_i0 = triangles.begin();
-
 
 		oss.clear();
 		oss.str("");

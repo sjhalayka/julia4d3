@@ -147,6 +147,13 @@ unsigned int axis_buffer = 0;
 
 
 
+
+
+
+
+
+
+
 // http://www.songho.ca/opengl/gl_transform.html
 
 complex<float> get_window_coords_from_ndc_coords(size_t viewport_width, size_t viewport_height, complex<float>& src_coords)
@@ -1839,6 +1846,9 @@ void setup_gui(void)
 
 	fps_statictext = glui->add_statictext("FPS: --");
 }
+
+
+
 
 
 
