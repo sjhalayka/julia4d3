@@ -615,7 +615,7 @@ int js_state_machine::g0_stage_1_gpu(void)
 		log_system->add_string_to_contents(oss.str());
 
 	// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-	tesselate_adjacent_xy_plane_pair_cpu(
+	tesselate_adjacent_xy_plane_pair_gpu(
 		box_count,
 		g0_previous_slice, g0_output_pixels,
 		g0_z - 1,

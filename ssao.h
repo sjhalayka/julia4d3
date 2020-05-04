@@ -120,9 +120,9 @@ GLUI_EditText* c_y_edittext;
 GLUI_EditText* c_z_edittext;
 GLUI_EditText* c_w_edittext;
 
-GLUI_EditText* x_min_edittext;
-GLUI_EditText* y_min_edittext;
-GLUI_EditText* z_min_edittext;
+GLUI_EditText* x_min_edit_text;
+GLUI_EditText* y_min_edit_text;
+GLUI_EditText* z_min_edit_text;
 
 GLUI_EditText* x_max_edittext;
 GLUI_EditText* y_max_edittext;
@@ -156,7 +156,7 @@ vertex_geometry_fragment_shader render;
 vertex_fragment_shader ssao;
 vertex_fragment_shader flat;
 vertex_fragment_shader ortho;
-vertex_geometry_fragment_shader points;
+// vertex_geometry_fragment_shader points;
 
 
 
@@ -489,7 +489,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		iss >> p.C_w;
 	}
 
-	temp_string = x_min_edittext->text;
+	temp_string = x_min_edit_text->text;
 
 	if (false == is_real_number(temp_string))
 	{
@@ -508,7 +508,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		iss >> p.x_min;
 	}
 
-	temp_string = y_min_edittext->text;
+	temp_string = y_min_edit_text->text;
 
 	if (false == is_real_number(temp_string))
 	{
@@ -527,7 +527,7 @@ bool obtain_control_contents(fractal_set_parameters& p)
 		iss >> p.y_min;
 	}
 
-	temp_string = z_min_edittext->text;
+	temp_string = z_min_edit_text->text;
 
 	if (false == is_real_number(temp_string))
 	{
@@ -977,11 +977,7 @@ bool load_shaders(void)
 		return false;
 	}
 
-	if (false == points.init("points.vs.glsl", "points.gs.glsl", "points.fs.glsl"))
-	{
-		cout << "Could not load points shader" << endl;
-		return false;
-	}
+
 
 
 	uniforms.render.mv_matrix = glGetUniformLocation(render.get_program(), "mv_matrix");
@@ -1000,10 +996,6 @@ bool load_shaders(void)
 	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
 
 	uniforms.ortho.tex = glGetUniformLocation(ortho.get_program(), "tex");
-
-	uniforms.points.mv_matrix = glGetUniformLocation(points.get_program(), "mv_matrix");
-	uniforms.points.proj_matrix = glGetUniformLocation(points.get_program(), "proj_matrix");
-	uniforms.points.shading_level = glGetUniformLocation(points.get_program(), "shading_level");
 
 	return true;
 }
@@ -1614,6 +1606,271 @@ void draw_mesh(GLuint program)
 	glDrawArrays(GL_TRIANGLES, 0, num_vertices);
 }
 
+//void draw_points(GLuint program)
+//{
+//	glUseProgram(program);
+//
+//
+//
+//	vector<float> xyplane0(jsm.fsp.resolution * jsm.fsp.resolution);
+//	vector<float> xyplane1(jsm.fsp.resolution * jsm.fsp.resolution);
+//
+//	size_t z = 0;
+//	
+//
+//	const float x_step_size = (jsm.fsp.x_max - jsm.fsp.x_min) / (jsm.fsp.resolution - 1);
+//	const float y_step_size = (jsm.fsp.y_max - jsm.fsp.y_min) / (jsm.fsp.resolution - 1);
+//	const float z_step_size = (jsm.fsp.z_max - jsm.fsp.z_min) / (jsm.fsp.resolution - 1);
+//
+//	for (size_t x = 0; x < jsm.fsp.resolution - 1; x++)
+//	{
+//		for (size_t y = 0; y < jsm.fsp.resolution - 1; y++)
+//		{
+//			grid_cube temp_cube;
+//
+//			size_t x_offset = 0;
+//			size_t y_offset = 0;
+//			size_t z_offset = 0;
+//
+//			// Setup vertex 0
+//			x_offset = 0;
+//			y_offset = 0;
+//			z_offset = 0;
+//			temp_cube.vertex[0].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[0].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[0].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[0] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[0] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 1
+//			x_offset = 1;
+//			y_offset = 0;
+//			z_offset = 0;
+//			temp_cube.vertex[1].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[1].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[1].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[1] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[1] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 2
+//			x_offset = 1;
+//			y_offset = 0;
+//			z_offset = 1;
+//			temp_cube.vertex[2].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[2].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[2].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[2] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[2] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 3
+//			x_offset = 0;
+//			y_offset = 0;
+//			z_offset = 1;
+//			temp_cube.vertex[3].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[3].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[3].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[3] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[3] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 4
+//			x_offset = 0;
+//			y_offset = 1;
+//			z_offset = 0;
+//			temp_cube.vertex[4].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[4].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[4].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[4] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[4] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 5
+//			x_offset = 1;
+//			y_offset = 1;
+//			z_offset = 0;
+//			temp_cube.vertex[5].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[5].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[5].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[5] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[5] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 6
+//			x_offset = 1;
+//			y_offset = 1;
+//			z_offset = 1;
+//			temp_cube.vertex[6].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[6].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[6].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[6] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[6] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// Setup vertex 7
+//			x_offset = 0;
+//			y_offset = 1;
+//			z_offset = 1;
+//			temp_cube.vertex[7].x = jsm.fsp.x_min + ((x + x_offset) * x_step_size);
+//			temp_cube.vertex[7].y = jsm.fsp.y_min + ((y + y_offset) * y_step_size);
+//			temp_cube.vertex[7].z = jsm.fsp.z_min + ((z + z_offset) * z_step_size);
+//
+//			if (0 == z_offset)
+//				temp_cube.value[7] = xyplane0[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//			else
+//				temp_cube.value[7] = xyplane1[(x + x_offset) * jsm.fsp.resolution + (y + y_offset)];
+//
+//			// add values to vertex_data
+//
+//			vertex_data.push_back(temp_cube.vertex[0].x);
+//			vertex_data.push_back(temp_cube.vertex[0].y);
+//			vertex_data.push_back(temp_cube.vertex[0].z);
+//			vertex_data.push_back(temp_cube.value[0]);
+//
+//			vertex_data.push_back(temp_cube.vertex[1].x);
+//			vertex_data.push_back(temp_cube.vertex[1].y);
+//			vertex_data.push_back(temp_cube.vertex[1].z);
+//			vertex_data.push_back(temp_cube.value[1]);
+//
+//			vertex_data.push_back(temp_cube.vertex[2].x);
+//			vertex_data.push_back(temp_cube.vertex[2].y);
+//			vertex_data.push_back(temp_cube.vertex[2].z);
+//			vertex_data.push_back(temp_cube.value[2]);
+//
+//			vertex_data.push_back(temp_cube.vertex[3].x);
+//			vertex_data.push_back(temp_cube.vertex[3].y);
+//			vertex_data.push_back(temp_cube.vertex[3].z);
+//			vertex_data.push_back(temp_cube.value[3]);
+//
+//			vertex_data.push_back(temp_cube.vertex[4].x);
+//			vertex_data.push_back(temp_cube.vertex[4].y);
+//			vertex_data.push_back(temp_cube.vertex[4].z);
+//			vertex_data.push_back(temp_cube.value[4]);
+//
+//			vertex_data.push_back(temp_cube.vertex[5].x);
+//			vertex_data.push_back(temp_cube.vertex[5].y);
+//			vertex_data.push_back(temp_cube.vertex[5].z);
+//			vertex_data.push_back(temp_cube.value[5]);
+//
+//			vertex_data.push_back(temp_cube.vertex[6].x);
+//			vertex_data.push_back(temp_cube.vertex[6].y);
+//			vertex_data.push_back(temp_cube.vertex[6].z);
+//			vertex_data.push_back(temp_cube.value[6]);
+//
+//			vertex_data.push_back(temp_cube.vertex[7].x);
+//			vertex_data.push_back(temp_cube.vertex[7].y);
+//			vertex_data.push_back(temp_cube.vertex[7].z);
+//			vertex_data.push_back(temp_cube.value[7]);
+//
+//			//// Generate triangles from cube.
+//			//static triangle temp_triangle_array[5];
+//
+//			//short unsigned int number_of_triangles_generated = tesselate_grid_cube(isovalue, temp_cube, temp_triangle_array);
+//
+//			//if (number_of_triangles_generated > 0)
+//			//	box_count++;
+//
+//			//for (short unsigned int i = 0; i < number_of_triangles_generated; i++)
+//			//	triangles.push_back(temp_triangle_array[i]);
+//		}
+//	}
+//
+//
+//
+//	const GLuint components_per_position = 4;
+//	const GLuint components_per_vertex = 8*components_per_position;
+//
+//	glDeleteBuffers(1, &triangle_buffer);
+//	glGenBuffers(1, &triangle_buffer);
+//	
+//	const GLuint num_vertices = static_cast<GLuint>(vertex_data.size()) / components_per_vertex;
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+//	glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(GLfloat), &vertex_data[0], GL_DYNAMIC_DRAW);
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position0"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position0"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_FALSE,
+//		components_per_vertex * sizeof(GLfloat),
+//		0);
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position1"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position1"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(1*components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position2"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position2"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(2 * components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position3"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position3"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(3 * components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position4"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position4"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(4 * components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position5"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position5"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(5 * components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position6"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position6"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(6 * components_per_position * sizeof(GLfloat)));
+//
+//	glEnableVertexAttribArray(glGetAttribLocation(program, "position7"));
+//	glVertexAttribPointer(glGetAttribLocation(program, "position7"),
+//		components_per_position,
+//		GL_FLOAT,
+//		GL_TRUE,
+//		components_per_vertex * sizeof(GLfloat),
+//		(const GLvoid*)(7 * components_per_position * sizeof(GLfloat)));
+//
+//	glDrawArrays(GL_POINTS, 0, num_vertices);
+//}
+
 
 void display_func(void)
 {
@@ -1638,12 +1895,12 @@ void display_func(void)
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
 
 
-	glUseProgram(points.get_program());
+	glUseProgram(render.get_program());
 
 	main_camera.calculate_camera_matrices(win_x, win_y);
-	glUniformMatrix4fv(uniforms.points.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-	glUniformMatrix4fv(uniforms.points.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
-	glUniform1f(uniforms.points.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
 	if (draw_axis_checkbox->get_int_val())
 	{
@@ -1652,30 +1909,10 @@ void display_func(void)
 
 	if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
 	{
-		draw_mesh(points.get_program());
+		//draw_points(points.get_program());
+		draw_mesh(render.get_program());
 	}
 
-
-
-
-
-
-	//glUseProgram(render.get_program());
-
-	//main_camera.calculate_camera_matrices(win_x, win_y);
-	//glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-	//glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
-	//glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
-
-	//if (draw_axis_checkbox->get_int_val())
-	//{
-	//	draw_axis();
-	//}
-
-	//if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
-	//{
-	//	draw_mesh(render.get_program());
-	//}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1872,12 +2109,12 @@ void setup_gui(void)
 
 	obj_panel3->set_alignment(GLUI_ALIGN_LEFT);
 
-	x_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
-	y_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
-	z_min_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
-	x_min_edittext->set_text("-1.5");
-	y_min_edittext->set_text("-1.5");
-	z_min_edittext->set_text("-1.5");
+	x_min_edit_text = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	y_min_edit_text = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	z_min_edit_text = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Z min:"), -1, const_cast<char*>("-1.5"), 3, control_cb);
+	x_min_edit_text->set_text("-1.5");
+	y_min_edit_text->set_text("-1.5");
+	z_min_edit_text->set_text("-1.5");
 
 	x_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("X max:"), -1, const_cast<char*>("1.5"), 3, control_cb);
 	y_max_edittext = glui->add_edittext_to_panel(obj_panel3, const_cast<char*>("Y max:"), -1, const_cast<char*>("1.5"), 3, control_cb);
