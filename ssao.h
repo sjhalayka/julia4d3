@@ -2,6 +2,10 @@
 #define ssao_h
 
 
+// https://github.com/jdupuy/marchingCube/blob/master/marchingCube.glsl
+
+
+
 
 // This is the copyright notice that came with the SSAO code:
 /*
@@ -148,6 +152,68 @@ unsigned int axis_buffer = 0;
 
 
 
+vertex_geometry_fragment_shader render;
+vertex_fragment_shader ssao;
+vertex_fragment_shader flat;
+vertex_fragment_shader ortho;
+vertex_geometry_fragment_shader points;
+
+
+
+struct
+{
+	struct
+	{
+		GLint           mv_matrix;
+		GLint           proj_matrix;
+		GLint           shading_level;
+	} render;
+	struct
+	{
+		GLint           ssao_level;
+		GLint           object_level;
+		GLint           ssao_radius;
+		GLint           weight_by_angle;
+		GLint           randomize_points;
+		GLint           point_count;
+	} ssao;
+	struct
+	{
+		GLint           mv_matrix;
+		GLint           proj_matrix;
+		GLint			flat_colour;
+	} flat;
+
+	struct
+	{
+		GLint			tex;
+	} ortho;
+	struct
+	{
+		GLint           mv_matrix;
+		GLint           proj_matrix;
+		GLint           shading_level;
+	} points;
+
+} uniforms;
+
+bool  show_shading;
+bool  show_ao;
+float ssao_level;
+float ssao_radius;
+bool  weight_by_angle;
+bool randomize_points;
+unsigned int point_count;
+
+
+struct SAMPLE_POINTS
+{
+	vertex_4 point[256];
+	vertex_4 random_vectors[256];
+};
+
+
+static unsigned int seed = 0x13371337;
 
 
 
@@ -867,63 +933,6 @@ void passive_motion_func(int x, int y)
 }
 
 // https://learnopengl.com/code_viewer_gh.php?code=src/4.advanced_opengl/9.1.geometry_shader_houses/9.1.geometry_shader.gs
-vertex_geometry_fragment_shader render;
-vertex_fragment_shader ssao;
-vertex_fragment_shader flat;
-vertex_fragment_shader ortho;
-
-
-
-
-struct
-{
-	struct
-	{
-		GLint           mv_matrix;
-		GLint           proj_matrix;
-		GLint           shading_level;
-	} render;
-	struct
-	{
-		GLint           ssao_level;
-		GLint           object_level;
-		GLint           ssao_radius;
-		GLint           weight_by_angle;
-		GLint           randomize_points;
-		GLint           point_count;
-	} ssao;
-	struct
-	{
-		GLint           mv_matrix;
-		GLint           proj_matrix;
-		GLint			flat_colour;
-	} flat;
-
-	struct
-	{
-		GLint			tex;
-	} ortho;
-
-
-} uniforms;
-
-bool  show_shading;
-bool  show_ao;
-float ssao_level;
-float ssao_radius;
-bool  weight_by_angle;
-bool randomize_points;
-unsigned int point_count;
-
-
-struct SAMPLE_POINTS
-{
-	vertex_4 point[256];
-	vertex_4 random_vectors[256];
-};
-
-
-static unsigned int seed = 0x13371337;
 
 static inline float random_float()
 {
@@ -968,6 +977,13 @@ bool load_shaders(void)
 		return false;
 	}
 
+	if (false == points.init("points.vs.glsl", "points.gs.glsl", "points.fs.glsl"))
+	{
+		cout << "Could not load points shader" << endl;
+		return false;
+	}
+
+
 	uniforms.render.mv_matrix = glGetUniformLocation(render.get_program(), "mv_matrix");
 	uniforms.render.proj_matrix = glGetUniformLocation(render.get_program(), "proj_matrix");
 	uniforms.render.shading_level = glGetUniformLocation(render.get_program(), "shading_level");
@@ -984,6 +1000,10 @@ bool load_shaders(void)
 	uniforms.flat.flat_colour = glGetUniformLocation(flat.get_program(), "flat_colour");
 
 	uniforms.ortho.tex = glGetUniformLocation(ortho.get_program(), "tex");
+
+	uniforms.points.mv_matrix = glGetUniformLocation(points.get_program(), "mv_matrix");
+	uniforms.points.proj_matrix = glGetUniformLocation(points.get_program(), "proj_matrix");
+	uniforms.points.shading_level = glGetUniformLocation(points.get_program(), "shading_level");
 
 	return true;
 }
@@ -1447,11 +1467,11 @@ bool init(void)
 }
 
 
-void draw_axis(void)
+void draw_axis(GLuint program)
 {
 	glLineWidth(2.0);
 
-	glUseProgram(flat.get_program());
+	glUseProgram(program);
 
 	main_camera.calculate_camera_matrices(win_x, win_y);
 	glUniformMatrix4fv(uniforms.flat.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
@@ -1550,9 +1570,9 @@ void draw_axis(void)
 	glDrawArrays(GL_LINES, 0, num_vertices);
 }
 
-void draw_mesh(void)
+void draw_mesh(GLuint program)
 {
-	glUseProgram(render.get_program());
+	glUseProgram(program);
 
 	const GLuint components_per_vertex = 9;
 	const GLuint components_per_normal = 3;
@@ -1617,22 +1637,45 @@ void display_func(void)
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, points_buffer);
 
-	glUseProgram(render.get_program());
+
+	glUseProgram(points.get_program());
 
 	main_camera.calculate_camera_matrices(win_x, win_y);
-	glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
-	glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
-	glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+	glUniformMatrix4fv(uniforms.points.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	glUniformMatrix4fv(uniforms.points.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+	glUniform1f(uniforms.points.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
 
 	if (draw_axis_checkbox->get_int_val())
 	{
-		draw_axis();
+		draw_axis(flat.get_program());
 	}
 
 	if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
 	{
-		draw_mesh();
+		draw_mesh(points.get_program());
 	}
+
+
+
+
+
+
+	//glUseProgram(render.get_program());
+
+	//main_camera.calculate_camera_matrices(win_x, win_y);
+	//glUniformMatrix4fv(uniforms.render.proj_matrix, 1, GL_FALSE, main_camera.projection_mat);
+	//glUniformMatrix4fv(uniforms.render.mv_matrix, 1, GL_FALSE, main_camera.view_mat);
+	//glUniform1f(uniforms.render.shading_level, show_shading ? (show_ao ? 0.7f : 1.0f) : 0.0f);
+
+	//if (draw_axis_checkbox->get_int_val())
+	//{
+	//	draw_axis();
+	//}
+
+	//if (STATE_FINISHED == jsm.get_state() && jsm.vertex_data.size() > 0)
+	//{
+	//	draw_mesh(render.get_program());
+	//}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1668,7 +1711,7 @@ void display_func(void)
 			char_y_pos += 20;
 		}
 	}
-
+	
 	glutSwapBuffers();
 }
 
