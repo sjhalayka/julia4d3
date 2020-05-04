@@ -22,19 +22,8 @@ out VS_OUT
 uniform vec3 light_pos = vec3(100.0, 100.0, 100.0);
 
 void main(void)
-{	float max_rainbow = 0.0;
-	float min_rainbow = 100.0;
-        float min_3d_length = 1.0;
-        float max_3d_length = 4.0;
-		float vertex_length = sqrt(position.x * position.x + position.y * position.y + position.z * position.z) - min_3d_length;
-
-		vs_out.vertex_colour = colour;
-
-//		vs_out.vertex_colour = 
-//		HSBtoRGB(uint(
-//			max_rainbow - ((vertex_length / (max_3d_length - min_3d_length)) * min_rainbow)),
-//			uint(50),
-//			uint(100));
+{
+	vs_out.vertex_colour = colour;
 
     // Calculate view-space coordinate
     vec4 P = mv_matrix * position;
