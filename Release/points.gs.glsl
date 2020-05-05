@@ -4,6 +4,7 @@ layout (points) in;
 layout (triangle_strip) out;
 layout (max_vertices = 15) out;
 
+
 in VS_OUT
 {
     vec4 position0;
@@ -15,6 +16,7 @@ in VS_OUT
     vec4 position6;
     vec4 position7;
 } gs_in[];
+
 
 #define isovalue 4.0
 
@@ -418,7 +420,7 @@ int tesselate_grid_cube(grid_cube grid)
 	if(MC_EdgeTable[cubeindex] & 2048)
 		vertlist[11] = vertex_interp(grid.vertex_val[3], grid.vertex_val[7]);
 
-	int ntriang = 0;
+	int ntriang = 0; // Max triangles == 5
 
 	for(int i = 0; MC_TriTable[cubeindex][i] != -1; i += 3)
 	{
@@ -448,41 +450,7 @@ int tesselate_grid_cube(grid_cube grid)
 
         EndPrimitive();
 
-
-/*			
-		if(ntriang == 0)
-		{
-			imageStore(output_triangle0_vertex0_tex, pixel_coords, vertex0);
-			imageStore(output_triangle0_vertex1_tex, pixel_coords, vertex1);
-			imageStore(output_triangle0_vertex2_tex, pixel_coords, vertex2);
-		}
-		else if(ntriang == 1)
-		{
-			imageStore(output_triangle1_vertex0_tex, pixel_coords, vertex0);
-			imageStore(output_triangle1_vertex1_tex, pixel_coords, vertex1);
-			imageStore(output_triangle1_vertex2_tex, pixel_coords, vertex2);
-		}
-		else if(ntriang == 2)
-		{
-			imageStore(output_triangle2_vertex0_tex, pixel_coords, vertex0);
-			imageStore(output_triangle2_vertex1_tex, pixel_coords, vertex1);
-			imageStore(output_triangle2_vertex2_tex, pixel_coords, vertex2);
-		}
-		else if(ntriang == 3)
-		{
-			imageStore(output_triangle3_vertex0_tex, pixel_coords, vertex0);
-			imageStore(output_triangle3_vertex1_tex, pixel_coords, vertex1);
-			imageStore(output_triangle3_vertex2_tex, pixel_coords, vertex2);
-		}
-		else if(ntriang == 4)
-		{
-			imageStore(output_triangle4_vertex0_tex, pixel_coords, vertex0);
-			imageStore(output_triangle4_vertex1_tex, pixel_coords, vertex1);
-			imageStore(output_triangle4_vertex2_tex, pixel_coords, vertex2);
-		}
-		*/
-
-		ntriang += 1;
+		ntriang++;
 	}
 
 	return ntriang;
@@ -501,29 +469,4 @@ void main(void)
 	g.vertex_val[7] = gs_in[0].position7;
 
 	int n = tesselate_grid_cube(g);
-
-	vec4 ntriang = vec4(n, n, n, n);
-
-/*
-//    for (int i = 0; i < gl_in.length(); i++)
-//    {
-        gl_Position = gs_in[0].position0;
-        EmitVertex();
-        gl_Position = gs_in[0].position1;
-        EmitVertex();
-        gl_Position = gs_in[0].position2;
-        EmitVertex();
-        EndPrimitive();
-
-        gl_Position = gs_in[0].position3;
-        EmitVertex();
-        gl_Position = gs_in[0].position4;
-        EmitVertex();
-        gl_Position = gs_in[0].position5;
-        EmitVertex();
-        EndPrimitive();
-
-//    }
-*/
-    
 }  
