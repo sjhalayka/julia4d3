@@ -489,8 +489,103 @@ public:
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(7 * components_per_position * sizeof(GLfloat)));
+		
 
 
+
+		glEnable(GL_RASTERIZER_DISCARD);
+
+		GLuint array_buffer_vbo, feedback_buffer_vbo;
+		glGenBuffers(1, &array_buffer_vbo);
+		glGenBuffers(1, &feedback_buffer_vbo);
+
+vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9, 0.0f);
+vector<float> out_data = in_data;
+
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_buffer_vbo);
+		glNamedBufferStorage(feedback_buffer_vbo, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_STORAGE_BIT);
+		
+		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_COPY);
+
+
+		glBindBuffer(GL_ARRAY_BUFFER, array_buffer_vbo);
+		glNamedBufferStorage(array_buffer_vbo, in_data.size() * sizeof(float), &in_data[0], GL_DYNAMIC_STORAGE_BIT);
+
+
+		//glBufferData(GL_ARRAY_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_DYNAMIC_COPY);
+
+		//glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_buffer_vbo);
+		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_COPY);
+
+		GLuint query;
+
+		glGenQueries(1, &query);
+
+		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
+			
+		glBeginTransformFeedback(GL_TRIANGLES);
+			glDrawArrays(GL_POINTS, 0, num_vertices);
+		glEndTransformFeedback();
+
+		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+
+		GLuint primitives;
+		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
+
+		printf("%u primitives written!\n\n", primitives);
+
+
+
+		//glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, out_data.size() * sizeof(float), &out_data[0]);
+		glGetNamedBufferSubData(feedback_buffer_vbo, 0, primitives*9*sizeof(float), &out_data[0]);
+
+		glDisable(GL_RASTERIZER_DISCARD);
+
+
+		for (size_t i = 0; i < primitives; i++)
+		{
+			size_t feedback_index = 9 * i;
+
+			triangle t;
+
+			t.vertex[0].x = out_data[feedback_index + 0];
+			t.vertex[0].y = out_data[feedback_index + 1];
+			t.vertex[0].z = out_data[feedback_index + 2];
+
+			t.vertex[1].x = out_data[feedback_index + 3];
+			t.vertex[1].y = out_data[feedback_index + 4];
+			t.vertex[1].z = out_data[feedback_index + 5];
+
+			t.vertex[2].x = out_data[feedback_index + 6];
+			t.vertex[2].y = out_data[feedback_index + 7];
+			t.vertex[2].z = out_data[feedback_index + 8];
+
+			triangles.push_back(t);
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 		GLuint query;
 
 		glGenQueries(1, &query);
@@ -537,10 +632,9 @@ public:
 			triangles.push_back(t);
 		}
 
+		*/
 
-		//printf("%u primitives written!\n\n", primitives);
-
-
+		
 		//for (int i = 0; i < 15; i++) {
 		//	printf("%f\n", feedback[i]);
 		//}
@@ -553,19 +647,19 @@ public:
 		//GLint queryResult = 0;
 		//glEndQuery(GL_PRIMITIVES_GENERATED);
 
-		//glGetQueryObjectiv(query, GL_QUERY_RESULT, &queryResult);
+		//glGetQueryObjectiv(query, GL_QUERY_RESULT, &queryResult);`
 
 		//printf("Primitives count: %d\n", queryResult);
 
 
 		//// https://open.gl/feedback
+		// https://www.reddit.com/r/opengl/comments/5wa3kv/transform_feedback_question/
+		// http://www.java-gaming.org/topics/opengl-transform-feedback/27786/view.html
 
 
 
 
-
-
-		glDisable(GL_RASTERIZER_DISCARD);
+		//glDisable(GL_RASTERIZER_DISCARD);
 
 
 		return true;
