@@ -505,7 +505,7 @@ public:
 		glBufferData(GL_ARRAY_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
 
 		glBeginTransformFeedback(GL_TRIANGLES);
-			glDrawArrays(GL_POINTS, 0, num_vertices);
+			glDrawArrays(GL_POINTS, 0, num_vertices);	
 		glEndTransformFeedback();
 
 		glEndQuery(GL_PRIMITIVES_GENERATED);
