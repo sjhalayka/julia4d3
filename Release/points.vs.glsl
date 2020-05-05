@@ -32,10 +32,4 @@ void main(void)
     vs_out.position5 = position5;
     vs_out.position6 = position6;
     vs_out.position7 = position7;
-
-    vec4 avg_position = position0 + position1 + position2 + position3 + position4 + position5 + position6 + position7;
-    avg_position /= 8.0f;
-
-    // Calculate the clip-space position of each vertex
-    gl_Position = avg_position;
 }
