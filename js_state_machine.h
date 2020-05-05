@@ -366,8 +366,6 @@ public:
 				else
 					temp_cube.value[7] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
 
-				// add values to points_vertex_data
-
 				points_vertex_data.push_back(temp_cube.vertex[0].x);
 				points_vertex_data.push_back(temp_cube.vertex[0].y);
 				points_vertex_data.push_back(temp_cube.vertex[0].z);
@@ -413,11 +411,6 @@ public:
 
 //	https://github.com/progschj/OpenGL-Examples/blob/master/09transform_feedback.cpp
 
-		GLuint query;
-
-		glGenQueries(1, &query);
-
-		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
 
 
 		const GLuint components_per_position = 4;
@@ -497,22 +490,75 @@ public:
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(7 * components_per_position * sizeof(GLfloat)));
 
-		glDrawArrays(GL_POINTS, 0, num_vertices);
 
-		// read points or triangles via GPU to CPU copy (transform feedback)
+		GLuint query;
 
-		GLint queryResult = 0;
+		glGenQueries(1, &query);
+
+		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
+
+		vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9);
+
+		GLuint tbo;
+		glGenBuffers(1, &tbo);
+		glBindBuffer(GL_ARRAY_BUFFER, tbo);
+		glBufferData(GL_ARRAY_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
+
+		glBeginTransformFeedback(GL_TRIANGLES);
+			glDrawArrays(GL_POINTS, 0, num_vertices);
+		glEndTransformFeedback();
+
 		glEndQuery(GL_PRIMITIVES_GENERATED);
+	
+		GLuint primitives;
+		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
 
-		glGetQueryObjectiv(query, GL_QUERY_RESULT, &queryResult);
+		vector<float> feedback(in_data.size(), 0.0f);
+		glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size()*sizeof(float), &feedback[0]);
 
-		printf("Primitives count: %d\n", queryResult);
+		for (size_t i = 0; i < primitives; i++)
+		{
+			size_t feedback_index = 9 * i;
 
-		triangle t;
-		for (GLint i = 0; i < queryResult; i++)
+			triangle t;
+
+			t.vertex[0].x = feedback[feedback_index + 0];
+			t.vertex[0].y = feedback[feedback_index + 1];
+			t.vertex[0].z = feedback[feedback_index + 2];
+
+			t.vertex[1].x = feedback[feedback_index + 3];
+			t.vertex[1].y = feedback[feedback_index + 4];
+			t.vertex[1].z = feedback[feedback_index + 5];
+
+			t.vertex[2].x = feedback[feedback_index + 6];
+			t.vertex[2].y = feedback[feedback_index + 7];
+			t.vertex[2].z = feedback[feedback_index + 8];
+
 			triangles.push_back(t);
+		}
 
-		// https://open.gl/feedback
+
+		//printf("%u primitives written!\n\n", primitives);
+
+
+		//for (int i = 0; i < 15; i++) {
+		//	printf("%f\n", feedback[i]);
+		//}
+
+
+
+
+		// read	triangles via GPU to CPU copy (transform feedback)
+
+		//GLint queryResult = 0;
+		//glEndQuery(GL_PRIMITIVES_GENERATED);
+
+		//glGetQueryObjectiv(query, GL_QUERY_RESULT, &queryResult);
+
+		//printf("Primitives count: %d\n", queryResult);
+
+
+		//// https://open.gl/feedback
 
 
 
