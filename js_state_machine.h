@@ -245,7 +245,7 @@ public:
 		}
 		
 		glUseProgram(points.get_program());
-		glEnable(GL_RASTERIZER_DISCARD);
+
 		vector<float> points_vertex_data;
 
 		const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
@@ -490,9 +490,75 @@ public:
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(7 * components_per_position * sizeof(GLfloat)));
 		
+		 /*
+		// Create VAO
+		GLuint vao;
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		// Create input VBO and vertex format
+		vector<float> data(num_vertices, 0);
+
+		GLuint vbo;
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
+
+		// Create transform feedback buffer
+		GLuint tbo;
+		glGenBuffers(1, &tbo);
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
+		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)*(fsp.resolution - 1)*5*9 * sizeof(float), nullptr, GL_STATIC_READ);
+		glBufferStorage(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9 * sizeof(float), NULL, 0);
+	
+		// Create query object to collect info
+		GLuint query;
+		glGenQueries(1, &query);
+
+		// Perform feedback transform
+		glEnable(GL_RASTERIZER_DISCARD);
+
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, tbo);
+
+		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
+		glBeginTransformFeedback(GL_TRIANGLES);
+				glDrawArrays(GL_POINTS, 0, num_vertices);
+		glEndTransformFeedback();
+		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+
+		glDisable(GL_RASTERIZER_DISCARD);
+
+		glFlush();
+
+		// Fetch and print results
+		GLuint primitives;
+		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
+
+		if (primitives > 0)
+		{
+			vector<float> feedback(primitives * 3 * 3, 0);
+
+			glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
+
+			printf("%u primitives written!\n\n", primitives);
+
+			for (int i = 0; i < 15; i++) {
+				printf("%f\n", feedback[i]);
+			}
+		}
 
 
 
+		*/
+
+
+
+
+
+		/*
+
+
+	
 		glEnable(GL_RASTERIZER_DISCARD);
 
 		GLuint array_buffer_vbo, feedback_buffer_vbo;
@@ -565,6 +631,9 @@ vector<float> out_data = in_data;
 
 
 
+		*/
+
+		
 
 
 
@@ -583,9 +652,6 @@ vector<float> out_data = in_data;
 
 
 
-
-
-/*
 		GLuint query;
 
 		glGenQueries(1, &query);
@@ -632,7 +698,7 @@ vector<float> out_data = in_data;
 			triangles.push_back(t);
 		}
 
-		*/
+	
 
 		
 		//for (int i = 0; i < 15; i++) {
@@ -664,805 +730,6 @@ vector<float> out_data = in_data;
 
 		return true;
 	}
-
-
-
-/*
-bool tesselate_adjacent_xy_plane_pair_gpu(size_t& box_count, const vector<float>& xyplane0, const vector<float>& xyplane1, const size_t z, vector<triangle>& triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
-{
-	const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
-	const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
-	const float z_step_size = (z_grid_max - z_grid_min) / (z_res - 1);
-
-	GLsizei width = static_cast<GLsizei>(x_res) - 1;
-	GLsizei height = static_cast<GLsizei>(y_res) - 1;
-
-	glUseProgram(mc_shader);
-
-	vector<GLfloat> input_tex0_data(4 * width * height);
-	vector<GLfloat> input_tex1_data(4 * width * height);
-	vector<GLfloat> input_tex2_data(4 * width * height);
-	vector<GLfloat> input_tex3_data(4 * width * height);
-	vector<GLfloat> input_tex4_data(4 * width * height);
-	vector<GLfloat> input_tex5_data(4 * width * height);
-	vector<GLfloat> input_tex6_data(4 * width * height);
-	vector<GLfloat> input_tex7_data(4 * width * height);
-
-	vector<GLfloat> output_tri_count_data(width * height);
-
-	vector<GLfloat> output_tex0_data(3 * width * height);
-	vector<GLfloat> output_tex1_data(3 * width * height);
-	vector<GLfloat> output_tex2_data(3 * width * height);
-	vector<GLfloat> output_tex3_data(3 * width * height);
-	vector<GLfloat> output_tex4_data(3 * width * height);
-	vector<GLfloat> output_tex5_data(3 * width * height);
-	vector<GLfloat> output_tex6_data(3 * width * height);
-	vector<GLfloat> output_tex7_data(3 * width * height);
-	vector<GLfloat> output_tex8_data(3 * width * height);
-	vector<GLfloat> output_tex9_data(3 * width * height);
-	vector<GLfloat> output_tex10_data(3 * width * height);
-	vector<GLfloat> output_tex11_data(3 * width * height);
-	vector<GLfloat> output_tex12_data(3 * width * height);
-	vector<GLfloat> output_tex13_data(3 * width * height);
-	vector<GLfloat> output_tex14_data(3 * width * height);
-
-	GLuint input_tex0, input_tex1, input_tex2, input_tex3, input_tex4, input_tex5, input_tex6, input_tex7;
-
-	glGenTextures(1, &input_tex0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, input_tex0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, input_tex1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex2);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, input_tex2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex3);
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, input_tex3);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex4);
-	glActiveTexture(GL_TEXTURE4);
-	glBindTexture(GL_TEXTURE_2D, input_tex4);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex5);
-	glActiveTexture(GL_TEXTURE5);
-	glBindTexture(GL_TEXTURE_2D, input_tex5);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex6);
-	glActiveTexture(GL_TEXTURE6);
-	glBindTexture(GL_TEXTURE_2D, input_tex6);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	glGenTextures(1, &input_tex7);
-	glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_2D, input_tex7);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	GLuint output_triangle_number_tex;
-
-	glGenTextures(1, &output_triangle_number_tex);
-	glActiveTexture(GL_TEXTURE8);
-	glBindTexture(GL_TEXTURE_2D, output_triangle_number_tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, width, height, 0, GL_RED, GL_FLOAT, NULL);
-	glBindImageTexture(8, output_triangle_number_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-	GLuint output_tex0, output_tex1, output_tex2, output_tex3, output_tex4, output_tex5, output_tex6,
-		output_tex7, output_tex8, output_tex9, output_tex10, output_tex11, output_tex12, output_tex13,
-		output_tex14;
-
-	glGenTextures(1, &output_tex0);
-	glActiveTexture(GL_TEXTURE9);
-	glBindTexture(GL_TEXTURE_2D, output_tex0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(9, output_tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex1);
-	glActiveTexture(GL_TEXTURE10);
-	glBindTexture(GL_TEXTURE_2D, output_tex1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(10, output_tex1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex2);
-	glActiveTexture(GL_TEXTURE11);
-	glBindTexture(GL_TEXTURE_2D, output_tex2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(11, output_tex2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex3);
-	glActiveTexture(GL_TEXTURE12);
-	glBindTexture(GL_TEXTURE_2D, output_tex3);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(12, output_tex3, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex4);
-	glActiveTexture(GL_TEXTURE13);
-	glBindTexture(GL_TEXTURE_2D, output_tex4);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(13, output_tex4, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex5);
-	glActiveTexture(GL_TEXTURE14);
-	glBindTexture(GL_TEXTURE_2D, output_tex5);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(14, output_tex5, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex6);
-	glActiveTexture(GL_TEXTURE15);
-	glBindTexture(GL_TEXTURE_2D, output_tex6);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(15, output_tex6, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex7);
-	glActiveTexture(GL_TEXTURE16);
-	glBindTexture(GL_TEXTURE_2D, output_tex7);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(16, output_tex7, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex8);
-	glActiveTexture(GL_TEXTURE17);
-	glBindTexture(GL_TEXTURE_2D, output_tex8);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(17, output_tex8, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex9);
-	glActiveTexture(GL_TEXTURE18);
-	glBindTexture(GL_TEXTURE_2D, output_tex9);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(18, output_tex9, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex10);
-	glActiveTexture(GL_TEXTURE19);
-	glBindTexture(GL_TEXTURE_2D, output_tex10);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(19, output_tex10, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex11);
-	glActiveTexture(GL_TEXTURE20);
-	glBindTexture(GL_TEXTURE_2D, output_tex11);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(20, output_tex11, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex12);
-	glActiveTexture(GL_TEXTURE21);
-	glBindTexture(GL_TEXTURE_2D, output_tex12);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(21, output_tex12, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex13);
-	glActiveTexture(GL_TEXTURE22);
-	glBindTexture(GL_TEXTURE_2D, output_tex13);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(22, output_tex13, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-	glGenTextures(1, &output_tex14);
-	glActiveTexture(GL_TEXTURE23);
-	glBindTexture(GL_TEXTURE_2D, output_tex14);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-	glBindImageTexture(23, output_tex14, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-
-
-	size_t index = 0;
-
-	for (size_t x = 0; x < width; x++)
-	{
-		for (size_t y = 0; y < height; y++)
-		{
-			grid_cube temp_cube;
-
-			size_t x_offset = 0;
-			size_t y_offset = 0;
-			size_t z_offset = 0;
-
-			// Setup vertex 0
-			x_offset = 0;
-			y_offset = 0;
-			z_offset = 0;
-			temp_cube.vertex[0].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[0].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[0].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[0] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[0] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 1
-			x_offset = 1;
-			y_offset = 0;
-			z_offset = 0;
-			temp_cube.vertex[1].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[1].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[1].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[1] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[1] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 2
-			x_offset = 1;
-			y_offset = 0;
-			z_offset = 1;
-			temp_cube.vertex[2].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[2].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[2].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[2] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[2] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 3
-			x_offset = 0;
-			y_offset = 0;
-			z_offset = 1;
-			temp_cube.vertex[3].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[3].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[3].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[3] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[3] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 4
-			x_offset = 0;
-			y_offset = 1;
-			z_offset = 0;
-			temp_cube.vertex[4].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[4].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[4].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[4] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[4] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 5
-			x_offset = 1;
-			y_offset = 1;
-			z_offset = 0;
-			temp_cube.vertex[5].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[5].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[5].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[5] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[5] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 6
-			x_offset = 1;
-			y_offset = 1;
-			z_offset = 1;
-			temp_cube.vertex[6].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[6].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[6].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[6] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[6] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			// Setup vertex 7
-			x_offset = 0;
-			y_offset = 1;
-			z_offset = 1;
-			temp_cube.vertex[7].x = x_grid_min + ((x + x_offset) * x_step_size);
-			temp_cube.vertex[7].y = y_grid_min + ((y + y_offset) * y_step_size);
-			temp_cube.vertex[7].z = z_grid_min + ((z + z_offset) * z_step_size);
-
-			if (0 == z_offset)
-				temp_cube.value[7] = xyplane0[(x + x_offset) * y_res + (y + y_offset)];
-			else
-				temp_cube.value[7] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
-
-			input_tex0_data[index + 0] = temp_cube.vertex[0].x;
-			input_tex0_data[index + 1] = temp_cube.vertex[0].y;
-			input_tex0_data[index + 2] = temp_cube.vertex[0].z;
-			input_tex0_data[index + 3] = temp_cube.value[0];
-
-			input_tex1_data[index + 0] = temp_cube.vertex[1].x;
-			input_tex1_data[index + 1] = temp_cube.vertex[1].y;
-			input_tex1_data[index + 2] = temp_cube.vertex[1].z;
-			input_tex1_data[index + 3] = temp_cube.value[1];
-
-			input_tex2_data[index + 0] = temp_cube.vertex[2].x;
-			input_tex2_data[index + 1] = temp_cube.vertex[2].y;
-			input_tex2_data[index + 2] = temp_cube.vertex[2].z;
-			input_tex2_data[index + 3] = temp_cube.value[2];
-
-			input_tex3_data[index + 0] = temp_cube.vertex[3].x;
-			input_tex3_data[index + 1] = temp_cube.vertex[3].y;
-			input_tex3_data[index + 2] = temp_cube.vertex[3].z;
-			input_tex3_data[index + 3] = temp_cube.value[3];
-
-			input_tex4_data[index + 0] = temp_cube.vertex[4].x;
-			input_tex4_data[index + 1] = temp_cube.vertex[4].y;
-			input_tex4_data[index + 2] = temp_cube.vertex[4].z;
-			input_tex4_data[index + 3] = temp_cube.value[4];
-
-			input_tex5_data[index + 0] = temp_cube.vertex[5].x;
-			input_tex5_data[index + 1] = temp_cube.vertex[5].y;
-			input_tex5_data[index + 2] = temp_cube.vertex[5].z;
-			input_tex5_data[index + 3] = temp_cube.value[5];
-
-			input_tex6_data[index + 0] = temp_cube.vertex[6].x;
-			input_tex6_data[index + 1] = temp_cube.vertex[6].y;
-			input_tex6_data[index + 2] = temp_cube.vertex[6].z;
-			input_tex6_data[index + 3] = temp_cube.value[6];
-
-			input_tex7_data[index + 0] = temp_cube.vertex[7].x;
-			input_tex7_data[index + 1] = temp_cube.vertex[7].y;
-			input_tex7_data[index + 2] = temp_cube.vertex[7].z;
-			input_tex7_data[index + 3] = temp_cube.value[7];
-
-			index += 4;
-		}
-	}
-
-
-	glActiveTexture(GL_TEXTURE0);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex0_data[0]);
-	glBindImageTexture(0, input_tex0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE1);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex1_data[0]);
-	glBindImageTexture(1, input_tex1, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE2);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex2_data[0]);
-	glBindImageTexture(2, input_tex2, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE3);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex3_data[0]);
-	glBindImageTexture(3, input_tex3, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE4);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex4_data[0]);
-	glBindImageTexture(4, input_tex4, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE5);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex5_data[0]);
-	glBindImageTexture(5, input_tex5, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE6);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex6_data[0]);
-	glBindImageTexture(6, input_tex6, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glActiveTexture(GL_TEXTURE7);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, &input_tex7_data[0]);
-	glBindImageTexture(7, input_tex7, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	// Pass in the input image and quaternion Julia set parameters as uniforms
-	//glUniform1i(glGetUniformLocation(compute_shader_program, "input_image"), 1); // use GL_TEXTURE1
-	//glUniform4f(glGetUniformLocation(compute_shader_program, "c"), C.x, C.y, C.z, C.w);
-	//glUniform1i(glGetUniformLocatio	n(compute_shader_program, "max_iterations"), max_iterations);
-	//glUniform1f(glGetUniformLocation(compute_shader_program, "threshold"), threshold);
-
-	// Run compute shader
-	glDispatchCompute((GLuint)width, (GLuint)height, 1);
-
-	// Wait for compute shader to finish
-	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-	// Copy output pixel array to CPU as texture 8
-	glActiveTexture(GL_TEXTURE8);
-	glBindImageTexture(8, output_triangle_number_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, &output_tri_count_data[0]);
-
-	glActiveTexture(GL_TEXTURE9);
-	glBindImageTexture(9, output_tex0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex0_data[0]);
-
-	glActiveTexture(GL_TEXTURE10);
-	glBindImageTexture(10, output_tex1, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex1_data[0]);
-
-	glActiveTexture(GL_TEXTURE11);
-	glBindImageTexture(11, output_tex2, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex2_data[0]);
-
-	glActiveTexture(GL_TEXTURE12);
-	glBindImageTexture(12, output_tex3, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex3_data[0]);
-
-	glActiveTexture(GL_TEXTURE13);
-	glBindImageTexture(13, output_tex4, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex4_data[0]);
-
-	glActiveTexture(GL_TEXTURE14);
-	glBindImageTexture(14, output_tex5, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex5_data[0]);
-
-	glActiveTexture(GL_TEXTURE15);
-	glBindImageTexture(15, output_tex6, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex6_data[0]);
-
-	glActiveTexture(GL_TEXTURE16);
-	glBindImageTexture(16, output_tex7, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex7_data[0]);
-
-	glActiveTexture(GL_TEXTURE17);
-	glBindImageTexture(17, output_tex8, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex8_data[0]);
-
-	glActiveTexture(GL_TEXTURE18);
-	glBindImageTexture(18, output_tex9, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex9_data[0]);
-
-	glActiveTexture(GL_TEXTURE19);
-	glBindImageTexture(19, output_tex10, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex10_data[0]);
-
-	glActiveTexture(GL_TEXTURE20);
-	glBindImageTexture(20, output_tex11, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex11_data[0]);
-
-	glActiveTexture(GL_TEXTURE21);
-	glBindImageTexture(21, output_tex12, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex12_data[0]);
-
-	glActiveTexture(GL_TEXTURE22);
-	glBindImageTexture(22, output_tex13, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex13_data[0]);
-
-	glActiveTexture(GL_TEXTURE23);
-	glBindImageTexture(23, output_tex14, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGB32F);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, &output_tex14_data[0]);
-
-
-
-
-	for (size_t i = 0; i < output_tri_count_data.size(); i++)
-	{
-		size_t output_data_index = 3 * i;
-
-		size_t num_tris = static_cast<size_t>(output_tri_count_data[i]);
-
-		if (num_tris == 5)
-		{
-			triangle t;
-
-			t.vertex[0].x = output_tex0_data[output_data_index + 0];
-			t.vertex[0].y = output_tex0_data[output_data_index + 1];
-			t.vertex[0].z = output_tex0_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex1_data[output_data_index + 0];
-			t.vertex[1].y = output_tex1_data[output_data_index + 1];
-			t.vertex[1].z = output_tex1_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex2_data[output_data_index + 0];
-			t.vertex[2].y = output_tex2_data[output_data_index + 1];
-			t.vertex[2].z = output_tex2_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex3_data[output_data_index + 0];
-			t.vertex[0].y = output_tex3_data[output_data_index + 1];
-			t.vertex[0].z = output_tex3_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex4_data[output_data_index + 0];
-			t.vertex[1].y = output_tex4_data[output_data_index + 1];
-			t.vertex[1].z = output_tex4_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex5_data[output_data_index + 0];
-			t.vertex[2].y = output_tex5_data[output_data_index + 1];
-			t.vertex[2].z = output_tex5_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex6_data[output_data_index + 0];
-			t.vertex[0].y = output_tex6_data[output_data_index + 1];
-			t.vertex[0].z = output_tex6_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex7_data[output_data_index + 0];
-			t.vertex[1].y = output_tex7_data[output_data_index + 1];
-			t.vertex[1].z = output_tex7_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex8_data[output_data_index + 0];
-			t.vertex[2].y = output_tex8_data[output_data_index + 1];
-			t.vertex[2].z = output_tex8_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex9_data[output_data_index + 0];
-			t.vertex[0].y = output_tex9_data[output_data_index + 1];
-			t.vertex[0].z = output_tex9_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex10_data[output_data_index + 0];
-			t.vertex[1].y = output_tex10_data[output_data_index + 1];
-			t.vertex[1].z = output_tex10_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex11_data[output_data_index + 0];
-			t.vertex[2].y = output_tex11_data[output_data_index + 1];
-			t.vertex[2].z = output_tex11_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex12_data[output_data_index + 0];
-			t.vertex[0].y = output_tex12_data[output_data_index + 1];
-			t.vertex[0].z = output_tex12_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex13_data[output_data_index + 0];
-			t.vertex[1].y = output_tex13_data[output_data_index + 1];
-			t.vertex[1].z = output_tex13_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex14_data[output_data_index + 0];
-			t.vertex[2].y = output_tex14_data[output_data_index + 1];
-			t.vertex[2].z = output_tex14_data[output_data_index + 2];
-
-			triangles.push_back(t);
-		}
-		else if (num_tris == 4)
-		{
-
-			triangle t;
-
-			t.vertex[0].x = output_tex0_data[output_data_index + 0];
-			t.vertex[0].y = output_tex0_data[output_data_index + 1];
-			t.vertex[0].z = output_tex0_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex1_data[output_data_index + 0];
-			t.vertex[1].y = output_tex1_data[output_data_index + 1];
-			t.vertex[1].z = output_tex1_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex2_data[output_data_index + 0];
-			t.vertex[2].y = output_tex2_data[output_data_index + 1];
-			t.vertex[2].z = output_tex2_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex3_data[output_data_index + 0];
-			t.vertex[0].y = output_tex3_data[output_data_index + 1];
-			t.vertex[0].z = output_tex3_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex4_data[output_data_index + 0];
-			t.vertex[1].y = output_tex4_data[output_data_index + 1];
-			t.vertex[1].z = output_tex4_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex5_data[output_data_index + 0];
-			t.vertex[2].y = output_tex5_data[output_data_index + 1];
-			t.vertex[2].z = output_tex5_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex6_data[output_data_index + 0];
-			t.vertex[0].y = output_tex6_data[output_data_index + 1];
-			t.vertex[0].z = output_tex6_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex7_data[output_data_index + 0];
-			t.vertex[1].y = output_tex7_data[output_data_index + 1];
-			t.vertex[1].z = output_tex7_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex8_data[output_data_index + 0];
-			t.vertex[2].y = output_tex8_data[output_data_index + 1];
-			t.vertex[2].z = output_tex8_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex9_data[output_data_index + 0];
-			t.vertex[0].y = output_tex9_data[output_data_index + 1];
-			t.vertex[0].z = output_tex9_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex10_data[output_data_index + 0];
-			t.vertex[1].y = output_tex10_data[output_data_index + 1];
-			t.vertex[1].z = output_tex10_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex11_data[output_data_index + 0];
-			t.vertex[2].y = output_tex11_data[output_data_index + 1];
-			t.vertex[2].z = output_tex11_data[output_data_index + 2];
-
-			triangles.push_back(t);
-		}
-		else if (num_tris == 3)
-		{
-			triangle t;
-
-			t.vertex[0].x = output_tex0_data[output_data_index + 0];
-			t.vertex[0].y = output_tex0_data[output_data_index + 1];
-			t.vertex[0].z = output_tex0_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex1_data[output_data_index + 0];
-			t.vertex[1].y = output_tex1_data[output_data_index + 1];
-			t.vertex[1].z = output_tex1_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex2_data[output_data_index + 0];
-			t.vertex[2].y = output_tex2_data[output_data_index + 1];
-			t.vertex[2].z = output_tex2_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex3_data[output_data_index + 0];
-			t.vertex[0].y = output_tex3_data[output_data_index + 1];
-			t.vertex[0].z = output_tex3_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex4_data[output_data_index + 0];
-			t.vertex[1].y = output_tex4_data[output_data_index + 1];
-			t.vertex[1].z = output_tex4_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex5_data[output_data_index + 0];
-			t.vertex[2].y = output_tex5_data[output_data_index + 1];
-			t.vertex[2].z = output_tex5_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex6_data[output_data_index + 0];
-			t.vertex[0].y = output_tex6_data[output_data_index + 1];
-			t.vertex[0].z = output_tex6_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex7_data[output_data_index + 0];
-			t.vertex[1].y = output_tex7_data[output_data_index + 1];
-			t.vertex[1].z = output_tex7_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex8_data[output_data_index + 0];
-			t.vertex[2].y = output_tex8_data[output_data_index + 1];
-			t.vertex[2].z = output_tex8_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-
-		}
-		else if (num_tris == 2)
-		{
-			triangle t;
-
-			t.vertex[0].x = output_tex0_data[output_data_index + 0];
-			t.vertex[0].y = output_tex0_data[output_data_index + 1];
-			t.vertex[0].z = output_tex0_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex1_data[output_data_index + 0];
-			t.vertex[1].y = output_tex1_data[output_data_index + 1];
-			t.vertex[1].z = output_tex1_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex2_data[output_data_index + 0];
-			t.vertex[2].y = output_tex2_data[output_data_index + 1];
-			t.vertex[2].z = output_tex2_data[output_data_index + 2];
-
-			triangles.push_back(t);
-
-			t.vertex[0].x = output_tex3_data[output_data_index + 0];
-			t.vertex[0].y = output_tex3_data[output_data_index + 1];
-			t.vertex[0].z = output_tex3_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex4_data[output_data_index + 0];
-			t.vertex[1].y = output_tex4_data[output_data_index + 1];
-			t.vertex[1].z = output_tex4_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex5_data[output_data_index + 0];
-			t.vertex[2].y = output_tex5_data[output_data_index + 1];
-			t.vertex[2].z = output_tex5_data[output_data_index + 2];
-
-			triangles.push_back(t);
-		}
-		else if (num_tris == 1)
-		{
-			triangle t;
-
-			t.vertex[0].x = output_tex0_data[output_data_index + 0];
-			t.vertex[0].y = output_tex0_data[output_data_index + 1];
-			t.vertex[0].z = output_tex0_data[output_data_index + 2];
-
-			t.vertex[1].x = output_tex1_data[output_data_index + 0];
-			t.vertex[1].y = output_tex1_data[output_data_index + 1];
-			t.vertex[1].z = output_tex1_data[output_data_index + 2];
-
-			t.vertex[2].x = output_tex2_data[output_data_index + 0];
-			t.vertex[2].y = output_tex2_data[output_data_index + 1];
-			t.vertex[2].z = output_tex2_data[output_data_index + 2];
-
-			//cout << t.vertex[0].x << " " << t.vertex[0].y << " " << t.vertex[0].z << endl;
-			//cout << t.vertex[1].x << " " << t.vertex[1].y << " " << t.vertex[1].z << endl;
-			//cout << t.vertex[2].x << " " << t.vertex[2].y << " " << t.vertex[2].z << endl;
-			//cout << endl;
-
-			triangles.push_back(t);
-		}
-	}
-
-	return true;
-}
-*/
-
-
 
 	fractal_set_parameters fsp;
 

@@ -697,6 +697,19 @@ int js_state_machine::g0_stage_1_cpu(void)
 		state = STATE_G1_STAGE_0;
 		g1_i0 = triangles.begin();
 
+		end_time = std::chrono::high_resolution_clock::now();
+
+		std::chrono::duration<float, std::milli> elapsed = end_time - start_time;
+
+		ostringstream oss;
+		oss.clear();
+		oss.str("");
+		oss << "Duration: " << elapsed.count() / 1000.0f << " seconds";
+
+		if (0 != log_system)
+			log_system->add_string_to_contents(oss.str());
+
+
 		oss.clear();
 		oss.str("");
 		oss << triangles.size() << " triangles";
