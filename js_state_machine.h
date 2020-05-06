@@ -490,7 +490,16 @@ public:
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(7 * components_per_position * sizeof(GLfloat)));
 		
-		 /*
+	
+
+
+
+
+
+
+/*
+
+
 		// Create VAO
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
@@ -546,10 +555,10 @@ public:
 				printf("%f\n", feedback[i]);
 			}
 		}
-
-
-
 		*/
+
+
+
 
 
 
