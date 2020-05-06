@@ -156,7 +156,6 @@ vertex_geometry_fragment_shader render;
 vertex_fragment_shader ssao;
 vertex_fragment_shader flat;
 vertex_fragment_shader ortho;
-// vertex_geometry_fragment_shader points;
 
 
 
@@ -188,12 +187,6 @@ struct
 	{
 		GLint			tex;
 	} ortho;
-	struct
-	{
-		GLint           mv_matrix;
-		GLint           proj_matrix;
-		GLint           shading_level;
-	} points;
 
 } uniforms;
 
