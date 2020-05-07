@@ -10,6 +10,8 @@ layout (location = 5) in vec4 position5;
 layout (location = 6) in vec4 position6;
 layout (location = 7) in vec4 position7;
 
+uniform float threshold;
+
 out VS_OUT
 {
     vec4 position0;
@@ -20,6 +22,7 @@ out VS_OUT
     vec4 position5;
     vec4 position6;
     vec4 position7;
+    float threshold;
 } vs_out;
 
 void main(void)
@@ -32,4 +35,6 @@ void main(void)
     vs_out.position5 = position5;
     vs_out.position6 = position6;
     vs_out.position7 = position7;
+
+    vs_out.threshold = threshold;
 }

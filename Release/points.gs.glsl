@@ -15,10 +15,9 @@ in VS_OUT
     vec4 position5;
     vec4 position6;
     vec4 position7;
+	float threshold;
 } gs_in[];
 
-
-#define isovalue 4.0
 
 
 struct grid_cube
@@ -352,16 +351,16 @@ vec4 vertex_interp(vec4 v0, vec4 v1)
 
 	const float epsilon = 1e-10f;
 
-	if(abs(isovalue - v0.w) < epsilon)
+	if(abs(gs_in[0].threshold - v0.w) < epsilon)
 		return(v0);
 
-	if(abs(isovalue - v1.w) < epsilon)
+	if(abs(gs_in[0].threshold - v1.w) < epsilon)
 		return(v1);
 
 	if(abs(v0.w - v1.w) < epsilon)
 		return(v0);
 
-	float mu = (isovalue - v0.w) / (v1.w - v0.w);
+	float mu = (gs_in[0].threshold - v0.w) / (v1.w - v0.w);
 
 	return v0 + (v1 - v0)*mu;
 }
@@ -370,14 +369,14 @@ int tesselate_grid_cube(grid_cube grid)
 {
 	int cubeindex = 0;
 
-	if(grid.vertex_val[0].w < isovalue) cubeindex |= 1;
-	if(grid.vertex_val[1].w < isovalue) cubeindex |= 2;
-	if(grid.vertex_val[2].w < isovalue) cubeindex |= 4;
-	if(grid.vertex_val[3].w < isovalue) cubeindex |= 8;
-	if(grid.vertex_val[4].w < isovalue) cubeindex |= 16;
-	if(grid.vertex_val[5].w < isovalue) cubeindex |= 32;
-	if(grid.vertex_val[6].w < isovalue) cubeindex |= 64;
-	if(grid.vertex_val[7].w < isovalue) cubeindex |= 128;
+	if(grid.vertex_val[0].w < gs_in[0].threshold) cubeindex |= 1;
+	if(grid.vertex_val[1].w < gs_in[0].threshold) cubeindex |= 2;
+	if(grid.vertex_val[2].w < gs_in[0].threshold) cubeindex |= 4;
+	if(grid.vertex_val[3].w < gs_in[0].threshold) cubeindex |= 8;
+	if(grid.vertex_val[4].w < gs_in[0].threshold) cubeindex |= 16;
+	if(grid.vertex_val[5].w < gs_in[0].threshold) cubeindex |= 32;
+	if(grid.vertex_val[6].w < gs_in[0].threshold) cubeindex |= 64;
+	if(grid.vertex_val[7].w < gs_in[0].threshold) cubeindex |= 128;
 
 	if(0 == MC_EdgeTable[cubeindex])
 		return 0;
