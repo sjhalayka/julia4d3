@@ -348,7 +348,7 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		if (false == mc_shader.init("points.vs.glsl", "points.gs.glsl"))
+		if (false == g0_mc_shader.init("points.vs.glsl", "points.gs.glsl"))
 		{
 			oss.clear();
 			oss.str("");

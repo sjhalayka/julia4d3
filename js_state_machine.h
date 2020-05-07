@@ -234,8 +234,8 @@ public:
 
 	bool tesselate_adjacent_xy_plane_pair_gpu(size_t& box_count, const vector<float>& xyplane0, const vector<float>& xyplane1, const size_t z, vector<triangle>& triangles, const float isovalue, const float x_grid_min, const float x_grid_max, const size_t x_res, const float y_grid_min, const float y_grid_max, const size_t y_res, const float z_grid_min, const float z_grid_max, const size_t z_res)
 	{
-		glUseProgram(mc_shader.get_program());
-		glUniform1f(glGetUniformLocation(mc_shader.get_program(), "threshold"), fsp.infinity);
+		glUseProgram(g0_mc_shader.get_program());
+		glUniform1f(glGetUniformLocation(g0_mc_shader.get_program(), "threshold"), fsp.infinity);
 
 		vector<float> points_vertex_data;
 
@@ -417,64 +417,64 @@ public:
 		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
 		glBufferData(GL_ARRAY_BUFFER, points_vertex_data.size() * sizeof(GLfloat), &points_vertex_data[0], GL_DYNAMIC_DRAW);
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position0"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position0"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position0"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position0"),
 			components_per_position,
 			GL_FLOAT,
 			GL_FALSE,
 			components_per_vertex * sizeof(GLfloat),
 			0);
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position1"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position1"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position1"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position1"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(1 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position2"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position2"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position2"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position2"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(2 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position3"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position3"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position3"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position3"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(3 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position4"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position4"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position4"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position4"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(4 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position5"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position5"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position5"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position5"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(5 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position6"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position6"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position6"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position6"),
 			components_per_position,
 			GL_FLOAT,
 			GL_TRUE,
 			components_per_vertex * sizeof(GLfloat),
 			(const GLvoid*)(6 * components_per_position * sizeof(GLfloat)));
 
-		glEnableVertexAttribArray(glGetAttribLocation(mc_shader.get_program(), "position7"));
-		glVertexAttribPointer(glGetAttribLocation(mc_shader.get_program(), "position7"),
+		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position7"));
+		glVertexAttribPointer(glGetAttribLocation(g0_mc_shader.get_program(), "position7"),
 			components_per_position,	
 			GL_FLOAT,
 			GL_TRUE,
@@ -734,7 +734,7 @@ vector<float> out_data = in_data;
 
 protected:
 
-	vertex_geometry_shader mc_shader;
+
 
 	ostringstream oss;
 	vector<triangle> triangles;
@@ -774,6 +774,7 @@ protected:
 	GLuint g0_tex_input = 0;
 	size_t g0_num_output_channels = 1;
 	size_t g0_num_input_channels = 4;
+	vertex_geometry_shader g0_mc_shader;
 
 	set<vertex_3_with_index> g1_vertex_set;
 	vector<triangle>::const_iterator g1_i0;
