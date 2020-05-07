@@ -347,6 +347,18 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		if (false == mc_shader.init("points.vs.glsl", "points.gs.glsl"))
+		{
+			oss.clear();
+			oss.str("");
+			oss << "Couldn't load Marching Cubes shaders";
+
+			if (0 != log_system)
+				log_system->add_string_to_contents(oss.str());
+
+			return false;
+		}
 	}
 
 	g0_num_output_channels = 1;
