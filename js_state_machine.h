@@ -237,11 +237,14 @@ public:
 		glUseProgram(g0_mc_shader.get_program());
 		glUniform1f(glGetUniformLocation(g0_mc_shader.get_program(), "threshold"), fsp.infinity);
 
-		vector<float> points_vertex_data;
+		// Make room for a large number of grid_cubes data. 8 corners, 4 floats per corner
+		vector<float> points_vertex_data((x_res - 1) * (y_res - 1) * 8 * 4, 0.0f);
 
 		const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
 		const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
 		const float z_step_size = (z_grid_max - z_grid_min) / (z_res - 1);
+
+		size_t index = 0;
 
 		for (size_t x = 0; x < x_res - 1; x++)
 		{
@@ -357,64 +360,63 @@ public:
 				else
 					temp_cube.value[7] = xyplane1[(x + x_offset) * y_res + (y + y_offset)];
 
-				points_vertex_data.push_back(temp_cube.vertex[0].x);
-				points_vertex_data.push_back(temp_cube.vertex[0].y);
-				points_vertex_data.push_back(temp_cube.vertex[0].z);
-				points_vertex_data.push_back(temp_cube.value[0]);
+				points_vertex_data[index++] = temp_cube.vertex[0].x;
+				points_vertex_data[index++] = temp_cube.vertex[0].y;
+				points_vertex_data[index++] = temp_cube.vertex[0].z;
+				points_vertex_data[index++] = temp_cube.value[0];
 
-				points_vertex_data.push_back(temp_cube.vertex[1].x);
-				points_vertex_data.push_back(temp_cube.vertex[1].y);
-				points_vertex_data.push_back(temp_cube.vertex[1].z);
-				points_vertex_data.push_back(temp_cube.value[1]);
+				points_vertex_data[index++] = temp_cube.vertex[1].x;
+				points_vertex_data[index++] = temp_cube.vertex[1].y;
+				points_vertex_data[index++] = temp_cube.vertex[1].z;
+				points_vertex_data[index++] = temp_cube.value[1];
 
-				points_vertex_data.push_back(temp_cube.vertex[2].x);
-				points_vertex_data.push_back(temp_cube.vertex[2].y);
-				points_vertex_data.push_back(temp_cube.vertex[2].z);
-				points_vertex_data.push_back(temp_cube.value[2]);
+				points_vertex_data[index++] = temp_cube.vertex[2].x;
+				points_vertex_data[index++] = temp_cube.vertex[2].y;
+				points_vertex_data[index++] = temp_cube.vertex[2].z;
+				points_vertex_data[index++] = temp_cube.value[2];
 
-				points_vertex_data.push_back(temp_cube.vertex[3].x);
-				points_vertex_data.push_back(temp_cube.vertex[3].y);
-				points_vertex_data.push_back(temp_cube.vertex[3].z);
-				points_vertex_data.push_back(temp_cube.value[3]);
+				points_vertex_data[index++] = temp_cube.vertex[3].x;
+				points_vertex_data[index++] = temp_cube.vertex[3].y;
+				points_vertex_data[index++] = temp_cube.vertex[3].z;
+				points_vertex_data[index++] = temp_cube.value[3];
 
-				points_vertex_data.push_back(temp_cube.vertex[4].x);
-				points_vertex_data.push_back(temp_cube.vertex[4].y);
-				points_vertex_data.push_back(temp_cube.vertex[4].z);
-				points_vertex_data.push_back(temp_cube.value[4]);
+				points_vertex_data[index++] = temp_cube.vertex[4].x;
+				points_vertex_data[index++] = temp_cube.vertex[4].y;
+				points_vertex_data[index++] = temp_cube.vertex[4].z;
+				points_vertex_data[index++] = temp_cube.value[4];
 
-				points_vertex_data.push_back(temp_cube.vertex[5].x);
-				points_vertex_data.push_back(temp_cube.vertex[5].y);
-				points_vertex_data.push_back(temp_cube.vertex[5].z);
-				points_vertex_data.push_back(temp_cube.value[5]);
+				points_vertex_data[index++] = temp_cube.vertex[5].x;
+				points_vertex_data[index++] = temp_cube.vertex[5].y;
+				points_vertex_data[index++] = temp_cube.vertex[5].z;
+				points_vertex_data[index++] = temp_cube.value[5];
 
-				points_vertex_data.push_back(temp_cube.vertex[6].x);
-				points_vertex_data.push_back(temp_cube.vertex[6].y);
-				points_vertex_data.push_back(temp_cube.vertex[6].z);
-				points_vertex_data.push_back(temp_cube.value[6]);
+				points_vertex_data[index++] = temp_cube.vertex[6].x;
+				points_vertex_data[index++] = temp_cube.vertex[6].y;
+				points_vertex_data[index++] = temp_cube.vertex[6].z;
+				points_vertex_data[index++] = temp_cube.value[6];
 
-				points_vertex_data.push_back(temp_cube.vertex[7].x);
-				points_vertex_data.push_back(temp_cube.vertex[7].y);
-				points_vertex_data.push_back(temp_cube.vertex[7].z);
-				points_vertex_data.push_back(temp_cube.value[7]);
+				points_vertex_data[index++] = temp_cube.vertex[7].x;
+				points_vertex_data[index++] = temp_cube.vertex[7].y;
+				points_vertex_data[index++] = temp_cube.vertex[7].z;
+				points_vertex_data[index++] = temp_cube.value[7];
 			}
 		}
 
 
+
 //	https://github.com/progschj/OpenGL-Examples/blob/master/09transform_feedback.cpp
-
-
 
 		const GLuint components_per_position = 4;
 		const GLuint components_per_vertex = 8 * components_per_position;
 
-		static GLuint triangle_buffer;
+		static GLuint point_buffer;
 
-		glDeleteBuffers(1, &triangle_buffer);
-		glGenBuffers(1, &triangle_buffer);
+		glDeleteBuffers(1, &point_buffer);
+		glGenBuffers(1, &point_buffer);
 
 		const GLuint num_vertices = static_cast<GLuint>(points_vertex_data.size()) / components_per_vertex;
 
-		glBindBuffer(GL_ARRAY_BUFFER, triangle_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, point_buffer);
 		glBufferData(GL_ARRAY_BUFFER, points_vertex_data.size() * sizeof(GLfloat), &points_vertex_data[0], GL_DYNAMIC_DRAW);
 
 		glEnableVertexAttribArray(glGetAttribLocation(g0_mc_shader.get_program(), "position0"));
@@ -484,31 +486,49 @@ public:
 
 
 
+//	https://www.math.ucsd.edu/~sbuss/MathCG2/OpenGLsoft/Chap1TransformFeedback/C1TFexplain.html
 
+/*
+		unsigned int myTBO;               // Transform Buffer	Object (TBO)
+
+		glGenBuffers(1, &myTBO);          // Generate an OpenGL buffer  
+
+		int maxSizeOfFeedback = 10000000 * sizeof(float);
+
+		glBindBuffer(GL_ARRAY_BUFFER, myTBO);
+		glBufferData(GL_ARRAY_BUFFER, maxSizeOfFeedback, (void*)0, GL_STATIC_READ);
+		//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, myTBO);
+
+		GLuint myTBOquery;          // Will hold an OpenGL query object
+
+		glGenQueries(1, &myTBOquery);
+
+		glEnable(GL_RASTERIZER_DISCARD);        // There is no fragment shader; hence no rasterization should be done.
+
+		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, myTBOquery);
+		glBeginTransformFeedback(GL_TRIANGLES);
+		glDrawArrays(GL_POINTS, 0, num_vertices);
+		glEndTransformFeedback();               // End of transform feedback
+		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+
+		glFlush();
+
+
+		unsigned int numEdgesFedBack;
+		glGetQueryObjectuiv(myTBOquery, GL_QUERY_RESULT, &numEdgesFedBack);
+		glDisable(GL_RASTERIZER_DISCARD);       // Turn rasterization back on
+
+		cout << numEdgesFedBack << endl;
+
+*/
 
 
 /*
-
-
-		// Create VAO
-		GLuint vao;
-		glGenVertexArrays(1, &vao);
-		glBindVertexArray(vao);
-
-		// Create input VBO and vertex format
-		vector<float> data(num_vertices, 0);
-
-		GLuint vbo;
-		glGenBuffers(1, &vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
-
 		// Create transform feedback buffer
 		GLuint tbo;
 		glGenBuffers(1, &tbo);
 		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
-		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)*(fsp.resolution - 1)*5*9 * sizeof(float), nullptr, GL_STATIC_READ);
-		glBufferStorage(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9 * sizeof(float), NULL, 0);
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)*(fsp.resolution - 1)*5*9 * sizeof(float), nullptr, GL_STATIC_READ);
 	
 		// Create query object to collect info
 		GLuint query;
@@ -535,9 +555,9 @@ public:
 
 		if (primitives > 0)
 		{
-			vector<float> feedback(primitives * 3 * 3, 0);
+				glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
+		vector<float> feedback(primitives * 3 * 3, 0);
 
-			glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
 
 			printf("%u primitives written!\n\n", primitives);
 
@@ -545,7 +565,12 @@ public:
 				printf("%f\n", feedback[i]);
 			}
 		}
-		*/
+		else
+		{
+			cout << "No primitives made" << endl;
+		}
+
+	*/
 
 
 
@@ -646,7 +671,7 @@ vector<float> out_data = in_data;
 
 
 
-
+/*
 
 	
 
@@ -661,8 +686,8 @@ vector<float> out_data = in_data;
 
 		GLuint tbo;
 		glGenBuffers(1, &tbo);
-		glBindBuffer(GL_ARRAY_BUFFER, tbo);
-		glBufferData(GL_ARRAY_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
 
 		glBeginTransformFeedback(GL_TRIANGLES);
 			glDrawArrays(GL_POINTS, 0, num_vertices);	
@@ -697,7 +722,8 @@ vector<float> out_data = in_data;
 			triangles.push_back(t);
 		}
 
-	
+
+	*/
 
 		
 		//for (int i = 0; i < 15; i++) {
@@ -805,13 +831,6 @@ protected:
 
 	quaternion_julia_set_equation_parser eqparser;
 	logging_system* log_system;
-
-
-
-
-
-
-
 };
 
 
