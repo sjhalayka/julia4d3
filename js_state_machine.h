@@ -238,7 +238,11 @@ public:
 		glUniform1f(glGetUniformLocation(g0_mc_shader.get_program(), "threshold"), fsp.infinity);
 
 		// Make room for a large number of grid_cubes data. 8 corners, 4 floats per corner
-		vector<float> points_vertex_data((x_res - 1) * (y_res - 1) * 8 * 4, 0.0f);
+		vector<float> points_vertex_data;
+
+		points_vertex_data.resize((x_res - 1) * (y_res - 1) * 8 * 4);
+
+
 
 		const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
 		const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
