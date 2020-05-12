@@ -383,40 +383,40 @@ int tesselate_grid_cube(grid_cube grid)
 
 	vec4 vertlist[12];
 
-	if(MC_EdgeTable[cubeindex] & 1)
+	if(bool(MC_EdgeTable[cubeindex] & 1))
 		vertlist[0] = vertex_interp(grid.vertex_val[0], grid.vertex_val[1]);
 
-	if(MC_EdgeTable[cubeindex] & 2)
+	if(bool(MC_EdgeTable[cubeindex] & 2))
 		vertlist[1] = vertex_interp(grid.vertex_val[1], grid.vertex_val[2]);
 
-	if(MC_EdgeTable[cubeindex] & 4)
+	if(bool(MC_EdgeTable[cubeindex] & 4))
 		vertlist[2] = vertex_interp(grid.vertex_val[2], grid.vertex_val[3]);
 
-	if(MC_EdgeTable[cubeindex] & 8)
+	if(bool(MC_EdgeTable[cubeindex] & 8))
 		vertlist[3] = vertex_interp(grid.vertex_val[3], grid.vertex_val[0]);
 
-	if(MC_EdgeTable[cubeindex] & 16)
+	if(bool(MC_EdgeTable[cubeindex] & 16))
 		vertlist[4] = vertex_interp(grid.vertex_val[4], grid.vertex_val[5]);
 
-	if(MC_EdgeTable[cubeindex] & 32)
+	if(bool(MC_EdgeTable[cubeindex] & 32))
 		vertlist[5] = vertex_interp(grid.vertex_val[5], grid.vertex_val[6]);
 
-	if(MC_EdgeTable[cubeindex] & 64)
+	if(bool(MC_EdgeTable[cubeindex] & 64))
 		vertlist[6] = vertex_interp(grid.vertex_val[6], grid.vertex_val[7]);
 
-	if(MC_EdgeTable[cubeindex] & 128)
+	if(bool(MC_EdgeTable[cubeindex] & 128))
 		vertlist[7] = vertex_interp(grid.vertex_val[7], grid.vertex_val[4]);
 
-	if(MC_EdgeTable[cubeindex] & 256)
+	if(bool(MC_EdgeTable[cubeindex] & 256))
 		vertlist[8] = vertex_interp(grid.vertex_val[0], grid.vertex_val[4]);
 
-	if(MC_EdgeTable[cubeindex] & 512)
+	if(bool(MC_EdgeTable[cubeindex] & 512))
 		vertlist[9] = vertex_interp(grid.vertex_val[1], grid.vertex_val[5]);
 
-	if(MC_EdgeTable[cubeindex] & 1024)
+	if(bool(MC_EdgeTable[cubeindex] & 1024))
 		vertlist[10] = vertex_interp(grid.vertex_val[2], grid.vertex_val[6]);
 
-	if(MC_EdgeTable[cubeindex] & 2048)
+	if(bool(MC_EdgeTable[cubeindex] & 2048))
 		vertlist[11] = vertex_interp(grid.vertex_val[3], grid.vertex_val[7]);
 
 	int ntriang = 0; // Max triangles == 5
