@@ -671,7 +671,7 @@ vector<float> out_data = in_data;
 
 
 
-/*
+
 
 	
 
@@ -723,7 +723,7 @@ vector<float> out_data = in_data;
 		}
 
 
-	*/
+	
 
 		
 		//for (int i = 0; i < 15; i++) {

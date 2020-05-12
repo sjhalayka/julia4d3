@@ -620,7 +620,7 @@ int js_state_machine::g0_stage_1_gpu(void)
 		fsp.x_min, fsp.x_max, fsp.resolution,
 		fsp.y_min, fsp.y_max, fsp.resolution,
 		fsp.z_min, fsp.z_max, fsp.resolution);
-		*/
+	*/	
 
 	tesselate_adjacent_xy_plane_pair_cpu(
 		box_count,
