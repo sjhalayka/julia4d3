@@ -1383,68 +1383,68 @@ bool init(void)
 	if (false == load_shaders())
 		return false;
 
-	//glGenFramebuffers(1, &render_fbo);
-	//glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
-	//glGenTextures(3, fbo_textures);
+	glGenFramebuffers(1, &render_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, render_fbo);
+	glGenTextures(3, fbo_textures);
 
-	//glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
-	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[0]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB16F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	//glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
-	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[1]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	//glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
-	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glBindTexture(GL_TEXTURE_2D, fbo_textures[2]);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 2048, 2048);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
-	//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
-	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, fbo_textures[0], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, fbo_textures[1], 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, fbo_textures[2], 0);
 
-	//static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
 
-	//glDrawBuffers(2, draw_buffers);
+	glDrawBuffers(2, draw_buffers);
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	//glGenVertexArrays(1, &quad_vao);
-	//glBindVertexArray(quad_vao);
+	glGenVertexArrays(1, &quad_vao);
+	glBindVertexArray(quad_vao);
 
-	//glEnable(GL_DEPTH_TEST);
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
-	//int i;
-	//SAMPLE_POINTS point_data;
+	int i;
+	SAMPLE_POINTS point_data;
 
-	//for (i = 0; i < 256; i++)
-	//{
-	//	do
-	//	{
-	//		point_data.point[i].x = random_float() * 2.0f - 1.0f;
-	//		point_data.point[i].y = random_float() * 2.0f - 1.0f;
-	//		point_data.point[i].z = random_float(); //  * 2.0f - 1.0f;
-	//		point_data.point[i].w = 0.0f;
-	//	} while (length(point_data.point[i]) > 1.0f);
-	//	normalize(point_data.point[i]);
-	//}
-	//for (i = 0; i < 256; i++)
-	//{
-	//	point_data.random_vectors[i].x = random_float();
-	//	point_data.random_vectors[i].y = random_float();
-	//	point_data.random_vectors[i].z = random_float();
-	//	point_data.random_vectors[i].w = random_float();
-	//}
+	for (i = 0; i < 256; i++)
+	{
+		do
+		{
+			point_data.point[i].x = random_float() * 2.0f - 1.0f;
+			point_data.point[i].y = random_float() * 2.0f - 1.0f;
+			point_data.point[i].z = random_float(); //  * 2.0f - 1.0f;
+			point_data.point[i].w = 0.0f;
+		} while (length(point_data.point[i]) > 1.0f);
+		normalize(point_data.point[i]);
+	}
+	for (i = 0; i < 256; i++)
+	{
+		point_data.random_vectors[i].x = random_float();
+		point_data.random_vectors[i].y = random_float();
+		point_data.random_vectors[i].z = random_float();
+		point_data.random_vectors[i].w = random_float();
+	}
 
-	//glGenBuffers(1, &points_buffer);
-	//glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
-	//glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
+	glGenBuffers(1, &points_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, points_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(SAMPLE_POINTS), &point_data, GL_STATIC_DRAW);
 
 	return true;
 }
