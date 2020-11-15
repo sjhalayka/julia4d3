@@ -348,17 +348,17 @@ bool js_state_machine::init(fractal_set_parameters& fsp_in, logging_system* ls)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		//if (false == g0_mc_shader.init("points.vs.glsl", "points.gs.glsl"))
-		//{
-		//	oss.clear();
-		//	oss.str("");
-		//	oss << "Couldn't load Marching Cubes shaders";
+		if (false == g0_mc_shader.init("points.vs.glsl", "points.gs.glsl", "vert"))
+		{
+			oss.clear();
+			oss.str("");
+			oss << "Couldn't load Marching Cubes shaders";
 
-		//	if (0 != log_system)
-		//		log_system->add_string_to_contents(oss.str());
+			if (0 != log_system)
+				log_system->add_string_to_contents(oss.str());
 
-		//	return false;
-		//}
+			return false;
+		}
 	}
 
 	g0_num_output_channels = 1;
@@ -611,7 +611,7 @@ int js_state_machine::g0_stage_1_gpu(void)
 		log_system->add_string_to_contents(oss.str());
 
 	// Calculate triangles for the xy-planes corresponding to z - 1 and z by marching cubes.
-/*	tesselate_adjacent_xy_plane_pair_gpu(
+	tesselate_adjacent_xy_plane_pair_gpu(
 		box_count,
 		g0_previous_slice, g0_output_pixels,
 		g0_z - 1,
@@ -620,8 +620,8 @@ int js_state_machine::g0_stage_1_gpu(void)
 		fsp.x_min, fsp.x_max, fsp.resolution,
 		fsp.y_min, fsp.y_max, fsp.resolution,
 		fsp.z_min, fsp.z_max, fsp.resolution);
-	*/	
-	
+		
+	/*
 	tesselate_adjacent_xy_plane_pair_cpu(
 		box_count,
 		g0_previous_slice, g0_output_pixels,
@@ -631,7 +631,7 @@ int js_state_machine::g0_stage_1_gpu(void)
 		fsp.x_min, fsp.x_max, fsp.resolution,
 		fsp.y_min, fsp.y_max, fsp.resolution,
 		fsp.z_min, fsp.z_max, fsp.resolution);
-
+		*/
 
 	if (g0_z >= fsp.resolution - 1)
 	{
@@ -1220,7 +1220,7 @@ int js_state_machine::g3_stage_0_rainbow(void)
 
 		RGB rgb = HSBtoRGB(static_cast<unsigned short int>(
 			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(75),
 			static_cast<unsigned char>(100));
 
 		colour.x = rgb.r / 255.0f;
@@ -1241,7 +1241,7 @@ int js_state_machine::g3_stage_0_rainbow(void)
 
 		rgb = HSBtoRGB(static_cast<unsigned short int>(
 			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(75),
 			static_cast<unsigned char>(100));
 
 		colour.x = rgb.r / 255.0f;
@@ -1263,7 +1263,7 @@ int js_state_machine::g3_stage_0_rainbow(void)
 
 		rgb = HSBtoRGB(static_cast<unsigned short int>(
 			max_rainbow - ((vertex_length / (max_length - min_length)) * min_rainbow)),
-			static_cast<unsigned char>(50),
+			static_cast<unsigned char>(75),
 			static_cast<unsigned char>(100));
 
 		colour.x = rgb.r / 255.0f;

@@ -242,8 +242,6 @@ public:
 
 		points_vertex_data.resize((x_res - 1) * (y_res - 1) * 8 * 4);
 
-
-
 		const float x_step_size = (x_grid_max - x_grid_min) / (x_res - 1);
 		const float y_step_size = (y_grid_max - y_grid_min) / (y_res - 1);
 		const float z_step_size = (z_grid_max - z_grid_min) / (z_res - 1);
@@ -489,52 +487,15 @@ public:
 		
 
 
+		size_t max_triangles_per_geometry_shader = 5;
+		size_t num_vertices_per_triangle = 3;
+		size_t num_floats_per_vertex = 3;
 
-//	https://www.math.ucsd.edu/~sbuss/MathCG2/OpenGLsoft/Chap1TransformFeedback/C1TFexplain.html
-
-/*
-		unsigned int myTBO;               // Transform Buffer	Object (TBO)
-
-		glGenBuffers(1, &myTBO);          // Generate an OpenGL buffer  
-
-		int maxSizeOfFeedback = 10000000 * sizeof(float);
-
-		glBindBuffer(GL_ARRAY_BUFFER, myTBO);
-		glBufferData(GL_ARRAY_BUFFER, maxSizeOfFeedback, (void*)0, GL_STATIC_READ);
-		//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, myTBO);
-
-		GLuint myTBOquery;          // Will hold an OpenGL query object
-
-		glGenQueries(1, &myTBOquery);
-
-		glEnable(GL_RASTERIZER_DISCARD);        // There is no fragment shader; hence no rasterization should be done.
-
-		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, myTBOquery);
-		glBeginTransformFeedback(GL_TRIANGLES);
-		glDrawArrays(GL_POINTS, 0, num_vertices);
-		glEndTransformFeedback();               // End of transform feedback
-		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
-
-		glFlush();
-
-
-		unsigned int numEdgesFedBack;
-		glGetQueryObjectuiv(myTBOquery, GL_QUERY_RESULT, &numEdgesFedBack);
-		glDisable(GL_RASTERIZER_DISCARD);       // Turn rasterization back on
-
-		cout << numEdgesFedBack << endl;
-
-*/
-
-
-/*
-		// Create transform feedback buffer
 		GLuint tbo;
 		glGenBuffers(1, &tbo);
-		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
-		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, (fsp.resolution - 1)*(fsp.resolution - 1)*5*9 * sizeof(float), nullptr, GL_STATIC_READ);
-	
-		// Create query object to collect info
+		glBindBuffer(GL_ARRAY_BUFFER, tbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) *num_vertices* max_triangles_per_geometry_shader*num_vertices_per_triangle* num_floats_per_vertex, nullptr, GL_STATIC_READ);
+
 		GLuint query;
 		glGenQueries(1, &query);
 
@@ -545,7 +506,7 @@ public:
 
 		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
 		glBeginTransformFeedback(GL_TRIANGLES);
-				glDrawArrays(GL_POINTS, 0, num_vertices);
+		glDrawArrays(GL_POINTS, 0, num_vertices);
 		glEndTransformFeedback();
 		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
 
@@ -553,157 +514,14 @@ public:
 
 		glFlush();
 
-		// Fetch and print results
 		GLuint primitives;
 		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
 
-		if (primitives > 0)
-		{
-				glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
-		vector<float> feedback(primitives * 3 * 3, 0);
-
-
-			printf("%u primitives written!\n\n", primitives);
-
-			for (int i = 0; i < 15; i++) {
-				printf("%f\n", feedback[i]);
-			}
-		}
-		else
-		{
-			cout << "No primitives made" << endl;
-		}
-
-	*/
-
-
-
-
-
-
-
-
-		/*
-
-
-	
-		glEnable(GL_RASTERIZER_DISCARD);
-
-		GLuint array_buffer_vbo, feedback_buffer_vbo;
-		glGenBuffers(1, &array_buffer_vbo);
-		glGenBuffers(1, &feedback_buffer_vbo);
-
-vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9, 0.0f);
-vector<float> out_data = in_data;
-
-		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_buffer_vbo);
-		glNamedBufferStorage(feedback_buffer_vbo, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_STORAGE_BIT);
-		
-		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_COPY);
-
-
-		glBindBuffer(GL_ARRAY_BUFFER, array_buffer_vbo);
-		glNamedBufferStorage(array_buffer_vbo, in_data.size() * sizeof(float), &in_data[0], GL_DYNAMIC_STORAGE_BIT);
-
-
-		//glBufferData(GL_ARRAY_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_DYNAMIC_COPY);
-
-		//glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, feedback_buffer_vbo);
-		//glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, out_data.size() * sizeof(float), &out_data[0], GL_DYNAMIC_COPY);
-
-		GLuint query;
-
-		glGenQueries(1, &query);
-
-		glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
-			
-		glBeginTransformFeedback(GL_TRIANGLES);
-			glDrawArrays(GL_POINTS, 0, num_vertices);
-		glEndTransformFeedback();
-
-		glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
-
-		GLuint primitives;
-		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
-
-		printf("%u primitives written!\n\n", primitives);
-
-
-
-		//glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, out_data.size() * sizeof(float), &out_data[0]);
-		glGetNamedBufferSubData(feedback_buffer_vbo, 0, primitives*9*sizeof(float), &out_data[0]);
-
-		glDisable(GL_RASTERIZER_DISCARD);
-
-
-		for (size_t i = 0; i < primitives; i++)
-		{
-			size_t feedback_index = 9 * i;
-
-			triangle t;
-
-			t.vertex[0].x = out_data[feedback_index + 0];
-			t.vertex[0].y = out_data[feedback_index + 1];
-			t.vertex[0].z = out_data[feedback_index + 2];
-
-			t.vertex[1].x = out_data[feedback_index + 3];
-			t.vertex[1].y = out_data[feedback_index + 4];
-			t.vertex[1].z = out_data[feedback_index + 5];
-
-			t.vertex[2].x = out_data[feedback_index + 6];
-			t.vertex[2].y = out_data[feedback_index + 7];
-			t.vertex[2].z = out_data[feedback_index + 8];
-
-			triangles.push_back(t);
-		}
-
-
-
-		*/
-
-		
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-		GLuint query;
-
-		glGenQueries(1, &query);
-
-		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
-
-		vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9);
-
-		GLuint tbo;
-		glGenBuffers(1, &tbo);
-		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
-		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
-
-		glBeginTransformFeedback(GL_TRIANGLES);
-			glDrawArrays(GL_POINTS, 0, num_vertices);	
-		glEndTransformFeedback();
-
-		glEndQuery(GL_PRIMITIVES_GENERATED);
-	
-		GLuint primitives;
-		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
-
-		vector<float> feedback(in_data.size(), 0.0f);
-		glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size()*sizeof(float), &feedback[0]);
+		vector<GLfloat> feedback(num_vertices* max_triangles_per_geometry_shader* num_vertices_per_triangle* num_floats_per_vertex);
+		glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(GLfloat)* feedback.size(), &feedback[0]);
+
+		glDeleteQueries(1, &query);
+		glDeleteBuffers(1, &tbo);
 
 		for (size_t i = 0; i < primitives; i++)
 		{
@@ -727,34 +545,64 @@ vector<float> out_data = in_data;
 		}
 
 
-	
-
-		
-		//for (int i = 0; i < 15; i++) {
-		//	printf("%f\n", feedback[i]);
-		//}
 
 
+		/*
 
 
-		// read	triangles via GPU to CPU copy (transform feedback)
+		GLuint query;
 
-		//GLint queryResult = 0;
-		//glEndQuery(GL_PRIMITIVES_GENERATED);
+		glGenQueries(1, &query);
 
-		//glGetQueryObjectiv(query, GL_QUERY_RESULT, &queryResult);`
+		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
 
-		//printf("Primitives count: %d\n", queryResult);
+		vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9);
+
+		GLuint tbo;
+		glGenBuffers(1, &tbo);
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
+
+		glBeginTransformFeedback(GL_TRIANGLES);
+		glDrawArrays(GL_POINTS, 0, num_vertices);
+		glEndTransformFeedback();
+
+		glEndQuery(GL_PRIMITIVES_GENERATED);
+
+		GLuint primitives;
+		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
 
 
-		//// https://open.gl/feedback
-		// https://www.reddit.com/r/opengl/comments/5wa3kv/transform_feedback_question/
-		// http://www.java-gaming.org/topics/opengl-transform-feedback/27786/view.html
+		cout << primitives << endl;
+
+		vector<float> feedback(in_data.size(), 0.0f);
+		glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
+
+		for (size_t i = 0; i < primitives; i++)
+		{
+			size_t feedback_index = 9 * i;
+
+			triangle t;
+
+			t.vertex[0].x = feedback[feedback_index + 0];
+			t.vertex[0].y = feedback[feedback_index + 1];
+			t.vertex[0].z = feedback[feedback_index + 2];
+
+			t.vertex[1].x = feedback[feedback_index + 3];
+			t.vertex[1].y = feedback[feedback_index + 4];
+			t.vertex[1].z = feedback[feedback_index + 5];
+
+			t.vertex[2].x = feedback[feedback_index + 6];
+			t.vertex[2].y = feedback[feedback_index + 7];
+			t.vertex[2].z = feedback[feedback_index + 8];
+
+			triangles.push_back(t);
+		}
 
 
 
+		*/
 
-		//glDisable(GL_RASTERIZER_DISCARD);
 
 
 		return true;
