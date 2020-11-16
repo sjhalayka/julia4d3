@@ -406,7 +406,7 @@ public:
 
 
 
-//	https://github.com/progschj/OpenGL-Examples/blob/master/09transform_feedback.cpp
+
 
 		const GLuint components_per_position = 4;
 		const GLuint components_per_vertex = 8 * components_per_position;
@@ -547,61 +547,6 @@ public:
 
 
 
-		/*
-
-
-		GLuint query;
-
-		glGenQueries(1, &query);
-
-		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
-
-		vector<float> in_data((fsp.resolution - 1)* (fsp.resolution - 1) * 5 * 9);
-
-		GLuint tbo;
-		glGenBuffers(1, &tbo);
-		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, tbo);
-		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, in_data.size() * sizeof(float), &in_data[0], GL_STATIC_READ);
-
-		glBeginTransformFeedback(GL_TRIANGLES);
-		glDrawArrays(GL_POINTS, 0, num_vertices);
-		glEndTransformFeedback();
-
-		glEndQuery(GL_PRIMITIVES_GENERATED);
-
-		GLuint primitives;
-		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
-
-
-		cout << primitives << endl;
-
-		vector<float> feedback(in_data.size(), 0.0f);
-		glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, feedback.size() * sizeof(float), &feedback[0]);
-
-		for (size_t i = 0; i < primitives; i++)
-		{
-			size_t feedback_index = 9 * i;
-
-			triangle t;
-
-			t.vertex[0].x = feedback[feedback_index + 0];
-			t.vertex[0].y = feedback[feedback_index + 1];
-			t.vertex[0].z = feedback[feedback_index + 2];
-
-			t.vertex[1].x = feedback[feedback_index + 3];
-			t.vertex[1].y = feedback[feedback_index + 4];
-			t.vertex[1].z = feedback[feedback_index + 5];
-
-			t.vertex[2].x = feedback[feedback_index + 6];
-			t.vertex[2].y = feedback[feedback_index + 7];
-			t.vertex[2].z = feedback[feedback_index + 8];
-
-			triangles.push_back(t);
-		}
-
-
-
-		*/
 
 
 

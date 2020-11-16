@@ -621,17 +621,6 @@ int js_state_machine::g0_stage_1_gpu(void)
 		fsp.y_min, fsp.y_max, fsp.resolution,
 		fsp.z_min, fsp.z_max, fsp.resolution);
 		
-	/*
-	tesselate_adjacent_xy_plane_pair_cpu(
-		box_count,
-		g0_previous_slice, g0_output_pixels,
-		g0_z - 1,
-		triangles,
-		fsp.infinity, // Use threshold as isovalue.
-		fsp.x_min, fsp.x_max, fsp.resolution,
-		fsp.y_min, fsp.y_max, fsp.resolution,
-		fsp.z_min, fsp.z_max, fsp.resolution);
-		*/
 
 	if (g0_z >= fsp.resolution - 1)
 	{
